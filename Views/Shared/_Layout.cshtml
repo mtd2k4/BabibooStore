@@ -1,0 +1,1253 @@
+﻿@using WebsiteBabyShop.Models
+@using WebsiteBabyShop.Helpers
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var cart = HttpContextAccessor.HttpContext?.Session.GetObject<List<CartItem>>("ShoppingCart") ?? new List<CartItem>();
+    var cartCount = cart.Sum(c => c.Quantity);
+    var isAuthenticated = User.Identity?.IsAuthenticated ?? false;
+    var userName = User.Identity?.Name ?? "";
+    var isAdmin = User.IsInRole("Admin");
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>@(ViewData["Title"] != null ? ViewData["Title"] + " - BabyShop Studio Kids" : "BabyShop | Thời Trang Trẻ Em Thiết Kế & Cao Cấp")</title>
+    
+    <!-- Bootstrap CSS & Icons -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+
+    <!-- Contemporary Kids Boutique Design System -->
+    <link rel="stylesheet" href="~/css/babyshop.css" asp-append-version="true" />
+</head>
+<body>
+    <!-- 1. Top Announcement Bar -->
+    <div class="baby-topbar text-center">
+        <div class="container d-flex justify-content-between align-items-center">
+            <span class="d-none d-md-inline"><i class="bi bi-feather me-1"></i> Chất liệu 100% Cotton Organic an toàn cho bé</span>
+            <span class="mx-auto mx-md-0"><i class="bi bi-truck me-1"></i> Miễn phí vận chuyển từ <strong>300.000đ</strong> • Đổi hàng tận nhà <strong>7 ngày</strong></span>
+            <div class="d-none d-lg-flex align-items-center gap-3">
+                <button type="button" class="btn btn-link text-decoration-none text-dark p-0 small fw-semibold" data-bs-toggle="modal" data-bs-target="#sizeGuideModal" style="font-size: 0.8rem;">
+                    <i class="bi bi-rulers me-1 text-primary"></i> Bảng Size Chuẩn
+                </button>
+                <span><i class="bi bi-telephone me-1"></i> Hotline: <strong>1900 633 520</strong></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Frosted Sticky Header -->
+    <header class="baby-header">
+        <div class="container py-2">
+            <div class="row align-items-center g-2 g-md-3">
+                <!-- Mobile Menu Button & Brand Logo -->
+                <div class="col-6 col-md-3 col-lg-3 d-flex align-items-center gap-2">
+                    <button class="baby-mobile-toggle d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileNavOffcanvas" aria-label="Menu">
+                        <i class="bi bi-list"></i>
+                    </button>
+
+                    <a class="baby-brand" asp-controller="Home" asp-action="Index">
+                        <div class="baby-brand-icon">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <div class="baby-brand-text">
+                            <span class="baby-brand-name">BABY<span>SHOP</span></span>
+                            <span class="baby-brand-sub">Studio Kids</span>
+                        </div>
+                    </a>
+                </div>
+
+                <!-- Desktop / Tablet Search Form -->
+                <div class="col-12 col-md-4 col-lg-4 order-3 order-md-2 mt-2 mt-md-0">
+                    <form asp-controller="Product" asp-action="Index" method="get" class="baby-search-form mx-auto">
+                        <input type="text" name="search" id="globalSearchInput" class="baby-search-input" placeholder="Tìm kiếm váy bé gái, set yếm, đồ sơ sinh..." value="@Context.Request.Query["search"]" />
+                        <button type="submit" class="baby-search-btn" title="Tìm kiếm">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Right Actions: Order Tracking, Wishlist, Account, Cart -->
+                <div class="col-6 col-md-5 col-lg-5 order-2 order-md-3 text-end d-flex justify-content-end align-items-center gap-1 gap-sm-2 gap-lg-3">
+                    <!-- Order Tracking -->
+                    <a asp-controller="OrderTracking" asp-action="Index" class="baby-header-action d-none d-md-flex" title="Tra cứu tiến độ đơn hàng">
+                        <i class="bi bi-truck"></i>
+                        <span>Tra Cứu Đơn</span>
+                    </a>
+
+                    <!-- Wishlist -->
+                    <a asp-controller="Wishlist" asp-action="Index" class="baby-header-action position-relative d-none d-sm-flex" title="Sản phẩm yêu thích">
+                        <i class="bi bi-heart"></i>
+                        <span>Yêu Thích</span>
+                        <span class="baby-header-badge d-none" id="wishlistBadge">0</span>
+                    </a>
+
+                    <!-- Rewards & Lucky Wheel -->
+                    <a asp-controller="Rewards" asp-action="Index" class="baby-header-action position-relative d-none d-md-flex" title="Vòng quay may mắn & Điểm danh">
+                        <i class="bi bi-gift text-danger"></i>
+                        <span>Săn Quà</span>
+                        <span class="baby-header-badge bg-danger text-white" style="display: inline-block;">Hot</span>
+                    </a>
+
+                    <!-- Account / Auth -->
+                    @if (isAuthenticated)
+                    {
+                        <div class="dropdown">
+                            <button class="baby-header-action dropdown-toggle" type="button" data-bs-toggle="dropdown" title="Tài khoản cá nhân">
+                                <i class="bi bi-person-check text-primary"></i>
+                                <span class="baby-header-username">@userName</span>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3 mt-2">
+                                <li><h6 class="dropdown-header">Tài khoản của bạn</h6></li>
+                                @if (isAdmin)
+                                {
+                                    <li>
+                                        <a class="dropdown-item fw-bold text-danger" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">
+                                            <i class="bi bi-shield-lock me-2"></i>Trang Quản Trị (Admin)
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                }
+                                <li><a class="dropdown-item" asp-controller="Account" asp-action="Profile"><i class="bi bi-person me-2"></i>Hồ sơ cá nhân</a></li>
+                                <li><a class="dropdown-item fw-bold text-danger" asp-controller="Rewards" asp-action="Index"><i class="bi bi-gift-fill text-danger me-2"></i>Vòng Quay & Điểm Danh 🎡</a></li>
+                                <li><a class="dropdown-item" asp-controller="Account" asp-action="MyVouchers"><i class="bi bi-ticket-perforated-fill text-danger me-2"></i>Kho Voucher của tôi</a></li>
+                                <li><a asp-controller="OrderTracking" asp-action="Index" class="dropdown-item"><i class="bi bi-truck me-2"></i>Tra cứu đơn hàng</a></li>
+                                <li><a class="dropdown-item" asp-controller="Account" asp-action="MyOrders"><i class="bi bi-bag-check me-2"></i>Đơn hàng đã mua</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline" onsubmit="sessionStorage.clear();">
+                                        <button type="submit" class="dropdown-item text-secondary"><i class="bi bi-box-arrow-right me-2"></i>Đăng xuất</button>
+                                    </form>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="baby-header-action" title="Đăng nhập tài khoản">
+                            <i class="bi bi-person"></i>
+                            <span>Tài Khoản</span>
+                        </a>
+                    }
+
+                    <!-- Shopping Cart Pill -->
+                    <a asp-controller="Cart" asp-action="Index" class="baby-cart-btn-pill ms-1" title="Giỏ hàng của mẹ">
+                        <i class="bi bi-bag fs-5"></i>
+                        <span class="d-none d-sm-inline">Giỏ Hàng</span>
+                        <span class="baby-cart-count-pill" id="cartBadge">@cartCount</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. Desktop Navigation Bar -->
+        <nav class="baby-navbar d-none d-md-block">
+            <div class="container">
+                <ul class="baby-nav-list">
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Home" asp-action="Index">
+                            Trang Chủ
+                        </a>
+                    </li>
+
+                    <!-- BÉ GÁI WITH MEGA MENU -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">
+                            Bé Gái <i class="bi bi-chevron-down small opacity-50 ms-1"></i>
+                        </a>
+                        <div class="baby-mega-menu">
+                            <div class="row g-4">
+                                <div class="col-4">
+                                    <div class="baby-mega-title">Trang Phục Bé Gái</div>
+                                    <ul class="baby-mega-links">
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-category="vay-dam-be-gai">Váy Đầm Công Chúa</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-category="ao-be-gai">Áo Thun & Sơ Mi</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-category="quan-be-gai">Quần & Chân Váy</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-category="do-bo-mac-nha">Đồ Bộ Mặc Nhà</a></li>
+                                    </ul>
+                                </div>
+                                <div class="col-4">
+                                    <div class="baby-mega-title">Theo Độ Tuổi</div>
+                                    <ul class="baby-mega-links">
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Bé tập đi (1 - 3 tuổi)</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Mẫu giáo (3 - 6 tuổi)</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Tiểu học (6 - 12 tuổi)</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-isNew="true" class="text-primary fw-bold">Xem tất cả đồ bé gái &rarr;</a></li>
+                                    </ul>
+                                </div>
+                                <div class="col-4">
+                                    <div class="rounded-3 overflow-hidden border p-3 text-center" style="background: var(--baby-rose-light);">
+                                        <h6 class="fw-bold mb-1" style="color: var(--baby-rose);">Váy Mùa Hè 2026</h6>
+                                        <p class="small text-muted mb-2">Vải thô đũi mát mịn</p>
+                                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" class="btn btn-baby-primary btn-sm">Khám Phá</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- BÉ TRAI WITH MEGA MENU -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai">
+                            Bé Trai <i class="bi bi-chevron-down small opacity-50 ms-1"></i>
+                        </a>
+                        <div class="baby-mega-menu">
+                            <div class="row g-4">
+                                <div class="col-4">
+                                    <div class="baby-mega-title">Trang Phục Bé Trai</div>
+                                    <ul class="baby-mega-links">
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-category="ao-polo-be-trai">Áo Polo & Sơ Mi</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-category="ao-phong-be-trai">Áo Phông Năng Động</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-category="quan-kaki-short">Quần Kaki & Shorts</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-category="set-yem-be-trai">Set Yếm Cá Tính</a></li>
+                                    </ul>
+                                </div>
+                                <div class="col-4">
+                                    <div class="baby-mega-title">Bộ Sưu Tập</div>
+                                    <ul class="baby-mega-links">
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai">Thời Trang Đi Học</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai">Đồ Đi Chơi Dã Ngoại</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-isNew="true" class="text-primary fw-bold">Xem tất cả đồ bé trai &rarr;</a></li>
+                                    </ul>
+                                </div>
+                                <div class="col-4">
+                                    <div class="rounded-3 overflow-hidden border p-3 text-center" style="background: var(--baby-sage-light);">
+                                        <h6 class="fw-bold mb-1" style="color: var(--baby-sage);">Polo Năng Động</h6>
+                                        <p class="small text-muted mb-2">Thấm hút mồ hôi tối đa</p>
+                                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="btn btn-baby-primary btn-sm">Khám Phá</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+
+                    <!-- SƠ SINH -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh">
+                            Sơ Sinh (0 - 24M)
+                        </a>
+                    </li>
+
+                    <!-- GIÀY & PHỤ KIỆN -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Product" asp-action="Index" asp-route-category="phu-kien-giay-dep">
+                            Giày Dép & Phụ Kiện
+                        </a>
+                    </li>
+
+                    <!-- HÀNG MỚI VỀ -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Product" asp-action="Index" asp-route-isNew="true">
+                            Mới Về <span class="nav-badge new">New</span>
+                        </a>
+                    </li>
+
+                    <!-- SIÊU SALE -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link" asp-controller="Product" asp-action="Index" asp-route-isSale="true">
+                            Ưu Đãi <span class="nav-badge sale">Sale</span>
+                        </a>
+                    </li>
+
+                    <!-- VÒNG QUAY MAY MẮN -->
+                    <li class="baby-nav-item">
+                        <a class="baby-nav-link text-danger fw-bold" asp-controller="Rewards" asp-action="Index">
+                            <i class="bi bi-gift-fill me-1"></i> Săn Quà <span class="nav-badge new" style="background: #ef4444;">Hot</span>
+                        </a>
+                    </li>
+                    <li class="baby-nav-item ms-auto">
+                        <button type="button" class="baby-nav-link border-0 bg-transparent text-primary fw-semibold" data-bs-toggle="modal" data-bs-target="#sizeGuideModal">
+                            <i class="bi bi-rulers me-1"></i> Bảng Đo Size Cho Bé
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <!-- 4. Mobile Offcanvas Navigation Drawer -->
+    <div class="offcanvas offcanvas-start baby-offcanvas" tabindex="-1" id="mobileNavOffcanvas" aria-labelledby="mobileNavLabel">
+        <div class="baby-offcanvas-header d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-2">
+                <div class="baby-brand-icon" style="width: 32px; height: 32px; font-size: 1.1rem;">
+                    <i class="bi bi-stars"></i>
+                </div>
+                <span class="fw-bold fs-6">BABYSHOP KIDS</span>
+            </div>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="baby-offcanvas-body">
+            <!-- Categories Group -->
+            <div class="mobile-nav-group">
+                <a asp-controller="Home" asp-action="Index" class="mobile-nav-link">
+                    <span><i class="bi bi-house me-2 text-muted"></i> Trang Chủ</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </a>
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" class="mobile-nav-link">
+                    <span>👗 Thời Trang Bé Gái</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </a>
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="mobile-nav-link">
+                    <span>👕 Thời Trang Bé Trai</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </a>
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" class="mobile-nav-link">
+                    <span>👶 Đồ Sơ Sinh (0 - 24M)</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </a>
+                <a asp-controller="Product" asp-action="Index" asp-route-category="phu-kien-giay-dep" class="mobile-nav-link">
+                    <span>👟 Giày Dép & Phụ Kiện</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </a>
+                <a asp-controller="Product" asp-action="Index" asp-route-isNew="true" class="mobile-nav-link">
+                    <span>✨ Hàng Mới Về</span>
+                    <span class="badge bg-success-subtle text-success small">New</span>
+                </a>
+                <a asp-controller="Product" asp-action="Index" asp-route-isSale="true" class="mobile-nav-link">
+                    <span>🔥 Ưu Đãi Đặc Biệt</span>
+                    <span class="badge bg-danger-subtle text-danger small">Sale</span>
+                </a>
+                <a asp-controller="Rewards" asp-action="Index" class="mobile-nav-link text-danger fw-bold">
+                    <span>🎡 Vòng Quay & Điểm Danh</span>
+                    <span class="badge bg-danger text-white small">Hot</span>
+                </a>
+            </div>
+
+            <!-- Quick Service Actions -->
+            <div class="mobile-nav-group">
+                <a asp-controller="Wishlist" asp-action="Index" class="mobile-nav-link">
+                    <span><i class="bi bi-heart me-2 text-danger"></i> Sản Phẩm Yêu Thích</span>
+                    <span class="badge bg-danger-subtle text-danger rounded-pill" id="mobileWishlistBadge">0</span>
+                </a>
+                <a asp-controller="OrderTracking" asp-action="Index" class="mobile-nav-link">
+                    <span><i class="bi bi-truck me-2 text-primary"></i> Tra Cứu Đơn Hàng</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </a>
+                <button type="button" class="mobile-nav-link w-100 text-start border-0 bg-transparent" data-bs-toggle="modal" data-bs-target="#sizeGuideModal" data-bs-dismiss="offcanvas">
+                    <span><i class="bi bi-rulers me-2 text-muted"></i> Bảng Đo Size Chuẩn</span>
+                    <i class="bi bi-chevron-right small text-muted"></i>
+                </button>
+                <a href="tel:1900633520" class="mobile-nav-link">
+                    <span><i class="bi bi-telephone me-2 text-muted"></i> Hotline CSKH: 1900 633 520</span>
+                </a>
+            </div>
+
+            <!-- Auth link for mobile -->
+            @if (isAuthenticated)
+            {
+                <div class="mobile-nav-group">
+                    <a asp-controller="Account" asp-action="Profile" class="mobile-nav-link">
+                        <span><i class="bi bi-person me-2 text-muted"></i> @userName</span>
+                    </a>
+                    <a asp-controller="Account" asp-action="MyVouchers" class="mobile-nav-link">
+                        <span><i class="bi bi-ticket-perforated-fill me-2 text-danger"></i> Kho Voucher của tôi</span>
+                    </a>
+                    <a asp-controller="Account" asp-action="MyOrders" class="mobile-nav-link">
+                        <span><i class="bi bi-bag-check me-2 text-muted"></i> Đơn hàng của tôi</span>
+                    </a>
+                    @if (isAdmin)
+                    {
+                        <a asp-area="Admin" asp-controller="Dashboard" asp-action="Index" class="mobile-nav-link text-danger fw-bold">
+                            <span><i class="bi bi-shield-lock me-2"></i> Trang Quản Trị</span>
+                        </a>
+                    }
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline" onsubmit="sessionStorage.clear();">
+                        <button type="submit" class="mobile-nav-link text-secondary w-100 text-start border-0 bg-transparent">
+                            <i class="bi bi-box-arrow-right me-2"></i> Đăng xuất
+                        </button>
+                    </form>
+                </div>
+            }
+            else
+            {
+                <div class="p-2">
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-baby-primary w-100 justify-content-center">
+                        <i class="bi bi-person me-1"></i> Đăng Nhập / Đăng Ký
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- 5. Main Content Body -->
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <!-- 6. Mobile Bottom Navigation Bar (Fixed for mobile) -->
+    <div class="baby-bottom-nav d-md-none">
+        <a asp-controller="Home" asp-action="Index" class="baby-bottom-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "active" : "")">
+            <i class="bi bi-house"></i>
+            <span>Trang chủ</span>
+        </a>
+        <button type="button" class="baby-bottom-item border-0 bg-transparent" data-bs-toggle="offcanvas" data-bs-target="#mobileNavOffcanvas">
+            <i class="bi bi-grid"></i>
+            <span>Danh mục</span>
+        </button>
+        <button type="button" class="baby-bottom-item border-0 bg-transparent" onclick="document.getElementById('globalSearchInput')?.focus(); window.scrollTo({top: 0, behavior: 'smooth'});">
+            <i class="bi bi-search"></i>
+            <span>Tìm kiếm</span>
+        </button>
+        <a asp-controller="Cart" asp-action="Index" class="baby-bottom-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Cart" ? "active" : "")">
+            <i class="bi bi-bag"></i>
+            <span>Giỏ hàng</span>
+            @if (cartCount > 0)
+            {
+                <span class="baby-bottom-badge">@cartCount</span>
+            }
+        </a>
+        <a asp-controller="Account" asp-action="@(isAuthenticated ? "Profile" : "Login")" class="baby-bottom-item @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Account" ? "active" : "")">
+            <i class="bi bi-person"></i>
+            <span>Tài khoản</span>
+        </a>
+    </div>
+
+    <!-- 7. Size Guide Modal (Bảng Đo Size Chuẩn) -->
+    <div class="modal fade" id="sizeGuideModal" tabindex="-1" aria-labelledby="sizeGuideModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold" id="sizeGuideModalLabel">
+                        <i class="bi bi-rulers text-primary me-2"></i>Bảng Hướng Dẫn Chọn Size Chuẩn Cho Bé
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small mb-3">
+                        Kích thước quần áo phụ thuộc lớn vào chiều cao và cân nặng thực tế của bé. Nếu bé mũm mĩm hoặc cao hơn tuổi, mẹ nên chọn tăng lên 1 size nhé!
+                    </p>
+                    <div class="table-responsive">
+                        <table class="table table-bordered align-middle text-center small">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Kích thước (Size)</th>
+                                    <th>Độ tuổi gợi ý</th>
+                                    <th>Cân nặng chuẩn</th>
+                                    <th>Chiều cao chuẩn</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr><td><strong>Size 90 (1-2T)</strong></td><td>1 - 2 tuổi</td><td>10 - 12 kg</td><td>80 - 90 cm</td></tr>
+                                <tr><td><strong>Size 100 (2-3T)</strong></td><td>2 - 3 tuổi</td><td>13 - 15 kg</td><td>90 - 100 cm</td></tr>
+                                <tr><td><strong>Size 110 (3-4T)</strong></td><td>3 - 4 tuổi</td><td>16 - 18 kg</td><td>100 - 110 cm</td></tr>
+                                <tr><td><strong>Size 120 (5-6T)</strong></td><td>5 - 6 tuổi</td><td>19 - 22 kg</td><td>110 - 120 cm</td></tr>
+                                <tr><td><strong>Size 130 (7-8T)</strong></td><td>7 - 8 tuổi</td><td>23 - 26 kg</td><td>120 - 130 cm</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-baby-primary px-4 py-2" data-bs-dismiss="modal">Đã hiểu, Cảm ơn!</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 8. Contemporary Footer -->
+    <footer class="baby-footer">
+        <div class="container">
+            <div class="row g-4">
+                <!-- Col 1: About Brand -->
+                <div class="col-12 col-md-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <div class="baby-brand-icon" style="width: 36px; height: 36px; font-size: 1.2rem;">
+                            <i class="bi bi-stars"></i>
+                        </div>
+                        <h5 class="fw-bold m-0 text-dark">BABYSHOP STUDIO KIDS</h5>
+                    </div>
+                    <p class="small text-muted mb-3" style="line-height: 1.6;">
+                        Thương hiệu thời trang thiết kế cho trẻ em, chú trọng chất liệu an toàn, nguồn gốc tự nhiên và đường nét tinh tế. Đạt tiêu chuẩn dệt may an toàn Oeko-Tex cho làn da bé.
+                    </p>
+                    <p class="small mb-1"><i class="bi bi-geo-alt text-muted me-2"></i>Showroom: 123 Cầu Giấy, Hà Nội & Quận 1, TP.HCM</p>
+                    <p class="small mb-1"><i class="bi bi-telephone text-muted me-2"></i>Hotline tư vấn: <strong>1900 633 520</strong> (8:00 - 21:30)</p>
+                    <p class="small mb-0"><i class="bi bi-envelope text-muted me-2"></i>Email: cskh@babyshop.vn</p>
+                </div>
+
+                <!-- Col 2: Categories -->
+                <div class="col-6 col-md-2">
+                    <h6 class="baby-footer-title">Sản Phẩm</h6>
+                    <ul>
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Thời trang Bé Gái</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai">Thời trang Bé Trai</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh">Đồ Sơ Sinh Organic</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-category="phu-kien-giay-dep">Giày Dép & Phụ Kiện</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" asp-route-isSale="true">Bộ Sưu Tập Ưu Đãi</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 3: Policy & Support -->
+                <div class="col-6 col-md-3">
+                    <h6 class="baby-footer-title">Chính Sách & Hỗ Trợ</h6>
+                    <ul>
+                        <li><a href="#" data-bs-toggle="modal" data-bs-target="#sizeGuideModal"><i class="bi bi-rulers me-1"></i>Bảng đo Size chuẩn</a></li>
+                        <li><a asp-controller="OrderTracking" asp-action="Index"><i class="bi bi-truck me-1 text-primary"></i>Tra cứu đơn hàng</a></li>
+                        <li><a asp-controller="Wishlist" asp-action="Index"><i class="bi bi-heart me-1 text-danger"></i>Sản phẩm yêu thích</a></li>
+                        <li><a asp-controller="Policy" asp-action="Return">Chính sách đổi trả trong 7 ngày</a></li>
+                        <li><a asp-controller="Policy" asp-action="Shipping">Chính sách giao hàng toàn quốc</a></li>
+                        <li><a asp-controller="Policy" asp-action="Care">Hướng dẫn bảo quản đồ cho bé</a></li>
+                        <li><a asp-controller="Policy" asp-action="Privacy">Chính sách bảo mật thông tin</a></li>
+                    </ul>
+                </div>
+
+                <!-- Col 4: Newsletter -->
+                <div class="col-12 col-md-3">
+                    <h6 class="baby-footer-title">Nhận Ưu Đãi Độc Quyền</h6>
+                    <p class="small text-muted mb-3">Đăng ký email để nhận thông báo bộ sưu tập mùa mới và voucher 50.000đ.</p>
+                    <div class="input-group mb-3">
+                        <input type="email" class="form-control rounded-start-pill small" placeholder="Nhập email của bạn..." />
+                        <button class="btn btn-baby-primary rounded-end-pill px-3" type="button">Gửi</button>
+                    </div>
+                    <div class="d-flex gap-3 fs-5 mt-3">
+                        <a href="#" class="text-secondary"><i class="bi bi-facebook"></i></a>
+                        <a href="#" class="text-secondary"><i class="bi bi-instagram"></i></a>
+                        <a href="#" class="text-secondary"><i class="bi bi-tiktok"></i></a>
+                        <a href="#" class="text-secondary"><i class="bi bi-youtube"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="baby-footer-bottom d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <div>&copy; 2026 BabyShop Studio Kids. Nền tảng thương mại điện tử ASP.NET Core 8.0 MVC.</div>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="badge bg-light text-muted border"><i class="bi bi-shield-check text-success me-1"></i>Vải An Toàn Oeko-Tex</span>
+                    <span class="badge bg-light text-muted border">Thanh toán an toàn COD & VietQR</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- 9. Floating Contact Widget (Nút Liên Hệ Ở Góc) -->
+    <div class="baby-floating-contact" id="babyContactWidget">
+        <!-- Floating Tooltip -->
+        <div class="baby-contact-tooltip">
+            <i class="bi bi-chat-heart text-primary"></i>
+            <span>Tư vấn chọn size 24/7</span>
+        </div>
+
+        <!-- Popup Menu -->
+        <div class="baby-contact-menu">
+            <div class="baby-contact-menu-header">
+                <h6 class="baby-contact-menu-title">Hỗ Trợ Mẹ & Bé</h6>
+                <div class="baby-contact-menu-sub">BabyShop luôn sẵn sàng phục vụ 24/7</div>
+            </div>
+            <ul class="baby-contact-list">
+                <li>
+                    <button type="button" class="baby-contact-item-btn" onclick="openBabyChat('AI')">
+                        <div class="baby-contact-item-icon" style="background: var(--baby-primary-light); color: var(--baby-primary);">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <div class="baby-contact-item-info">
+                            <div class="baby-contact-item-name">Chat với Trợ Lý AI</div>
+                            <div class="baby-contact-item-desc">Tư vấn size, gợi ý mẫu tức thì 24/7</div>
+                        </div>
+                    </button>
+                </li>
+                <li>
+                    <button type="button" class="baby-contact-item-btn" onclick="openBabyChat('Staff')">
+                        <div class="baby-contact-item-icon" style="background: var(--baby-sage-light); color: var(--baby-sage);">
+                            <i class="bi bi-headset"></i>
+                        </div>
+                        <div class="baby-contact-item-info">
+                            <div class="baby-contact-item-name">Chat với Nhân Viên CSKH</div>
+                            <div class="baby-contact-item-desc">Tư vấn viên trực tuyến hỗ trợ</div>
+                        </div>
+                    </button>
+                </li>
+                <li>
+                    <a href="tel:1900633520" class="baby-contact-item-btn">
+                        <div class="baby-contact-item-icon" style="background: #FDF9F5; color: var(--baby-dark);">
+                            <i class="bi bi-telephone-fill"></i>
+                        </div>
+                        <div class="baby-contact-item-info">
+                            <div class="baby-contact-item-name">Gọi Hotline CSKH</div>
+                            <div class="baby-contact-item-desc">1900 633 520 (Miễn phí cước)</div>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a href="https://zalo.me/0912345678" target="_blank" rel="noopener noreferrer" class="baby-contact-item-btn">
+                        <div class="baby-contact-item-icon" style="background: #E8F2FE; color: #0068FF;">
+                            <i class="bi bi-chat-dots-fill"></i>
+                        </div>
+                        <div class="baby-contact-item-info">
+                            <div class="baby-contact-item-name">Chat qua Zalo</div>
+                            <div class="baby-contact-item-desc">Tư vấn ảnh thật & kích thước</div>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <a asp-controller="OrderTracking" asp-action="Index" class="baby-contact-item-btn" onclick="toggleBabyContact();">
+                        <div class="baby-contact-item-icon" style="background: #FFF7ED; color: #EA580C;">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div class="baby-contact-item-info">
+                            <div class="baby-contact-item-name">Tra Cứu Đơn Hàng</div>
+                            <div class="baby-contact-item-desc">Theo dõi tiến độ bưu kiện của bé</div>
+                        </div>
+                    </a>
+                </li>
+                <li>
+                    <button type="button" class="baby-contact-item-btn" data-bs-toggle="modal" data-bs-target="#sizeGuideModal" onclick="toggleBabyContact();">
+                        <div class="baby-contact-item-icon" style="background: var(--baby-sand-light); color: var(--baby-primary);">
+                            <i class="bi bi-rulers"></i>
+                        </div>
+                        <div class="baby-contact-item-info">
+                            <div class="baby-contact-item-name">Bảng Đo Size Chuẩn</div>
+                            <div class="baby-contact-item-desc">Tra cứu theo chiều cao, cân nặng</div>
+                        </div>
+                    </button>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Trigger Button -->
+        <button type="button" class="baby-contact-trigger" id="babyContactTrigger" onclick="toggleBabyContact()" aria-label="Liên hệ tư vấn">
+            <span class="baby-contact-pulse"></span>
+            <i class="bi bi-chat-dots-fill icon-open"></i>
+            <i class="bi bi-x-lg icon-close"></i>
+        </button>
+    </div>
+
+    <!-- 10. Live Chat Box (Chat với AI & Chat với Nhân Viên) -->
+    <div class="baby-chat-window" id="babyChatWindow">
+        <!-- Chat Header -->
+        <div class="baby-chat-header">
+            <div class="baby-chat-tabs">
+                <button type="button" class="baby-chat-tab-btn active" id="tabModeAI" onclick="switchChatMode('AI')">
+                    <i class="bi bi-robot"></i> Trợ Lý AI
+                </button>
+                <button type="button" class="baby-chat-tab-btn" id="tabModeStaff" onclick="switchChatMode('Staff')">
+                    <span class="online-dot"></span> Nhân Viên
+                </button>
+            </div>
+            <button type="button" class="baby-chat-close-btn" onclick="closeBabyChat()" title="Đóng chat">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <!-- Chat Messages Container -->
+        <div class="baby-chat-messages" id="babyChatMessages">
+            <!-- Initial Welcome Message -->
+            <div class="baby-msg-wrap msg-bot">
+                <div class="baby-msg-avatar" id="botAvatar">
+                    <i class="bi bi-robot"></i>
+                </div>
+                <div class="baby-msg-content">
+                    <div class="baby-msg-bubble" id="welcomeMsgBubble">
+                        Dạ em chào mẹ! Em là <strong>Trợ lý AI của BabyShop</strong> 🤖.<br />
+                        Em có thể hỗ trợ mẹ chọn size chuẩn theo cân nặng của bé, gợi ý mẫu đồ mới và giải đáp chính sách giao hàng miễn phí.<br /><br />
+                        Mẹ có thể bấm chọn nhanh câu hỏi bên dưới hoặc nhắn trực tiếp cân nặng của bé nhé:
+                    </div>
+                    <div class="baby-msg-time" id="welcomeTime">Vừa xong</div>
+
+                    <!-- Quick Suggestion Chips -->
+                    <div class="baby-quick-chips" id="quickChipsWrap">
+                        <button type="button" class="baby-chip-btn" onclick="sendQuickMessage('Bé 12kg mặc size gì?')">Bé 12kg mặc size gì?</button>
+                        <button type="button" class="baby-chip-btn" onclick="sendQuickMessage('Váy bé gái xinh')">👗 Váy bé gái xinh</button>
+                        <button type="button" class="baby-chip-btn" onclick="sendQuickMessage('Đồ bé trai năng động')">👕 Đồ bé trai</button>
+                        <button type="button" class="baby-chip-btn" onclick="sendQuickMessage('Chính sách freeship')">🚚 Freeship từ bao nhiêu?</button>
+                        <button type="button" class="baby-chip-btn" onclick="sendQuickMessage('Chính sách đổi trả trong 7 ngày')">🔄 Đổi trả tận nhà</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div class="baby-typing" id="chatTypingIndicator">
+                <span class="baby-dot"></span>
+                <span class="baby-dot"></span>
+                <span class="baby-dot"></span>
+            </div>
+        </div>
+
+        <!-- Chat Footer / Input Area -->
+        <div class="baby-chat-footer">
+            <form class="baby-chat-form" id="babyChatForm" onsubmit="handleChatSubmit(event)">
+                <input type="text" id="chatInputMessage" class="baby-chat-input" placeholder="Hỏi AI tư vấn size, sản phẩm..." autocomplete="off" />
+                <button type="submit" class="baby-chat-send-btn" title="Gửi tin nhắn">
+                    <i class="bi bi-send-fill"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 JS Library -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <!-- BabyAlert Global SweetAlert2 Utilities -->
+    <script>
+        window.BabyAlert = {
+            toast: function(message, icon = 'success') {
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3500,
+                    timerProgressBar: true,
+                    customClass: {
+                        popup: 'baby-swal-toast'
+                    },
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                    }
+                });
+                Toast.fire({
+                    icon: icon,
+                    title: message
+                });
+            },
+            success: function(title, message) {
+                return Swal.fire({
+                    icon: 'success',
+                    title: title,
+                    text: message,
+                    confirmButtonColor: '#C57B57',
+                    confirmButtonText: 'Tuyệt vời',
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-baby-primary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+            },
+            error: function(title, message) {
+                return Swal.fire({
+                    icon: 'error',
+                    title: title,
+                    text: message,
+                    confirmButtonColor: '#DC3545',
+                    confirmButtonText: 'Đã hiểu',
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-danger rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+            },
+            warning: function(title, message, isHtml = false) {
+                const config = {
+                    icon: 'warning',
+                    title: title,
+                    confirmButtonColor: '#F59E0B',
+                    confirmButtonText: 'Đã hiểu',
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-warning text-white fw-bold rounded-pill px-4 shadow-sm'
+                    },
+                    buttonsStyling: false
+                };
+                if (isHtml) {
+                    config.html = message;
+                } else {
+                    config.text = message;
+                }
+                return Swal.fire(config);
+            },
+            confirm: function(title, message, confirmText = 'Xác nhận', cancelText = 'Hủy') {
+                return Swal.fire({
+                    title: title,
+                    text: message,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: confirmText,
+                    cancelButtonText: cancelText,
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-baby-primary rounded-pill px-4 me-2',
+                        cancelButton: 'btn btn-outline-secondary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+            },
+            copy: function(text, label = 'mã') {
+                if (navigator.clipboard) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        BabyAlert.toast(`Đã sao chép ${label}: ${text} ✨`, 'success');
+                    }).catch(() => {
+                        BabyAlert.toast(`Đã chọn ${label}: ${text}`, 'info');
+                    });
+                }
+            }
+        };
+
+        // Tự động kích hoạt SweetAlert Toast khi có TempData thông báo
+        document.addEventListener('DOMContentLoaded', function() {
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>BabyAlert.toast('@Html.Raw(TempData["SuccessMessage"])', 'success');</text>
+            }
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>BabyAlert.toast('@Html.Raw(TempData["ErrorMessage"])', 'error');</text>
+            }
+            @if (TempData["StockWarning"] != null)
+            {
+                <text>BabyAlert.warning('Cảnh Báo Tồn Kho', '@Html.Raw(TempData["StockWarning"])');</text>
+            }
+            @if (TempData["CouponSuccess"] != null)
+            {
+                <text>BabyAlert.toast('@Html.Raw(TempData["CouponSuccess"])', 'success');</text>
+            }
+            @if (TempData["CouponError"] != null)
+            {
+                <text>BabyAlert.toast('@Html.Raw(TempData["CouponError"])', 'error');</text>
+            }
+        });
+    </script>
+    <script>
+        var currentChatMode = 'AI'; // 'AI' or 'Staff'
+        var staffPollTimer = null;
+        var renderedStaffMsgIds = new Set();
+
+        function getBabyChatSessionId() {
+            var sess = localStorage.getItem('babyshop_chat_session');
+            if (!sess) {
+                sess = 'sess_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+                localStorage.setItem('babyshop_chat_session', sess);
+            }
+            return sess;
+        }
+
+        function toggleBabyContact() {
+            var widget = document.getElementById('babyContactWidget');
+            if (widget) {
+                widget.classList.toggle('active');
+            }
+        }
+
+        function openBabyChat(mode) {
+            var widget = document.getElementById('babyContactWidget');
+            if (widget) widget.classList.remove('active');
+
+            var chat = document.getElementById('babyChatWindow');
+            if (chat) {
+                chat.classList.add('active');
+            }
+            switchChatMode(mode || 'AI');
+
+            setTimeout(function() {
+                var input = document.getElementById('chatInputMessage');
+                if (input) input.focus();
+            }, 300);
+        }
+
+        function closeBabyChat() {
+            var chat = document.getElementById('babyChatWindow');
+            if (chat) {
+                chat.classList.remove('active');
+            }
+            if (staffPollTimer) {
+                clearInterval(staffPollTimer);
+                staffPollTimer = null;
+            }
+        }
+
+        function switchChatMode(mode) {
+            currentChatMode = mode;
+            var tabAI = document.getElementById('tabModeAI');
+            var tabStaff = document.getElementById('tabModeStaff');
+            var input = document.getElementById('chatInputMessage');
+
+            if (mode === 'AI') {
+                if (tabAI) tabAI.classList.add('active');
+                if (tabStaff) tabStaff.classList.remove('active');
+                if (input) input.placeholder = "Hỏi Real AI tư vấn size, sản phẩm 24/7...";
+                if (staffPollTimer) {
+                    clearInterval(staffPollTimer);
+                    staffPollTimer = null;
+                }
+            } else {
+                if (tabStaff) tabStaff.classList.add('active');
+                if (tabAI) tabAI.classList.remove('active');
+                if (input) input.placeholder = "Nhắn tin trực tiếp với chuyên viên CSKH...";
+                
+                // Tải lịch sử chat với nhân viên và bắt đầu kiểm tra tin nhắn mới
+                loadStaffChatHistory();
+                if (!staffPollTimer) {
+                    staffPollTimer = setInterval(loadStaffChatHistory, 3000);
+                }
+            }
+        }
+
+        async function loadStaffChatHistory() {
+            if (currentChatMode !== 'Staff') return;
+            var sess = getBabyChatSessionId();
+            try {
+                var resp = await fetch('/Chat/GetStaffMessages?sessionId=' + encodeURIComponent(sess));
+                if (!resp.ok) return;
+                var data = await resp.json();
+                if (data.success && data.messages) {
+                    var messagesContainer = document.getElementById('babyChatMessages');
+                    var typingEl = document.getElementById('chatTypingIndicator');
+                    var hasNew = false;
+
+                    data.messages.forEach(function(m) {
+                        // 1. Đã đăng ký ID này thì bỏ qua
+                        if (renderedStaffMsgIds.has(m.id)) return;
+
+                        // 2. Nếu phần tử trên DOM đã có ID này thì ghi nhận và bỏ qua
+                        if (document.querySelector(`.baby-msg-wrap[data-msg-id="${m.id}"]`)) {
+                            renderedStaffMsgIds.add(m.id);
+                            return;
+                        }
+
+                        // 3. Nếu là tin nhắn của Khách hàng, kiểm tra xem bong bóng vừa gửi đã có trên DOM chưa (tránh nhân đôi)
+                        if (m.sender === 'Customer') {
+                            var matchingUserEl = Array.from(document.querySelectorAll('.baby-msg-wrap.msg-user')).find(function(el) {
+                                var bubble = el.querySelector('.baby-msg-bubble');
+                                return bubble && bubble.textContent.trim() === m.message.trim() && !el.hasAttribute('data-msg-id');
+                            });
+                            if (matchingUserEl) {
+                                matchingUserEl.setAttribute('data-msg-id', m.id);
+                                renderedStaffMsgIds.add(m.id);
+                                return; // Trùng khớp với tin vừa gửi, không thêm lại!
+                            }
+                        }
+
+                        // 4. Nếu chưa có trên màn hình, render vào khung chat
+                        renderedStaffMsgIds.add(m.id);
+                        hasNew = true;
+
+                        if (m.sender === 'Customer') {
+                            var uHtml = `
+                                <div class="baby-msg-wrap msg-user" data-msg-id="${m.id}">
+                                    <div class="baby-msg-content">
+                                        <div class="baby-msg-bubble">${escapeHtml(m.message)}</div>
+                                        <div class="baby-msg-time">${m.time}</div>
+                                    </div>
+                                </div>
+                            `;
+                            typingEl.insertAdjacentHTML('beforebegin', uHtml);
+                        } else {
+                            var sHtml = `
+                                <div class="baby-msg-wrap msg-bot" data-msg-id="${m.id}">
+                                    <div class="baby-msg-avatar" style="background: var(--baby-sage-light); color: var(--baby-sage);">
+                                        <i class="bi bi-person-check-fill"></i>
+                                    </div>
+                                    <div class="baby-msg-content">
+                                        <div class="baby-msg-bubble" style="border-left: 3px solid var(--baby-sage);">${formatChatReply(m.message)}</div>
+                                        <div class="baby-msg-time">${escapeHtml(m.senderName)} • ${m.time}</div>
+                                    </div>
+                                </div>
+                            `;
+                            typingEl.insertAdjacentHTML('beforebegin', sHtml);
+                        }
+                    });
+
+                    if (hasNew) {
+                        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+                    }
+                }
+            } catch (e) {
+                console.error("Lỗi khi đồng bộ chat nhân viên:", e);
+            }
+        }
+
+        function sendQuickMessage(text) {
+            var input = document.getElementById('chatInputMessage');
+            if (input) {
+                input.value = text;
+                handleChatSubmit(new Event('submit'));
+            }
+        }
+
+        function sendCSKHMessage(text, custName, custPhone) {
+            // 1. Mở cửa sổ chat và chuyển ngay sang chế độ CSKH (Staff)
+            openBabyChat('Staff');
+
+            // 2. Lưu tên và SĐT vào biến tạm để gửi kèm request
+            if (custName) window.currentCustomerName = custName;
+            if (custPhone) window.currentCustomerPhone = custPhone;
+
+            // 3. Tránh gửi lặp lại nếu vừa gửi nội dung hỗ trợ đơn này
+            if (window.lastSentOrderSupportText === text) {
+                return;
+            }
+            window.lastSentOrderSupportText = text;
+
+            // 4. Đưa vào ô input và tự động gửi tới bộ phận CSKH
+            var input = document.getElementById('chatInputMessage');
+            if (input) {
+                input.value = text;
+                setTimeout(function() {
+                    handleChatSubmit(new Event('submit'));
+                }, 200);
+            }
+        }
+
+        async function handleChatSubmit(e) {
+            if (e && e.preventDefault) e.preventDefault();
+            var input = document.getElementById('chatInputMessage');
+            if (!input) return;
+
+            var msg = input.value.trim();
+            if (!msg) return;
+
+            // Clear input
+            input.value = '';
+
+            // 1. Render User Message
+            var messagesContainer = document.getElementById('babyChatMessages');
+            var now = new Date();
+            var timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
+            var clientMsgId = 'client_' + Date.now();
+
+            var userHtml = `
+                <div class="baby-msg-wrap msg-user" data-client-id="${clientMsgId}">
+                    <div class="baby-msg-content">
+                        <div class="baby-msg-bubble">${escapeHtml(msg)}</div>
+                        <div class="baby-msg-time">${timeStr}</div>
+                    </div>
+                </div>
+            `;
+            var typingEl = document.getElementById('chatTypingIndicator');
+            typingEl.insertAdjacentHTML('beforebegin', userHtml);
+            typingEl.classList.add('active');
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+            var sessId = getBabyChatSessionId();
+
+            try {
+                var payload = { 
+                    message: msg, 
+                    mode: currentChatMode, 
+                    sessionId: sessId 
+                };
+                if (window.currentCustomerName) payload.customerName = window.currentCustomerName;
+                if (window.currentCustomerPhone) payload.customerPhone = window.currentCustomerPhone;
+
+                var response = await fetch('/Chat/SendMessage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                var data = await response.json();
+                typingEl.classList.remove('active');
+
+                if (data && data.success) {
+                    // Đăng ký messageId vào Set và gắn vào phần tử user vừa tạo để không bị nhân đôi
+                    if (data.messageId) {
+                        renderedStaffMsgIds.add(data.messageId);
+                        var userEl = document.querySelector(`.baby-msg-wrap.msg-user[data-client-id="${clientMsgId}"]`);
+                        if (userEl) {
+                            userEl.setAttribute('data-msg-id', data.messageId);
+                            userEl.removeAttribute('data-client-id');
+                        }
+                    }
+                    var formattedReply = formatChatReply(data.reply);
+                    var avatarIcon = data.mode === 'Staff' ? 'bi-person-check-fill' : 'bi-robot';
+                    var avatarBg = data.mode === 'Staff' ? 'var(--baby-sage-light)' : 'var(--baby-primary-light)';
+                    var avatarColor = data.mode === 'Staff' ? 'var(--baby-sage)' : 'var(--baby-primary)';
+
+                    // Render Suggested Products if any
+                    var prodsHtml = '';
+                    if (data.suggestedProducts && data.suggestedProducts.length > 0) {
+                        data.suggestedProducts.forEach(function(p) {
+                            prodsHtml += `
+                                <a href="/Product/Details/${p.id}" class="baby-chat-prod-card">
+                                    <img src="${p.imageUrl}" alt="${escapeHtml(p.name)}" class="baby-chat-prod-thumb" />
+                                    <div class="baby-chat-prod-info">
+                                        <div class="baby-chat-prod-title">${escapeHtml(p.name)}</div>
+                                        <div class="baby-chat-prod-price">${Number(p.price).toLocaleString('vi-VN')} đ</div>
+                                    </div>
+                                    <i class="bi bi-chevron-right text-muted small"></i>
+                                </a>
+                            `;
+                        });
+                    }
+
+                    var botHtml = `
+                        <div class="baby-msg-wrap msg-bot">
+                            <div class="baby-msg-avatar" style="background: ${avatarBg}; color: ${avatarColor};">
+                                <i class="bi ${avatarIcon}"></i>
+                            </div>
+                            <div class="baby-msg-content">
+                                <div class="baby-msg-bubble">${formattedReply}</div>
+                                ${prodsHtml}
+                                <div class="baby-msg-time">${data.senderName || 'Trợ Lý'} • ${data.time || timeStr}</div>
+                            </div>
+                        </div>
+                    `;
+                    typingEl.insertAdjacentHTML('beforebegin', botHtml);
+                } else {
+                    var errorHtml = `
+                        <div class="baby-msg-wrap msg-bot">
+                            <div class="baby-msg-avatar"><i class="bi bi-exclamation-circle"></i></div>
+                            <div class="baby-msg-content">
+                                <div class="baby-msg-bubble">${data.reply || 'Hệ thống đang bận, mẹ vui lòng thử lại sau nhé!'}</div>
+                            </div>
+                        </div>
+                    `;
+                    typingEl.insertAdjacentHTML('beforebegin', errorHtml);
+                }
+            } catch (err) {
+                typingEl.classList.remove('active');
+                console.error(err);
+            }
+
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        function formatChatReply(rawText) {
+            if (!rawText) return '';
+            var safe = escapeHtml(rawText);
+            // In đậm: **text**
+            safe = safe.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Chuyển đổi gạch đầu dòng Markdown (* hoặc -) thành list đẹp
+            safe = safe.replace(/(?:^|\n)\s*[\*\-]\s+(.+)/g, '<div class="baby-bullet-item"><span class="baby-bullet-dot">•</span><span class="baby-bullet-text">$1</span></div>');
+            // Xuống dòng
+            safe = safe.replace(/\n/g, '<br />');
+            // Dọn dẹp khoảng trống sau bullet div
+            safe = safe.replace(/<\/div><br \/>/g, '</div>');
+            return safe;
+        }
+
+        function escapeHtml(text) {
+            var div = document.createElement('div');
+            div.innerText = text;
+            return div.innerHTML;
+        }
+
+        // Close contact menu when clicking outside
+        document.addEventListener('click', function(e) {
+            var widget = document.getElementById('babyContactWidget');
+            var chat = document.getElementById('babyChatWindow');
+            if (widget && widget.classList.contains('active')) {
+                if (!widget.contains(e.target) && (!chat || !chat.contains(e.target))) {
+                    widget.classList.remove('active');
+                }
+            }
+        });
+
+        // ==========================================
+        // GLOBAL WISHLIST MANAGEMENT (LOCALSTORAGE)
+        // ==========================================
+        function getWishlist() {
+            try {
+                const raw = localStorage.getItem('babyshop_wishlist');
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                return [];
+            }
+        }
+
+        function toggleWishlist(productId, event) {
+            if (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            productId = parseInt(productId);
+            if (isNaN(productId)) return;
+
+            let list = getWishlist();
+            const index = list.indexOf(productId);
+            let added = false;
+
+            if (index > -1) {
+                list.splice(index, 1);
+                added = false;
+            } else {
+                list.unshift(productId);
+                added = true;
+            }
+
+            localStorage.setItem('babyshop_wishlist', JSON.stringify(list));
+            updateWishlistBadges();
+            syncWishlistButtons();
+
+            if (added) {
+                renderWishlistToast("Đã lưu vào danh sách yêu thích cho bé ❤️", "success");
+            } else {
+                renderWishlistToast("Đã bỏ khỏi danh sách yêu thích", "info");
+            }
+        }
+
+        function updateWishlistBadges() {
+            const count = getWishlist().length;
+            const badge = document.getElementById('wishlistBadge');
+            const mobBadge = document.getElementById('mobileWishlistBadge');
+
+            if (badge) {
+                badge.textContent = count;
+                if (count > 0) {
+                    badge.classList.remove('d-none');
+                } else {
+                    badge.classList.add('d-none');
+                }
+            }
+            if (mobBadge) {
+                mobBadge.textContent = count;
+            }
+        }
+
+        function syncWishlistButtons() {
+            const list = getWishlist();
+            document.querySelectorAll('.baby-wishlist-btn, .baby-wishlist-detail-btn').forEach(btn => {
+                const pid = parseInt(btn.getAttribute('data-product-id'));
+                if (!isNaN(pid)) {
+                    const icon = btn.querySelector('i');
+                    if (list.includes(pid)) {
+                        btn.classList.add('is-active');
+                        if (icon) {
+                            icon.className = 'bi bi-heart-fill text-danger' + (btn.classList.contains('baby-wishlist-detail-btn') ? ' fs-5 me-2' : '');
+                        }
+                    } else {
+                        btn.classList.remove('is-active');
+                        if (icon) {
+                            icon.className = 'bi bi-heart' + (btn.classList.contains('baby-wishlist-detail-btn') ? ' fs-5 me-2' : '');
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderWishlistToast(message, type) {
+            if (window.BabyAlert) {
+                BabyAlert.toast(message, type === 'success' ? 'success' : 'info');
+                return;
+            }
+            let container = document.getElementById('babyToastContainer');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'babyToastContainer';
+                container.className = 'baby-toast-container';
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement('div');
+            toast.className = `baby-toast ${type === 'success' ? 'baby-toast-success' : 'baby-toast-info'}`;
+            toast.innerHTML = `<i class="bi ${type === 'success' ? 'bi-heart-fill text-danger' : 'bi-info-circle'} me-2"></i><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.add('show');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 2500);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            updateWishlistBadges();
+            syncWishlistButtons();
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

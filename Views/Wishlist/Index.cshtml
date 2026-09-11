@@ -1,0 +1,212 @@
+﻿@{
+    ViewData["Title"] = "Sản Phẩm Yêu Thích Của Mẹ - BabyShop Studio Kids";
+}
+
+<div class="baby-policy-hero py-4 py-md-5">
+    <div class="container text-center">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center small mb-3">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang Chủ</a></li>
+                <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Sản Phẩm Yêu Thích</li>
+            </ol>
+        </nav>
+        <span class="baby-badge-pill mb-2">
+            <i class="bi bi-heart-fill text-danger me-1"></i> Wishlist
+        </span>
+        <h1 class="display-6 fw-bold text-dark mb-2">Bộ Sưu Tập Yêu Thích Của Mẹ</h1>
+        <p class="text-muted lead fs-6 mx-auto mb-0" style="max-width: 650px;">
+            Những mẫu trang phục xinh xắn, êm mềm mẹ đã chọn riêng cho bé yêu. Mẹ có thể dễ dàng xem lại và đặt hàng bất cứ lúc nào.
+        </p>
+    </div>
+</div>
+
+<div class="container py-4 py-md-5">
+    <!-- Top Bar with count and clear button -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-2" id="wishlistHeaderBar" style="display: none !important;">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="fw-bold mb-0">Danh Sách Đã Lưu</h5>
+            <span class="badge bg-secondary-subtle text-dark rounded-pill px-3 py-2" id="wishlistCountLabel">0 sản phẩm</span>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="clearAllWishlist()">
+            <i class="bi bi-trash3 me-1"></i> Xóa tất cả
+        </button>
+    </div>
+
+    <!-- Loading State -->
+    <div id="wishlistLoading" class="text-center py-5">
+        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status">
+            <span class="visually-hidden">Đang tải...</span>
+        </div>
+        <p class="text-muted">Đang tải danh sách đồ xinh cho bé...</p>
+    </div>
+
+    <!-- Empty State -->
+    <div id="wishlistEmpty" class="text-center py-5" style="display: none;">
+        <div class="rounded-circle mx-auto d-flex align-items-center justify-content-center mb-4" 
+             style="width: 100px; height: 100px; background: var(--baby-rose-light); color: var(--baby-rose); font-size: 3rem;">
+            <i class="bi bi-heartbreak"></i>
+        </div>
+        <h3 class="fw-bold text-dark mb-2">Chưa Có Sản Phẩm Yêu Thích Nào</h3>
+        <p class="text-muted mb-4 mx-auto" style="max-width: 480px;">
+            Mẹ chưa lưu món đồ nào cho bé. Hãy bấm vào biểu tượng <strong>trái tim</strong> trên các mẫu váy xinh, set đồ êm mát để lưu lại nhé!
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-3">
+            <a asp-controller="Product" asp-action="Index" asp-route-isNew="true" class="btn btn-baby-primary px-4 py-2">
+                <i class="bi bi-stars me-1"></i> Khám Phá Hàng Mới Về
+            </a>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                <i class="bi bi-house me-1"></i> Về Trang Chủ
+            </a>
+        </div>
+    </div>
+
+    <!-- Product Grid -->
+    <div class="row g-3 g-md-4" id="wishlistGrid" style="display: none;">
+        <!-- Dynamically rendered items -->
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        loadWishlistPage();
+    });
+
+    async function loadWishlistPage() {
+        const ids = getWishlist();
+        const loadingEl = document.getElementById("wishlistLoading");
+        const emptyEl = document.getElementById("wishlistEmpty");
+        const gridEl = document.getElementById("wishlistGrid");
+        const headerBar = document.getElementById("wishlistHeaderBar");
+        const countLabel = document.getElementById("wishlistCountLabel");
+
+        if (!ids || ids.length === 0) {
+            loadingEl.style.display = "none";
+            emptyEl.style.display = "block";
+            gridEl.style.display = "none";
+            headerBar.style.setProperty("display", "none", "important");
+            return;
+        }
+
+        try {
+            const res = await fetch("/Wishlist/GetProducts", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(ids)
+            });
+            const result = await res.json();
+
+            loadingEl.style.display = "none";
+
+            if (!result.success || !result.data || result.data.length === 0) {
+                emptyEl.style.display = "block";
+                gridEl.style.display = "none";
+                headerBar.style.setProperty("display", "none", "important");
+                return;
+            }
+
+            const products = result.data;
+            countLabel.textContent = products.length + " sản phẩm";
+            headerBar.style.setProperty("display", "flex", "important");
+            emptyEl.style.display = "none";
+            gridEl.style.display = "flex";
+
+            let html = "";
+            products.forEach(p => {
+                const priceFormatted = new Intl.NumberFormat('vi-VN').format(p.currentPrice) + ' đ';
+                const oldPriceFormatted = p.discountPrice && p.discountPrice < p.price 
+                    ? `<span class="baby-old-price">${new Intl.NumberFormat('vi-VN').format(p.price)} đ</span>` 
+                    : '';
+                const discountBadge = p.discountPercentage > 0 
+                    ? `<span class="baby-card-badge baby-badge-discount">-${p.discountPercentage}%</span>` 
+                    : '';
+                const newBadge = p.isNew 
+                    ? `<span class="baby-card-badge baby-badge-new">Mới</span>` 
+                    : '';
+
+                html += `
+                    <div class="col-6 col-md-4 col-lg-3" id="wishlist-col-${p.id}">
+                        <div class="baby-product-card position-relative">
+                            ${discountBadge}
+                            ${newBadge}
+
+                            <!-- Remove from wishlist button -->
+                            <button type="button" class="baby-wishlist-btn is-active" onclick="removeFromWishlistPage(${p.id})" title="Bỏ khỏi yêu thích">
+                                <i class="bi bi-heart-fill text-danger"></i>
+                            </button>
+
+                            <a href="/Product/Details/${p.id}" class="baby-thumb-container">
+                                <img src="${p.imageUrl}" alt="${p.name}" loading="lazy" />
+                            </a>
+
+                            <div class="baby-card-body">
+                                <div class="baby-card-meta">
+                                    <span class="baby-card-cat">${p.category}</span>
+                                    <span class="baby-card-gender">${p.gender}</span>
+                                </div>
+
+                                <h4 class="baby-card-title">
+                                    <a href="/Product/Details/${p.id}" title="${p.name}">${p.name}</a>
+                                </h4>
+
+                                <div class="baby-card-price-row">
+                                    <span class="baby-current-price">${priceFormatted}</span>
+                                    ${oldPriceFormatted}
+                                </div>
+
+                                <a href="/Product/Details/${p.id}" class="baby-btn-card-action">
+                                    <i class="bi bi-bag-plus"></i> Chọn Size & Mua
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            gridEl.innerHTML = html;
+        } catch (err) {
+            console.error("Error loading wishlist:", err);
+            loadingEl.style.display = "none";
+            emptyEl.style.display = "block";
+        }
+    }
+
+    function removeFromWishlistPage(productId) {
+        let list = getWishlist();
+        list = list.filter(id => id !== productId);
+        localStorage.setItem("babyshop_wishlist", JSON.stringify(list));
+        updateWishlistBadges();
+
+        // Animate card removal
+        const col = document.getElementById("wishlist-col-" + productId);
+        if (col) {
+            col.style.transition = "all 0.3s ease";
+            col.style.transform = "scale(0.8)";
+            col.style.opacity = "0";
+            setTimeout(() => {
+                col.remove();
+                // Check if empty
+                const remaining = document.querySelectorAll("#wishlistGrid > div");
+                if (remaining.length === 0) {
+                    document.getElementById("wishlistHeaderBar").style.setProperty("display", "none", "important");
+                    document.getElementById("wishlistGrid").style.display = "none";
+                    document.getElementById("wishlistEmpty").style.display = "block";
+                } else {
+                    document.getElementById("wishlistCountLabel").textContent = remaining.length + " sản phẩm";
+                }
+            }, 300);
+        }
+
+        renderWishlistToast("Đã bỏ sản phẩm khỏi danh sách yêu thích", "info");
+    }
+
+    function clearAllWishlist() {
+        if (confirm("Mẹ có chắc chắn muốn xóa toàn bộ danh sách yêu thích không?")) {
+            localStorage.removeItem("babyshop_wishlist");
+            updateWishlistBadges();
+            loadWishlistPage();
+            renderWishlistToast("Đã làm trống danh sách yêu thích", "info");
+        }
+    }
+</script>
+}

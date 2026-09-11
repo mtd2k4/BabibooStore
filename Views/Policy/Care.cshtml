@@ -1,0 +1,167 @@
+﻿@{
+    ViewData["Title"] = "Hướng Dẫn Giặt & Bảo Quản Trang Phục Bé Yêu - BabyShop Studio Kids";
+}
+
+<!-- Breadcrumb -->
+<div class="bg-light py-3 border-bottom">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang Chủ</a></li>
+                <li class="breadcrumb-item"><span class="text-muted">Hướng Dẫn</span></li>
+                <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Bảo Quản Trang Phục Bé</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Hero Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #FAF7F2 0%, #FDF2F4 100%);">
+    <div class="container text-center py-3">
+        <span class="badge rounded-pill px-3 py-2 text-uppercase fw-bold mb-3" style="background: var(--baby-rose-light); color: var(--baby-rose); letter-spacing: 1px; font-size: 0.75rem;">
+            Chăm Sóc Từng Sợi Vải Tự Nhiên
+        </span>
+        <h1 class="display-6 fw-bold text-dark mb-3">Cẩm Nang Giặt & Bảo Quản Đồ Bé Yêu</h1>
+        <p class="text-muted mx-auto" style="max-width: 650px; line-height: 1.7;">
+            Trang phục BabyShop sử dụng nguồn sợi 100% Cotton Organic và Sợi Tre Bamboo thiên nhiên. Việc giặt và chăm sóc đúng cách sẽ giúp áo quần của bé luôn mềm mịn, giữ màu tươi mới và an toàn tuyệt đối cho làn da mỏng manh.
+        </p>
+    </div>
+</section>
+
+<!-- 4 Thói Quen Giặt Giũ Vàng -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #FAF7F2; color: var(--baby-primary); font-size: 1.5rem;">
+                        <i class="bi bi-thermometer-snow"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Giặt Dưới 30°C</h6>
+                    <p class="small text-muted mb-0">Nên giặt bằng nước lạnh hoặc nước ấm dưới 30°C để sợi cotton tự nhiên không bị co rút hay biến dạng phom dáng.</p>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #EBF3EE; color: var(--baby-sage); font-size: 1.5rem;">
+                        <i class="bi bi-droplet-half"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Nước Giặt Dành Cho Bé</h6>
+                    <p class="small text-muted mb-0">Ưu tiên sử dụng nước giặt hữu cơ, không chứa chất tẩy quang học, không chứa paraben để bảo vệ làn da bé không bị mẩn ngứa.</p>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #FDF2F4; color: var(--baby-rose); font-size: 1.5rem;">
+                        <i class="bi bi-sun"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Phơi Nơi Thoáng Gió</h6>
+                    <p class="small text-muted mb-0">Phơi mặt trái của đồ ở nơi đón gió thoáng đãng, tránh phơi trực tiếp dưới ánh nắng mặt trời gắt giữa trưa để tránh làm giòn sợi vải.</p>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #F1F5F9; color: #1E293B; font-size: 1.5rem;">
+                        <i class="bi bi-bag-check"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Dùng Túi Giặt Máy</h6>
+                    <p class="small text-muted mb-0">Khi giặt máy, hãy cho các mẫu váy đầm voan, áo có cúc hoặc thêu hoa vào túi giặt lưới để bảo vệ các chi tiết đính kết tinh xảo.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Hướng Dẫn Chi Tiết Theo Từng Chất Liệu -->
+<section class="py-5" style="background: #FAF9F6;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-9">
+                <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm border mb-4">
+                    <h4 class="fw-bold mb-4 text-dark"><i class="bi bi-stars text-warning me-2"></i>Hướng Dẫn Chăm Sóc Theo Từng Dòng Vải</h4>
+
+                    <!-- Chất liệu 1: Sợi tre Bamboo -->
+                    <div class="p-3 p-md-4 rounded-3 border mb-4" style="background: #FAF7F2;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-success rounded-pill px-3 py-1">Vải Sợi Tre Bamboo Organic</span>
+                            <span class="small text-muted">(Bodysuit, đồ sơ sinh, quần áo mặc nhà)</span>
+                        </div>
+                        <ul class="small text-muted ps-3 mb-0" style="line-height: 1.8;">
+                            <li><strong>Đặc tính:</strong> Mềm mát như lụa, kháng khuẩn tự nhiên, chống tia UV và co giãn 4 chiều.</li>
+                            <li><strong>Cách giặt:</strong> Giặt nhẹ bằng tay hoặc chọn chế độ giặt nhẹ (Delicate) của máy. Không vắt xoắn mạnh tay.</li>
+                            <li><strong>Phơi:</strong> Vắt ráo nhẹ nhàng và phơi ngang trên mắc áo để tránh áo bị chảy dài phom.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Chất liệu 2: Váy đầm công chúa, Voan & Tơ -->
+                    <div class="p-3 p-md-4 rounded-3 border mb-4" style="background: #FDF2F4;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-1">Váy Đầm Voan & Tơ Xốp</span>
+                            <span class="small text-muted">(Váy công chúa, đầm tiệc sinh nhật bé gái)</span>
+                        </div>
+                        <ul class="small text-muted ps-3 mb-0" style="line-height: 1.8;">
+                            <li><strong>Đặc tính:</strong> Lớp voan bồng bềnh, đính nơ hoặc hoa thêu thủ công tinh tế.</li>
+                            <li><strong>Cách giặt:</strong> Khuyến khích giặt tay trong chậu nước xà phòng loãng, bóp nhẹ nhàng. Không ngâm quá 10 phút.</li>
+                            <li><strong>Là/Ủi:</strong> Sử dụng bàn là hơi nước ở nhiệt độ thấp nhất hoặc là qua một lớp khăn mỏng mặt trái.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Chất liệu 3: Đồ Len & Dệt Kim -->
+                    <div class="p-3 p-md-4 rounded-3 border mb-4" style="background: #EBF3EE;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-secondary rounded-pill px-3 py-1">Len & Dệt Kim Cardigan</span>
+                            <span class="small text-muted">(Áo khoác len, gile, mũ len mùa đông)</span>
+                        </div>
+                        <ul class="small text-muted ps-3 mb-0" style="line-height: 1.8;">
+                            <li><strong>Đặc tính:</strong> Giữ ấm êm ái, sợi len dệt đàn hồi tốt.</li>
+                            <li><strong>Cách giặt:</strong> Dùng nước xả vải dịu nhẹ để giữ nếp sợi len. Tuyệt đối không sấy ở nhiệt độ cao (sấy máy sẽ làm co rút len).</li>
+                            <li><strong>Bảo quản:</strong> Gấp gọn gàng để vào ngăn tủ, không nên treo móc vì sức nặng sẽ kéo giãn vai áo.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Chất liệu 4: Denim & Kaki -->
+                    <div class="p-3 p-md-4 rounded-3 border mb-4" style="background: #F1F5F9;">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <span class="badge bg-dark rounded-pill px-3 py-1">Denim, Jeans & Kaki</span>
+                            <span class="small text-muted">(Quần short, yếm bò, quần dài bé trai)</span>
+                        </div>
+                        <ul class="small text-muted ps-3 mb-0" style="line-height: 1.8;">
+                            <li><strong>Lần giặt đầu tiên:</strong> Ngâm đồ jean trong nước pha chút muối hạt hoặc giấm trắng trong 30 phút để giữ màu bền lâu.</li>
+                            <li><strong>Giặt các lần sau:</strong> Lộn trái quần áo trước khi giặt và kéo khóa, cài cúc gọn gàng. Giặt chung với quần áo tối màu.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Mẹo tẩy vết bẩn hữu ích -->
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-lightbulb text-warning me-2"></i>Mẹo Xử Lý Nhanh Các Vết Bẩn Thường Gặp Của Bé</h5>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-bordered small align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Loại Vết Bẩn</th>
+                                    <th>Cách Xử Lý Dịu Nhẹ & Hiệu Quả</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Vết sữa / đồ ăn dặm</strong></td>
+                                    <td>Xả nước ấm ngay lập tức, chấm chút nước giặt em bé lên vết bẩn, vò nhẹ rồi giặt lại bình thường.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vết nước trái cây (cam, dưa hấu)</strong></td>
+                                    <td>Thấm chút nước cốt chanh tươi hoặc giấm ăn lên vết ố trước khi giặt, vết bẩn sẽ tự tan nhanh chóng.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Vết mực sáp màu khi bé vẽ</strong></td>
+                                    <td>Dùng một ít dầu dừa hoặc dầu em bé (Baby Oil) xoa nhẹ lên vết sáp để hòa tan phẩm màu rồi giặt bằng nước ấm.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

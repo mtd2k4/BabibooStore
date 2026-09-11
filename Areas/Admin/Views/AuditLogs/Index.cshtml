@@ -1,0 +1,239 @@
+﻿@model List<WebsiteBabyShop.Models.AuditLog>
+@{
+    ViewData["Title"] = "Nhật Ký Kiểm Toán & Hoạt Động";
+    int totalLogs = ViewBag.TotalLogs ?? 0;
+    int todayLogs = ViewBag.TodayLogs ?? 0;
+    var actionTypes = ViewBag.ActionTypes as List<string> ?? new List<string>();
+    var entityNames = ViewBag.EntityNames as List<string> ?? new List<string>();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="bi bi-shield-check text-primary me-2"></i>Nhật Ký Hoạt Động & Kiểm Toán (Audit Logs)</h4>
+        <span class="text-muted small">Theo dõi toàn diện lịch sử thay đổi giá sản phẩm, nhập kho, xử lý đơn hàng và bảo mật nội bộ</span>
+    </div>
+    <div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill">
+            <i class="bi bi-shield-lock-fill me-1"></i> Kiểm Soát Nội Bộ Chuẩn ISO
+        </span>
+    </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-journal-text"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Tổng Số Sự Kiện Ghi Nhận</span>
+                <h4 class="fw-bold m-0 text-dark">@totalLogs.ToString("N0")</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-info-subtle text-info d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-clock-history"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Hoạt Động Trong Ngày</span>
+                <h4 class="fw-bold m-0 text-info">@todayLogs.ToString("N0")</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-shield-fill-check"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Trạng Thái An Ninh</span>
+                <h4 class="fw-bold m-0 text-success">Được bảo vệ 24/7</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="card border-0 rounded-4 shadow-sm mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-12 col-md-3">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Tìm mô tả, người dùng, IP..." value="@ViewBag.Search">
+            </div>
+        </div>
+        <div class="col-12 col-md-2">
+            <select name="actionType" class="form-select">
+                <option value="">-- Tất cả hành động --</option>
+                @foreach (var act in actionTypes)
+                {
+                    <option value="@act" selected="@(ViewBag.ActionType == act)">@act</option>
+                }
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <select name="entityName" class="form-select">
+                <option value="">-- Đối tượng --</option>
+                @foreach (var ent in entityNames)
+                {
+                    <option value="@ent" selected="@(ViewBag.EntityName == ent)">@ent</option>
+                }
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <input type="date" name="fromDate" class="form-control" title="Từ ngày" value="@ViewBag.FromDate">
+        </div>
+        <div class="col-6 col-md-2">
+            <input type="date" name="toDate" class="form-control" title="Đến ngày" value="@ViewBag.ToDate">
+        </div>
+        <div class="col-12 col-md-1 d-flex gap-1">
+            <button type="submit" class="btn btn-primary-baby w-100"><i class="bi bi-filter"></i></button>
+            <a asp-action="Index" class="btn btn-light border" title="Làm mới"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+</div>
+
+<!-- Audit Log Table -->
+<div class="card border-0 rounded-4 shadow-sm overflow-hidden mb-4">
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+            <thead class="table-light">
+                <tr class="text-secondary small fw-semibold">
+                    <th class="ps-4" style="width: 170px;">Thời Gian</th>
+                    <th style="width: 180px;">Người Thực Hiện</th>
+                    <th style="width: 140px;">Hành Động</th>
+                    <th style="width: 140px;">Đối Tượng</th>
+                    <th>Chi Tiết Thay Đổi</th>
+                    <th class="pe-4 text-end" style="width: 130px;">Địa Chỉ IP</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4">
+                                <span class="small fw-semibold text-dark">@item.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                <div class="text-muted small">@item.CreatedAt.ToString("HH:mm:ss")</div>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="rounded-circle bg-secondary bg-opacity-10 text-primary d-flex align-items-center justify-content-center fw-bold" style="width: 32px; height: 32px; font-size: 0.85rem;">
+                                        @(string.IsNullOrEmpty(item.UserName) ? "S" : item.UserName.Substring(0, 1).ToUpper())
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold text-dark small">@item.UserName</div>
+                                        @if (item.UserId.HasValue)
+                                        {
+                                            <span class="badge bg-light text-secondary border" style="font-size: 0.65rem;">UID: #@item.UserId</span>
+                                        }
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                @{
+                                    string badgeClass = "bg-secondary";
+                                    string actIcon = "bi-dot";
+                                    string actText = item.Action;
+
+                                    switch (item.Action)
+                                    {
+                                        case "Create":
+                                            badgeClass = "bg-success-subtle text-success border border-success-subtle";
+                                            actIcon = "bi-plus-circle";
+                                            actText = "Tạo mới";
+                                            break;
+                                        case "Update":
+                                            badgeClass = "bg-info-subtle text-info border border-info-subtle";
+                                            actIcon = "bi-pencil";
+                                            actText = "Cập nhật";
+                                            break;
+                                        case "Delete":
+                                            badgeClass = "bg-danger-subtle text-danger border border-danger-subtle";
+                                            actIcon = "bi-trash";
+                                            actText = "Xóa bỏ";
+                                            break;
+                                        case "Restock":
+                                            badgeClass = "bg-primary-subtle text-primary border border-primary-subtle";
+                                            actIcon = "bi-box-arrow-in-down";
+                                            actText = "Nhập kho";
+                                            break;
+                                        case "ChangeStatus":
+                                            badgeClass = "bg-warning-subtle text-warning-emphasis border border-warning-subtle";
+                                            actIcon = "bi-arrow-left-right";
+                                            actText = "Đổi trạng thái";
+                                            break;
+                                        case "ChangeRole":
+                                            badgeClass = "bg-purple-subtle text-purple border border-purple-subtle";
+                                            actIcon = "bi-shield-check";
+                                            actText = "Đổi quyền";
+                                            break;
+                                        case "LockUser":
+                                            badgeClass = "bg-danger text-white";
+                                            actIcon = "bi-lock-fill";
+                                            actText = "Khóa user";
+                                            break;
+                                        case "UnlockUser":
+                                            badgeClass = "bg-success text-white";
+                                            actIcon = "bi-unlock-fill";
+                                            actText = "Mở user";
+                                            break;
+                                    }
+                                }
+                                <span class="badge @badgeClass rounded-pill px-2 py-1">
+                                    <i class="bi @actIcon me-1"></i>@actText
+                                </span>
+                            </td>
+                            <td>
+                                <span class="fw-semibold text-dark small">@item.EntityName</span>
+                                @if (item.EntityId.HasValue && item.EntityId > 0)
+                                {
+                                    <span class="text-muted small">#@item.EntityId</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="text-dark small text-break">@item.Description</div>
+                                @if (!string.IsNullOrEmpty(item.OldValues) || !string.IsNullOrEmpty(item.NewValues))
+                                {
+                                    <div class="mt-1 small text-muted font-monospace" style="font-size: 0.75rem;">
+                                        @if (!string.IsNullOrEmpty(item.OldValues))
+                                        {
+                                            <span class="text-danger me-2"><i class="bi bi-dash-circle me-1"></i>@item.OldValues</span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.NewValues))
+                                        {
+                                            <span class="text-success"><i class="bi bi-plus-circle me-1"></i>@item.NewValues</span>
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td class="pe-4 text-end">
+                                <span class="badge bg-light text-muted border font-monospace small">
+                                    <i class="bi bi-geo-alt me-1"></i>@(string.IsNullOrEmpty(item.IpAddress) ? "Local" : item.IpAddress)
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                                Không có bản ghi nhật ký hoạt động nào phù hợp với bộ lọc.
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    <partial name="_AdminPagination" />
+</div>

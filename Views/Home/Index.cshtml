@@ -1,0 +1,888 @@
+﻿@model WebsiteBabyShop.Models.HomeViewModel
+@{
+    ViewData["Title"] = "Trang Chủ - Thời Trang Trẻ Em Thiết Kế & Cao Cấp - BabyShop";
+    var activeCoupons = ViewBag.ActiveCoupons as List<WebsiteBabyShop.Models.Coupon> ?? new List<WebsiteBabyShop.Models.Coupon>();
+    var userCollectedCouponIds = ViewBag.UserCollectedCouponIds as HashSet<int> ?? new HashSet<int>();
+}
+
+<!-- 1. Editorial Lookbook Hero Section -->
+<section class="py-3 py-md-4">
+    <div class="container">
+        <div id="babyHeroCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-indicators">
+                <button type="button" data-bs-target="#babyHeroCarousel" data-bs-slide-to="0" class="active" aria-current="true"></button>
+                <button type="button" data-bs-target="#babyHeroCarousel" data-bs-slide-to="1"></button>
+            </div>
+            <div class="carousel-inner rounded-4 overflow-hidden shadow-sm border">
+                <!-- Slide 1 -->
+                <div class="carousel-item active">
+                    <div class="baby-hero-slide">
+                        <div class="row align-items-center g-0">
+                            <div class="col-12 col-md-7">
+                                <div class="baby-hero-content">
+                                    <span class="baby-hero-tag">
+                                        <i class="bi bi-stars"></i> Bộ Sưu Tập Mới 2026
+                                    </span>
+                                    <h1 class="baby-hero-title">
+                                        Tự Do Vận Động, <br />
+                                        <span>Êm Ái Cho Bé Yêu</span>
+                                    </h1>
+                                    <p class="baby-hero-desc">
+                                        Chất liệu 100% Cotton Organic tự nhiên, mềm mại và an toàn tuyệt đối cho làn da nhạy cảm. Thiết kế tối giản, tinh tế cho bé luôn thoải mái khám phá.
+                                    </p>
+                                    <div class="d-flex flex-wrap gap-2 gap-sm-3">
+                                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" class="btn btn-baby-primary">
+                                            Đồ Bé Gái
+                                        </a>
+                                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="btn btn-baby-outline">
+                                            Đồ Bé Trai
+                                        </a>
+                                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" class="btn btn-baby-outline">
+                                            Đồ Sơ Sinh
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-5 d-none d-md-block p-4">
+                                <div class="rounded-4 overflow-hidden shadow-sm" style="aspect-ratio: 4/3;">
+                                    <img src="https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=800&q=80" 
+                                         alt="BabyShop Kids Collection" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Slide 2 -->
+                <div class="carousel-item">
+                    <div class="baby-hero-slide" style="background: linear-gradient(135deg, #F5EDE4 0%, #EFE5D8 100%);">
+                        <div class="row align-items-center g-0">
+                            <div class="col-12 col-md-7">
+                                <div class="baby-hero-content">
+                                    <span class="baby-hero-tag" style="background: var(--baby-rose-light); color: var(--baby-rose); border-color: #F5D6D8;">
+                                        <i class="bi bi-tag-fill"></i> Ưu Đãi Mùa Này
+                                    </span>
+                                    <h1 class="baby-hero-title">
+                                        Set Đồ Đi Chơi <br />
+                                        <span>Ưu Đãi Đến 30%</span>
+                                    </h1>
+                                    <p class="baby-hero-desc">
+                                        Cơ hội sắm những set đồ xinh xắn, chuẩn phong cách Hàn Quốc cho bé với mức giá nhẹ nhàng. Miễn phí giao hàng toàn quốc từ 300.000đ.
+                                    </p>
+                                    <div class="d-flex flex-wrap gap-2 gap-sm-3">
+                                        <a asp-controller="Product" asp-action="Index" asp-route-isSale="true" class="btn btn-baby-primary">
+                                            Khám Phá Ưu Đãi &rarr;
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-5 d-none d-md-block p-4">
+                                <div class="rounded-4 overflow-hidden shadow-sm" style="aspect-ratio: 4/3;">
+                                    <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=800&q=80" 
+                                         alt="BabyShop Boy Collection" class="w-100 h-100 object-fit-cover" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <button class="carousel-control-prev" type="button" data-bs-target="#babyHeroCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon p-3 rounded-circle bg-dark bg-opacity-25" aria-hidden="true"></span>
+            </button>
+            <button class="carousel-control-next" type="button" data-bs-target="#babyHeroCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon p-3 rounded-circle bg-dark bg-opacity-25" aria-hidden="true"></span>
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- 2. Quick Category Cards -->
+<section class="py-3 py-md-4">
+    <div class="container">
+        <div class="row g-2 g-md-3 justify-content-center">
+            <div class="col-4 col-sm-3 col-md-2">
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" class="baby-cat-pill-card">
+                    <div class="baby-cat-thumb">
+                        <img src="https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=200&q=80" alt="Đầm bé gái" />
+                    </div>
+                    <span class="baby-cat-name">Đầm Bé Gái</span>
+                </a>
+            </div>
+            <div class="col-4 col-sm-3 col-md-2">
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="baby-cat-pill-card">
+                    <div class="baby-cat-thumb">
+                        <img src="https://images.unsplash.com/photo-1519689680058-324335c77eba?auto=format&fit=crop&w=200&q=80" alt="Yếm bé trai" />
+                    </div>
+                    <span class="baby-cat-name">Yếm Bé Trai</span>
+                </a>
+            </div>
+            <div class="col-4 col-sm-3 col-md-2">
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" class="baby-cat-pill-card">
+                    <div class="baby-cat-thumb">
+                        <img src="https://images.unsplash.com/photo-1515488042361-ee00e0ddd4e4?auto=format&fit=crop&w=200&q=80" alt="Đồ sơ sinh" />
+                    </div>
+                    <span class="baby-cat-name">Đồ Sơ Sinh</span>
+                </a>
+            </div>
+            <div class="col-4 col-sm-3 col-md-2">
+                <a asp-controller="Product" asp-action="Index" asp-route-category="phu-kien-giay-dep" class="baby-cat-pill-card">
+                    <div class="baby-cat-thumb">
+                        <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=200&q=80" alt="Giày dép" />
+                    </div>
+                    <span class="baby-cat-name">Giày Dép</span>
+                </a>
+            </div>
+            <div class="col-4 col-sm-3 col-md-2">
+                <a asp-controller="Product" asp-action="Index" asp-route-isNew="true" class="baby-cat-pill-card">
+                    <div class="baby-cat-thumb">
+                        <img src="https://images.unsplash.com/photo-1503944583220-79d8926ad5e2?auto=format&fit=crop&w=200&q=80" alt="Hàng mới" />
+                    </div>
+                    <span class="baby-cat-name">Hàng Mới</span>
+                </a>
+            </div>
+            <div class="col-4 col-sm-3 col-md-2">
+                <a asp-controller="Product" asp-action="Index" asp-route-isSale="true" class="baby-cat-pill-card">
+                    <div class="baby-cat-thumb">
+                        <img src="https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?auto=format&fit=crop&w=200&q=80" alt="Ưu đãi" />
+                    </div>
+                    <span class="baby-cat-name">Ưu Đãi Hot</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2.5. Hộp Quà 12H - Dành Riêng Cho Bạn -->
+<section class="py-2 py-md-3">
+    <div class="container">
+        <div class="baby-foryou-banner">
+            <div class="row align-items-center g-3">
+                <div class="col-auto">
+                    <div class="baby-gift-box-wrapper">
+                        <i class="bi bi-gift-fill"></i>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="baby-foryou-tag mb-1">
+                        <i class="bi bi-stars"></i> Độc Quyền Baby Club • 12H Nhận 1 Lần
+                    </div>
+                    <h4 class="baby-foryou-title">🎁 Hộp Quà May Mắn 12H - Trúng Voucher Bất Ngờ</h4>
+                    <p class="baby-foryou-desc">
+                        Cứ mỗi 12 tiếng, mẹ nhận ngay 1 voucher ngẫu nhiên cực sốc (lên đến 35% hoặc 100K)! Mã áp dụng 1 lần duy nhất khi đặt hàng!
+                    </p>
+                    <div id="forYouActiveNotice" class="mt-2 text-success small fw-bold" style="display: none;">
+                        <i class="bi bi-check-circle-fill me-1"></i>Mã may mắn hiện tại: <span id="forYouActiveCode" class="font-monospace text-danger bg-white px-2 py-05 rounded border"></span> - <span id="forYouActiveDesc"></span>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-auto d-flex flex-wrap align-items-center gap-3">
+                    <div class="d-flex flex-column align-items-start align-items-lg-end">
+                        <span class="small fw-bold text-dark mb-1" id="forYouTimerLabel">Lượt mở quà tiếp theo sau:</span>
+                        <div class="baby-foryou-countdown">
+                            <div class="baby-countdown-block">
+                                <span class="baby-countdown-num" id="forYouHour">12</span>
+                                <span class="baby-countdown-lbl">Giờ</span>
+                            </div>
+                            <span class="baby-countdown-colon">:</span>
+                            <div class="baby-countdown-block">
+                                <span class="baby-countdown-num" id="forYouMin">00</span>
+                                <span class="baby-countdown-lbl">Phút</span>
+                            </div>
+                            <span class="baby-countdown-colon">:</span>
+                            <div class="baby-countdown-block">
+                                <span class="baby-countdown-num" id="forYouSec">00</span>
+                                <span class="baby-countdown-lbl">Giây</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <button type="button" id="btnClaimForYou" class="btn-foryou-claim" onclick="handleClaimForYou()">
+                            <i class="bi bi-box2-heart-fill"></i>
+                            <span id="btnClaimForYouText">Mở Quà 12H</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2.6. Săn Mã Giờ Vàng - Khung Giờ Mở Thưởng -->
+<section class="py-2 py-md-3">
+    <div class="container">
+        <div class="baby-flashhunt-teaser-banner p-3 p-md-4 rounded-4 shadow-sm border position-relative overflow-hidden">
+            <div class="row align-items-center g-3">
+                <div class="col-12 col-md-8">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-danger bg-opacity-10 text-danger small fw-bold mb-2">
+                        <i class="bi bi-lightning-charge-fill"></i> SỰ KIỆN SĂN MÃ HOT
+                    </div>
+                    <h4 class="fw-bold text-dark mb-1">⚡ Săn Mã Giảm Giá - Khung Giờ Vàng</h4>
+                    <p class="text-muted small mb-0">
+                        Mã giảm giá cực sốc được nạp sẵn vào Kho Voucher của mọi tài khoản. Canh đúng giờ mở để kích hoạt áp dụng đơn hàng nhé mẹ!
+                    </p>
+                </div>
+                <div class="col-12 col-md-4 text-md-end">
+                    <a asp-controller="Account" asp-action="MyVouchers" class="btn btn-baby-primary rounded-pill px-4 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-ticket-perforated-fill me-1"></i>Vào Kho Săn Mã &rarr;
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. Flash Deals Section -->
+@{
+    var flashList = Model.FlashSaleProducts.Any() ? Model.FlashSaleProducts : Model.FeaturedProducts.Take(4).ToList();
+}
+@if (flashList.Any())
+{
+    <section class="py-4">
+        <div class="container">
+            <div class="baby-flash-box">
+                <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="baby-brand-icon" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white;">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                        </div>
+                        <div>
+                            <div class="d-flex align-items-center gap-2">
+                                <h3 class="fw-bold mb-0">Flash Sale Giờ Vàng</h3>
+                                @if (Model.FlashSaleProducts.Any())
+                                {
+                                    <span class="badge bg-danger text-white rounded-pill pulse-badge">Đang diễn ra</span>
+                                }
+                            </div>
+                            <span class="small text-muted">Săn đồ hiệu cho bé giá sốc - Số lượng có hạn kết thúc sau:</span>
+                        </div>
+                    </div>
+
+                    <!-- Countdown Timer -->
+                    <div class="baby-countdown-wrap">
+                        <div class="baby-countdown-box" id="flashHour">02</div>
+                        <span class="baby-countdown-colon">:</span>
+                        <div class="baby-countdown-box" id="flashMin">30</div>
+                        <span class="baby-countdown-colon">:</span>
+                        <div class="baby-countdown-box" id="flashSec">45</div>
+                    </div>
+                </div>
+
+                <!-- Products Grid -->
+                <div class="row g-3 g-md-4">
+                    @foreach (var prod in flashList.Take(4))
+                    {
+                        <div class="col-6 col-md-3">
+                            @await Html.PartialAsync("_ProductCard", prod)
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+}
+
+<!-- 4. Curated Collection: Bé Gái Tỏa Sáng -->
+@if (Model.GirlProducts.Any())
+{
+    <section class="py-4">
+        <div class="container">
+            <div class="baby-section-header">
+                <div>
+                    <span class="baby-section-tag">Dành Riêng Cho Bé Gái</span>
+                    <h2 class="baby-section-title">Váy Xinh & Đồ Bộ Dịu Dàng</h2>
+                </div>
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" class="baby-section-link">
+                    Xem tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="row g-3 g-md-4">
+                @foreach (var prod in Model.GirlProducts.Take(4))
+                {
+                    <div class="col-6 col-md-3">
+                        @await Html.PartialAsync("_ProductCard", prod)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- 5. Dual Curated Lookbook Banners -->
+<section class="py-3">
+    <div class="container">
+        <div class="row g-3 g-md-4">
+            <div class="col-12 col-md-6">
+                <div class="p-4 p-md-5 rounded-4 border h-100 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #FBF8F4 0%, #F5EDE4 100%);">
+                    <div>
+                        <span class="badge bg-white text-muted border px-3 py-1 rounded-pill small mb-3">Mùa hè năng động</span>
+                        <h3 class="fw-bold mb-2">Trang Phục Dạo Phố Bé Trai</h3>
+                        <p class="text-muted small mb-4">Polo cotton dệt tổ ong thoáng khí, kết hợp quần kaki mềm mại cho bé thoải mái chạy nhảy cả ngày.</p>
+                    </div>
+                    <div>
+                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="btn btn-baby-primary btn-sm">
+                            Xem Bộ Sưu Tập &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6">
+                <div class="p-4 p-md-5 rounded-4 border h-100 d-flex flex-column justify-content-between" style="background: linear-gradient(135deg, #FAF7F2 0%, #F0E8DD 100%);">
+                    <div>
+                        <span class="badge bg-white text-muted border px-3 py-1 rounded-pill small mb-3">100% Organic Bamboo</span>
+                        <h3 class="fw-bold mb-2">Đồ Sơ Sinh Nâng Niu Làn Da</h3>
+                        <p class="text-muted small mb-4">Chất liệu sợi tre organic kháng khuẩn, đường chỉ may phẳng êm, không gây cọ xát ngứa ngáy cho trẻ sơ sinh.</p>
+                    </div>
+                    <div>
+                        <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" class="btn btn-baby-primary btn-sm">
+                            Khám Phá Ngay &rarr;
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. Curated Collection: Bé Trai Cá Tính -->
+@if (Model.BoyProducts.Any())
+{
+    <section class="py-4">
+        <div class="container">
+            <div class="baby-section-header">
+                <div>
+                    <span class="baby-section-tag">Dành Cho Bé Trai</span>
+                    <h2 class="baby-section-title">Phong Cách Năng Động & Cá Tính</h2>
+                </div>
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="baby-section-link">
+                    Xem tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="row g-3 g-md-4">
+                @foreach (var prod in Model.BoyProducts.Take(4))
+                {
+                    <div class="col-6 col-md-3">
+                        @await Html.PartialAsync("_ProductCard", prod)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- 7. Curated Collection: Sơ Sinh & Trẻ Nhỏ -->
+@if (Model.NewbornProducts.Any())
+{
+    <section class="py-4">
+        <div class="container">
+            <div class="baby-section-header">
+                <div>
+                    <span class="baby-section-tag">An Toàn Cho Bé Yêu</span>
+                    <h2 class="baby-section-title">Thời Trang Sơ Sinh (0 - 24 Tháng)</h2>
+                </div>
+                <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" class="baby-section-link">
+                    Xem tất cả <i class="bi bi-arrow-right"></i>
+                </a>
+            </div>
+
+            <div class="row g-3 g-md-4">
+                @foreach (var prod in Model.NewbornProducts.Take(4))
+                {
+                    <div class="col-6 col-md-3">
+                        @await Html.PartialAsync("_ProductCard", prod)
+                    </div>
+                }
+            </div>
+        </div>
+    </section>
+}
+
+<!-- 8. Core Values & Customer Commitments -->
+<section class="py-4 py-md-5 my-3">
+    <div class="container">
+        <div class="row g-3 g-md-4">
+            <div class="col-6 col-lg-3">
+                <div class="baby-service-card">
+                    <div class="baby-service-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h5>100% Vải An Toàn</h5>
+                    <p>Đạt tiêu chuẩn Oeko-Tex Standard 100 quốc tế, mềm mại với da bé.</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="baby-service-card">
+                    <div class="baby-service-icon" style="background: var(--baby-sage-light); color: var(--baby-sage);">
+                        <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                    <h5>Đổi Hàng Tận Nhà</h5>
+                    <p>Hỗ trợ đổi size trong 7 ngày, shipper tới tận nhà thu hàng tiện lợi.</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="baby-service-card">
+                    <div class="baby-service-icon" style="background: var(--baby-rose-light); color: var(--baby-rose);">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h5>Freeship Từ 300K</h5>
+                    <p>Miễn phí giao hàng toàn quốc cho đơn hàng từ 300.000đ.</p>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="baby-service-card">
+                    <div class="baby-service-icon" style="background: var(--baby-sand-light); color: var(--baby-primary);">
+                        <i class="bi bi-box-seam"></i>
+                    </div>
+                    <h5>Đồng Kiểm Nhận Hàng</h5>
+                    <p>Mẹ được kiểm tra đồ xinh cho bé trước khi thanh toán cho shipper.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Floating Gift / Promo Announcement Button -->
+<a href="javascript:void(0)" class="baby-home-fab" onclick="openHomePromoModal()" id="babyHomeGiftFab" title="Bấm để xem quà tặng & mã giảm giá hôm nay">
+    <i class="bi bi-gift-fill fs-5 text-warning"></i>
+    <span>Quà Tặng & Voucher</span>
+    <span class="baby-fab-badge">Hot</span>
+</a>
+
+<!-- BabyShop Home Announcement Popup Modal -->
+<div class="modal fade baby-promo-modal" id="babyHomePromoModal" tabindex="-1" aria-labelledby="babyHomePromoModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" style="max-width: 540px;">
+        <div class="modal-content">
+            <!-- Header -->
+            <div class="baby-promo-header">
+                <button type="button" class="btn-close position-absolute top-0 end-0 m-3 shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+                <div class="baby-promo-header-badge">
+                    <i class="bi bi-stars me-1"></i> ƯU ĐÃI ĐẶC QUYỀN HÔM NAY
+                </div>
+                <h4>Chào Mừng Mẹ & Bé Yêu! 💕</h4>
+                <p>Khám phá bộ sưu tập mới & nhận ngay voucher giảm giá độc quyền</p>
+            </div>
+
+            <!-- Body -->
+            <div class="modal-body p-3 p-md-4">
+                <!-- Vouchers List -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-bold text-dark"><i class="bi bi-ticket-perforated-fill text-danger me-1"></i>Mã Giảm Giá Dành Tặng Mẹ:</span>
+                        <span class="small text-muted" style="font-size: 0.75rem;">(Mỗi tài khoản nhận 1 lần)</span>
+                    </div>
+
+                    @if (activeCoupons.Any())
+                    {
+                        @foreach (var c in activeCoupons)
+                        {
+                            bool alreadyInWallet = userCollectedCouponIds.Contains(c.Id);
+                            <div class="baby-promo-ticket">
+                                <div class="pe-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="baby-promo-code">@c.Code</span>
+                                        <span class="badge bg-danger-subtle text-danger small fw-bold">
+                                            @(c.DiscountType == WebsiteBabyShop.Models.DiscountType.Percentage ? $"Giảm {c.DiscountValue}%" : $"Giảm {c.DiscountValue:N0}đ")
+                                        </span>
+                                    </div>
+                                    <div class="text-muted small mt-1" style="font-size: 0.78rem;">
+                                        @(string.IsNullOrEmpty(c.Description) ? c.Title : c.Description)
+                                    </div>
+                                    <div class="text-muted small" style="font-size: 0.72rem;">
+                                        <i class="bi bi-clock me-1"></i>Hạn dùng: @(c.ExpiryDate?.ToString("dd/MM/yyyy") ?? "Vô thời hạn")
+                                    </div>
+                                </div>
+                                <div class="d-flex flex-column gap-1 align-items-end">
+                                    @if (alreadyInWallet)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 small fw-bold" disabled>
+                                            <i class="bi bi-check2-circle me-1"></i>Đã trong kho
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-baby-primary rounded-pill px-3 py-1 small fw-bold" onclick="collectVoucherFromHome(@c.Id, '@c.Code', this)">
+                                            <i class="bi bi-download me-1"></i>Lưu vào kho
+                                        </button>
+                                    }
+                                    <button type="button" class="btn btn-sm btn-link p-0 text-muted small text-decoration-none" onclick="BabyAlert.copy('@c.Code', 'mã voucher')" style="font-size: 0.72rem;">
+                                        <i class="bi bi-clipboard me-1"></i>Chép mã
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="baby-promo-ticket">
+                            <div class="pe-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="baby-promo-code">BABYNEW</span>
+                                    <span class="badge bg-danger-subtle text-danger small fw-bold">Giảm 10%</span>
+                                </div>
+                                <div class="text-muted small mt-1" style="font-size: 0.78rem;">
+                                    Giảm 10% tối đa 40k cho đơn hàng đầu tiên từ 150k
+                                </div>
+                            </div>
+                            <div class="d-flex flex-column gap-1 align-items-end">
+                                <button type="button" class="btn btn-sm btn-baby-primary rounded-pill px-3 py-1 small fw-bold" onclick="collectVoucherFromHome(0, 'BABYNEW', this)">
+                                    <i class="bi bi-download me-1"></i>Lưu vào kho
+                                </button>
+                                <button type="button" class="btn btn-sm btn-link p-0 text-muted small text-decoration-none" onclick="BabyAlert.copy('BABYNEW', 'mã voucher')" style="font-size: 0.72rem;">
+                                    <i class="bi bi-clipboard me-1"></i>Chép mã
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Baby Club Reward Points Highlight -->
+                <div class="p-3 rounded-3 bg-warning-subtle bg-opacity-25 border border-warning-subtle mb-3">
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <div class="rounded-circle bg-warning text-dark d-flex align-items-center justify-content-center fw-bold" style="width: 26px; height: 26px; font-size: 0.8rem;">
+                            <i class="bi bi-star-fill"></i>
+                        </div>
+                        <span class="fw-bold text-dark small">Đặc Quyền Hội Viên Baby Club:</span>
+                    </div>
+                    <div class="text-muted small ps-4" style="font-size: 0.8rem;">
+                        Tích lũy <strong>100 điểm cho mỗi 100k</strong> chi tiêu (100 điểm = 10k giảm giá đơn tiếp theo). Hạng Kim Cương được <strong>giảm 20% trọn đời</strong>!
+                    </div>
+                </div>
+
+                <!-- CTA Button -->
+                <div class="d-grid gap-2">
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-baby-primary py-2 rounded-pill fw-bold text-center" onclick="closeHomePromoModal()">
+                        <i class="bi bi-bag-heart-fill me-1"></i> Khám Phá Sản Phẩm Hot Ngay
+                    </a>
+                </div>
+
+                <!-- Dismiss Option -->
+                <div class="text-center mt-3">
+                    <div class="form-check d-inline-block text-muted small" style="font-size: 0.78rem;">
+                        <input class="form-check-input" type="checkbox" id="dontShowAgainTodayCheck" onchange="toggleDismissPromoToday(this.checked)">
+                        <label class="form-check-label cursor-pointer" for="dontShowAgainTodayCheck">
+                            Không hiển thị lại thông báo này trong hôm nay
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Real-time Flash Sale Countdown Timer
+        (function() {
+            var targetTime = new Date();
+            targetTime.setHours(targetTime.getHours() + 8);
+            targetTime.setMinutes(targetTime.getMinutes() + 45);
+
+            function updateTimer() {
+                var now = new Date().getTime();
+                var diff = targetTime.getTime() - now;
+
+                if (diff <= 0) {
+                    targetTime = new Date();
+                    targetTime.setHours(targetTime.getHours() + 12);
+                    diff = targetTime.getTime() - now;
+                }
+
+                var hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+                var elH = document.getElementById('flashHour');
+                var elM = document.getElementById('flashMin');
+                var elS = document.getElementById('flashSec');
+
+                if (elH) elH.textContent = String(hours).padStart(2, '0');
+                if (elM) elM.textContent = String(minutes).padStart(2, '0');
+                if (elS) elS.textContent = String(seconds).padStart(2, '0');
+            }
+
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        })();
+
+        // Home Announcement Popup Logic
+        function openHomePromoModal() {
+            var el = document.getElementById('babyHomePromoModal');
+            if (el && window.bootstrap) {
+                var modal = bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el);
+                modal.show();
+            }
+        }
+
+        function closeHomePromoModal() {
+            var el = document.getElementById('babyHomePromoModal');
+            if (el && window.bootstrap) {
+                var modal = bootstrap.Modal.getInstance(el);
+                if (modal) modal.hide();
+            }
+        }
+
+        function toggleDismissPromoToday(checked) {
+            var today = new Date().toISOString().slice(0, 10);
+            if (checked) {
+                localStorage.setItem('babyshop_hide_home_popup_date', today);
+                if (window.BabyAlert) {
+                    BabyAlert.toast('Đã lưu tùy chọn không hiện lại hôm nay ✨', 'info');
+                }
+            } else {
+                localStorage.removeItem('babyshop_hide_home_popup_date');
+            }
+        }
+
+        function collectVoucherFromHome(couponId, couponCode, btnElem) {
+            if (!couponId && !couponCode) return;
+
+            var originalHtml = btnElem ? btnElem.innerHTML : '';
+            if (btnElem) {
+                btnElem.disabled = true;
+                btnElem.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Lưu...';
+            }
+
+            fetch('/Account/CollectCouponAjax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ couponId: couponId || 0, couponCode: couponCode || '' })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    BabyAlert.success('Đã Lưu Vào Kho Voucher! 🎁', data.message);
+                    if (btnElem) {
+                        btnElem.className = 'btn btn-sm btn-outline-success rounded-pill px-3 py-1 small fw-bold';
+                        btnElem.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Đã trong kho';
+                        btnElem.disabled = true;
+                    }
+                } else {
+                    if (data.requiresLogin) {
+                        BabyAlert.confirm('Đăng Nhập Nhận Quà', data.message, 'Đăng nhập ngay').then(r => {
+                            if (r.isConfirmed) {
+                                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                            }
+                        });
+                    } else if (data.alreadyCollected) {
+                        BabyAlert.error('Đã Nhận Mã Này', data.message);
+                        if (btnElem) {
+                            btnElem.className = 'btn btn-sm btn-outline-success rounded-pill px-3 py-1 small fw-bold';
+                            btnElem.innerHTML = '<i class="bi bi-check2-circle me-1"></i>Đã trong kho';
+                            btnElem.disabled = true;
+                        }
+                    } else {
+                        BabyAlert.error('Thông Báo', data.message);
+                    }
+                    if (btnElem && !data.alreadyCollected) {
+                        btnElem.disabled = false;
+                        btnElem.innerHTML = originalHtml;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                BabyAlert.error('Lỗi', 'Không thể kết nối máy chủ để lưu mã giảm giá.');
+                if (btnElem) {
+                    btnElem.disabled = false;
+                    btnElem.innerHTML = originalHtml;
+                }
+            });
+        }
+
+        // Tính Năng "Dành Cho Bạn" 12H
+        var forYouTimerInterval = null;
+        var forYouRemainingSeconds = 0;
+        var forYouCanClaim = false;
+        var forYouIsAuth = false;
+
+        function formatTwoDigits(n) {
+            return String(Math.floor(n)).padStart(2, '0');
+        }
+
+        function updateForYouDisplay() {
+            var h = Math.floor(forYouRemainingSeconds / 3600);
+            var m = Math.floor((forYouRemainingSeconds % 3600) / 60);
+            var s = Math.floor(forYouRemainingSeconds % 60);
+
+            var elH = document.getElementById('forYouHour');
+            var elM = document.getElementById('forYouMin');
+            var elS = document.getElementById('forYouSec');
+            if (elH) elH.textContent = formatTwoDigits(h);
+            if (elM) elM.textContent = formatTwoDigits(m);
+            if (elS) elS.textContent = formatTwoDigits(s);
+
+            var btn = document.getElementById('btnClaimForYou');
+            var btnText = document.getElementById('btnClaimForYouText');
+            var timerLbl = document.getElementById('forYouTimerLabel');
+
+            if (!forYouIsAuth) {
+                if (btnText) btnText.textContent = 'Đăng nhập mở quà';
+                if (btn) btn.disabled = false;
+                if (timerLbl) timerLbl.textContent = 'Mở quà mỗi 12 giờ:';
+                return;
+            }
+
+            if (forYouCanClaim || forYouRemainingSeconds <= 0) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = 'btn-foryou-claim pulse-badge';
+                }
+                if (btnText) btnText.innerHTML = '<i class="bi bi-stars me-1"></i>Mở Quà 12H Ngay!';
+                if (timerLbl) timerLbl.textContent = 'Quà đã sẵn sàng!';
+            } else {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = 'btn-foryou-claim opacity-75';
+                }
+                if (btnText) btnText.textContent = 'Đang đếm ngược...';
+                if (timerLbl) timerLbl.textContent = 'Lượt mở tiếp theo sau:';
+            }
+        }
+
+        function startForYouCountdown() {
+            if (forYouTimerInterval) clearInterval(forYouTimerInterval);
+            updateForYouDisplay();
+            forYouTimerInterval = setInterval(function() {
+                if (forYouRemainingSeconds > 0) {
+                    forYouRemainingSeconds--;
+                    updateForYouDisplay();
+                } else {
+                    forYouCanClaim = true;
+                    updateForYouDisplay();
+                }
+            }, 1000);
+        }
+
+        function loadForYouStatus() {
+            fetch('/Account/GetForYouStatus')
+                .then(res => res.json())
+                .then(data => {
+                    forYouIsAuth = data.authenticated;
+                    forYouCanClaim = data.canClaim;
+                    forYouRemainingSeconds = data.remainingSeconds || 0;
+
+                    if (data.currentVoucher) {
+                        var noticeEl = document.getElementById('forYouActiveNotice');
+                        var codeEl = document.getElementById('forYouActiveCode');
+                        var descEl = document.getElementById('forYouActiveDesc');
+                        if (noticeEl && codeEl && descEl) {
+                            codeEl.textContent = data.currentVoucher.code;
+                            descEl.textContent = data.currentVoucher.title + ' (HSD: ' + data.currentVoucher.expiryDate + ')';
+                            noticeEl.style.display = 'block';
+                        }
+                    }
+                    startForYouCountdown();
+                })
+                .catch(err => {
+                    console.error('Lỗi tải trạng thái Dành Cho Bạn:', err);
+                });
+        }
+
+        function handleClaimForYou() {
+            if (!forYouIsAuth) {
+                BabyAlert.confirm('Đăng Nhập Nhận Quà', 'Vui lòng đăng nhập tài khoản để mở Hộp Quà 12H Dành Riêng Cho Bạn!', 'Đăng nhập ngay')
+                    .then(r => {
+                        if (r.isConfirmed) {
+                            window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                        }
+                    });
+                return;
+            }
+
+            if (!forYouCanClaim && forYouRemainingSeconds > 0) {
+                var h = Math.floor(forYouRemainingSeconds / 3600);
+                var m = Math.floor((forYouRemainingSeconds % 3600) / 60);
+                var s = Math.floor(forYouRemainingSeconds % 60);
+                var timeStr = formatTwoDigits(h) + ':' + formatTwoDigits(m) + ':' + formatTwoDigits(s);
+                BabyAlert.toast('Hộp quà đang nạp năng lượng! Vui lòng quay lại sau ' + timeStr + ' ✨', 'info');
+                return;
+            }
+
+            var btn = document.getElementById('btnClaimForYou');
+            var originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang mở...';
+            }
+
+            fetch('/Account/ClaimForYouVoucher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    var rarityBadge = data.coupon.rarity 
+                        ? '<span class="badge ' + (data.coupon.rarityColor || 'bg-warning text-dark') + ' px-3 py-1 rounded-pill fw-bold fs-6 mb-2">' + data.coupon.rarity + '</span>'
+                        : '';
+                    var discountBadge = data.coupon.displayDiscount
+                        ? '<span class="badge bg-danger text-white rounded-pill px-3 py-1 fw-bold fs-6 mt-1">' + data.coupon.displayDiscount + '</span>'
+                        : '';
+
+                    Swal.fire({
+                        title: '🎉 CHÚC MỪNG MẸ TRÚNG QUÀ MAY MẮN!',
+                        html: '<div class="text-center py-2">' +
+                                '<div class="fs-1 mb-2 animate__animated animate__bounceIn">🎁✨🎲</div>' +
+                                rarityBadge +
+                                '<h5 class="fw-bold text-danger mb-1 mt-1">' + data.coupon.title + '</h5>' +
+                                '<p class="text-muted small mb-3">' + data.coupon.description + '</p>' +
+                                '<div class="p-3 bg-light rounded-4 border mb-3 shadow-sm">' +
+                                    '<span class="small text-muted d-block mb-1">Mã may mắn độc quyền dành riêng cho bạn:</span>' +
+                                    '<div class="fs-3 fw-bold font-monospace text-primary">' + data.coupon.code + '</div>' +
+                                    '<div class="d-flex justify-content-center align-items-center gap-2 mt-1">' +
+                                        discountBadge +
+                                        '<span class="small text-muted">Đơn từ: <strong>' + Number(data.coupon.minOrder || 0).toLocaleString('vi-VN') + 'đ</strong></span>' +
+                                    '</div>' +
+                                    '<div class="small text-muted mt-2"><i class="bi bi-clock me-1 text-primary"></i>Hiệu lực 12 giờ (Đến: <strong>' + data.coupon.expiryDate + '</strong>)</div>' +
+                                '</div>' +
+                                '<p class="small text-muted mb-0">Mã đã được lưu vào <a href="/Account/MyVouchers" class="text-decoration-underline text-danger fw-bold">Kho Voucher</a>. Mỗi mã áp dụng 1 lần duy nhất cho đơn hàng.</p>' +
+                              '</div>',
+                        icon: 'success',
+                        confirmButtonText: 'Sử Dụng Ngay Khi Thanh Toán 💕',
+                        confirmButtonColor: '#E65100',
+                        showCancelButton: true,
+                        cancelButtonText: 'Xem Kho Voucher',
+                        cancelButtonColor: '#C57B57'
+                    }).then(result => {
+                        if (result.dismiss === Swal.DismissReason.cancel) {
+                            window.location.href = '/Account/MyVouchers';
+                        }
+                    });
+                    loadForYouStatus();
+                } else {
+                    if (data.requiresLogin) {
+                        window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                    } else {
+                        BabyAlert.error('Thông Báo', data.message);
+                        loadForYouStatus();
+                    }
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                BabyAlert.error('Lỗi', 'Không thể kết nối máy chủ để mở quà.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var today = new Date().toISOString().slice(0, 10);
+            var savedDate = localStorage.getItem('babyshop_hide_home_popup_date');
+            if (savedDate !== today) {
+                setTimeout(function() {
+                    openHomePromoModal();
+                }, 1200);
+            }
+            loadForYouStatus();
+        });
+    </script>
+}

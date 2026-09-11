@@ -1,0 +1,761 @@
+﻿@{
+    ViewData["Title"] = "Vòng Quay May Mắn & Điểm Danh Nhận Quà - BabyShop";
+    var user = ViewBag.User as WebsiteBabyShop.Models.User;
+    bool hasCheckedInToday = ViewBag.HasCheckedInToday ?? false;
+    int currentStreak = ViewBag.CurrentStreak ?? 0;
+    int availableSpins = ViewBag.AvailableSpins ?? 0;
+    int rewardPoints = ViewBag.RewardPoints ?? 0;
+    var recentCheckIns = ViewBag.RecentCheckIns as List<WebsiteBabyShop.Models.DailyCheckIn> ?? new List<WebsiteBabyShop.Models.DailyCheckIn>();
+    var userHistory = ViewBag.UserHistory as List<WebsiteBabyShop.Models.LuckyWheelHistory> ?? new List<WebsiteBabyShop.Models.LuckyWheelHistory>();
+    var recentWinners = ViewBag.RecentWinners as List<WebsiteBabyShop.Controllers.LuckyWinnerDto> ?? new List<WebsiteBabyShop.Controllers.LuckyWinnerDto>();
+}
+
+<div class="container py-4 py-md-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index"><i class="bi bi-house me-1"></i>Trang Chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Vòng Quay May Mắn & Điểm Danh</li>
+        </ol>
+    </nav>
+
+    <!-- Top Banner Hero -->
+    <div class="p-4 p-md-5 rounded-4 shadow-sm text-white mb-5 position-relative overflow-hidden" 
+         style="background: linear-gradient(135deg, #ff6b81, #ff8e53, #ffa07a); border: 1px solid rgba(255,255,255,0.2);">
+        <div class="position-absolute end-0 bottom-0 opacity-20 d-none d-lg-block pointer-events-none" style="transform: translate(10%, 20%);">
+            <i class="bi bi-stars text-white" style="font-size: 15rem;"></i>
+        </div>
+        <div class="row align-items-center position-relative" style="z-index: 2;">
+            <div class="col-12 col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-25 backdrop-blur mb-3">
+                    <i class="bi bi-gift-fill text-warning"></i>
+                    <span class="small fw-bold text-uppercase tracking-wider">Đặc Quyền Hội Viên Baby Club</span>
+                </div>
+                <h1 class="display-6 fw-bold mb-3">Vòng Quay May Mắn & Điểm Danh Mỗi Ngày</h1>
+                <p class="fs-6 opacity-90 mb-4" style="max-width: 600px;">
+                    Điểm danh 7 ngày liên tiếp để nhận hàng trăm <strong>Xu Baby Club</strong> và mở khóa <strong>Lượt Quay May Mắn</strong> rinh ngay Voucher 50.000đ, Mã Freeship cùng nhiều phần quà hấp dẫn cho bé yêu!
+                </p>
+                <div class="d-flex flex-wrap gap-3 align-items-center">
+                    <div class="rounded-4 px-3 py-2 d-flex align-items-center gap-3 shadow-sm border border-white" style="background: #ffffff; min-width: 175px;">
+                        <span class="fs-3">🪙</span>
+                        <div>
+                            <div class="small fw-semibold" style="color: #64748b; font-size: 0.8rem; line-height: 1.2;">Xu Baby Club của mẹ</div>
+                            <strong class="fs-5 fw-bold" style="color: #d97706;" id="userPointsDisplay">@rewardPoints.ToString("N0") Xu</strong>
+                        </div>
+                    </div>
+                    <div class="rounded-4 px-3 py-2 d-flex align-items-center gap-3 shadow-sm border border-white" style="background: #ffffff; min-width: 175px;">
+                        <span class="fs-3">🎡</span>
+                        <div>
+                            <div class="small fw-semibold" style="color: #64748b; font-size: 0.8rem; line-height: 1.2;">Lượt quay may mắn</div>
+                            <strong class="fs-5 fw-bold" style="color: #e11d48;" id="userSpinsDisplay">@availableSpins Lượt</strong>
+                        </div>
+                    </div>
+                    <a href="#wheelSection" class="btn btn-warning text-dark fw-bold rounded-pill px-4 py-2 shadow-sm d-inline-flex align-items-center gap-2">
+                        <i class="bi bi-play-circle-fill"></i> Quay Thưởng Ngay
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Winners Ticker Bar -->
+    <div class="bg-white p-3 rounded-4 shadow-sm border mb-5 d-flex align-items-center gap-3 overflow-hidden">
+        <div class="d-flex align-items-center gap-2 text-danger fw-bold text-nowrap">
+            <span class="spinner-grow spinner-grow-sm text-danger" role="status"></span>
+            <i class="bi bi-trophy-fill"></i> Thông Báo:
+        </div>
+        <div class="flex-grow-1 overflow-hidden">
+            <marquee behavior="scroll" direction="left" scrollamount="5" class="small text-muted m-0">
+                @if (recentWinners != null && recentWinners.Count > 0)
+                {
+                    foreach (var w in recentWinners)
+                    {
+                        <span class="me-4">
+                            🎉 <strong>@w.UserName</strong> vừa quay trúng <span class="text-danger fw-bold">@w.PrizeName</span> <span class="text-secondary opacity-75">(@w.TimeAgo)</span>
+                        </span>
+                    }
+                }
+                else
+                {
+                    <span class="me-4">🎉 <strong>Mẹ Thu Trang</strong> vừa quay trúng <span class="text-danger fw-bold">Voucher VIP 50.000đ</span></span>
+                    <span class="me-4">🎉 <strong>Mẹ Bích Ngọc</strong> vừa quay trúng <span class="text-success fw-bold">+50 Xu Baby Club</span></span>
+                    <span class="me-4">🎉 <strong>Mẹ Minh Hằng</strong> vừa quay trúng <span class="text-primary fw-bold">Freeship Vòng Quay 30K</span></span>
+                    <span class="me-4">🎉 <strong>Mẹ Lan Anh</strong> vừa nhận <span class="text-warning fw-bold">+1 Lượt Quay Thưởng</span></span>
+                }
+            </marquee>
+        </div>
+    </div>
+
+    <!-- Section 1: 7-Day Check-In Streak Roadmap -->
+    <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm border mb-5">
+        @if (ViewBag.StreakWasReset == true)
+        {
+            <div class="alert alert-warning alert-dismissible fade show rounded-4 d-flex align-items-center gap-3 p-3 mb-4 border-0 shadow-sm" role="alert" style="background: #fffbeb; border: 1px solid #fde68a !important; color: #92400e;">
+                <i class="bi bi-exclamation-triangle-fill fs-3 text-warning"></i>
+                <div class="flex-grow-1">
+                    <strong class="d-block mb-1">Chuỗi điểm danh đã reset về Ngày 1!</strong>
+                    <span class="small">Do hôm qua mẹ không vào điểm danh nên chuỗi tích lũy đã lập tức reset về Ngày 1. Mẹ hãy bấm <strong>"Điểm Danh Ngay"</strong> để bắt đầu lại chuỗi mới nhận quà nhé!</span>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        }
+        <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+            <div>
+                <h3 class="fw-bold mb-1 text-dark">
+                    <i class="bi bi-calendar2-check-fill text-danger me-2"></i>Lộ Trình Điểm Danh 7 Ngày
+                </h3>
+                @if (user != null)
+                {
+                    if (hasCheckedInToday)
+                    {
+                        <p class="text-success small mb-0 fw-semibold">
+                            <i class="bi bi-check-circle-fill me-1"></i> Tài khoản <strong>@(user.FullName ?? user.Username)</strong>: Hôm nay bạn đã điểm danh thành công (Ngày @currentStreak/7). Hẹn gặp lại bạn vào ngày mai nhé ✨
+                        </p>
+                    }
+                    else
+                    {
+                        <p class="text-danger small mb-0 fw-semibold">
+                            <i class="bi bi-exclamation-circle-fill me-1"></i> Tài khoản <strong>@(user.FullName ?? user.Username)</strong>: Hôm nay bạn chưa điểm danh. Hãy bấm nút bên cạnh để nhận +@((currentStreak + 1) switch { 1 => 10, 2 => 15, 3 => 20, 4 => 25, 5 => 30, 6 => 40, 7 => 50, _ => 10 }) Xu nhé!
+                        </p>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted small mb-0">Đăng nhập tài khoản của bạn để tham gia điểm danh mỗi ngày và tích lũy Xu nhận quà hấp dẫn!</p>
+                }
+            </div>
+            <div>
+                @if (user == null)
+                {
+                    <a href="/Account/Login?returnUrl=/Rewards" class="btn btn-baby-primary rounded-pill px-4 py-2 fw-bold shadow-sm">
+                        <i class="bi bi-box-arrow-in-right me-1"></i> Đăng Nhập Điểm Danh
+                    </a>
+                }
+                else if (hasCheckedInToday)
+                {
+                    <button type="button" class="btn btn-success rounded-pill px-4 py-2 fw-bold shadow-sm" disabled>
+                        <i class="bi bi-check-circle-fill me-1"></i> Hôm nay đã điểm danh
+                    </button>
+                }
+                else
+                {
+                    <button type="button" id="btnCheckInAction" class="btn btn-baby-primary rounded-pill px-4 py-2 fw-bold shadow-sm baby-pulse-btn" onclick="executeCheckIn()">
+                        <i class="bi bi-sparkles me-1"></i> Điểm Danh Ngay (+@((currentStreak + 1) switch { 1 => 10, 2 => 15, 3 => 20, 4 => 25, 5 => 30, 6 => 40, 7 => 50, _ => 10 }) Xu)
+                    </button>
+                }
+            </div>
+        </div>
+
+        <!-- 7 Days Cards -->
+        <div class="row g-3 row-cols-2 row-cols-sm-4 row-cols-md-7 text-center">
+            @{
+                int streak = currentStreak;
+                int[] pointsMap = { 10, 15, 20, 25, 30, 40, 50 };
+            }
+            @for (int day = 1; day <= 7; day++)
+            {
+                bool isCompleted = hasCheckedInToday ? (day <= streak) : (day < streak + 1 && streak > 0);
+                bool isTodayCard = hasCheckedInToday ? (day == streak) : (day == streak + 1);
+                bool isDay7 = (day == 7);
+                int dayPoints = pointsMap[day - 1];
+
+                <div class="col">
+                    <div class="p-3 rounded-4 border h-100 transition-all position-relative @(isCompleted ? "bg-light border-success" : isTodayCard ? "border-danger shadow-sm bg-white" : "bg-white")"
+                         style="@(isTodayCard ? "border-width: 2px !important;" : "")">
+                        @if (hasCheckedInToday && day == streak)
+                        {
+                            <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success small shadow-sm" style="white-space: nowrap;">
+                                <i class="bi bi-check-circle-fill me-1"></i> Hôm nay đã điểm danh
+                            </span>
+                        }
+                        else if (isCompleted)
+                        {
+                            <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-success small">
+                                <i class="bi bi-check-lg"></i> Đã nhận
+                            </span>
+                        }
+                        else if (isTodayCard)
+                        {
+                            <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger small animate-bounce shadow-sm" style="white-space: nowrap;">
+                                <i class="bi bi-sparkles me-1"></i> Chưa điểm danh
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-secondary bg-opacity-50 small">
+                                <i class="bi bi-lock-fill"></i>
+                            </span>
+                        }
+
+                        <div class="text-muted small fw-bold mt-1 mb-2">Ngày @day</div>
+                        <div class="my-2 fs-2">
+                            @(isDay7 ? "🎁" : isCompleted ? "🪙" : "📦")
+                        </div>
+                        <div class="fw-bold @(isCompleted ? "text-success" : isTodayCard ? "text-danger" : "text-dark")">
+                            +@dayPoints Xu
+                        </div>
+                        @if (isDay7)
+                        {
+                            <div class="badge bg-warning text-dark border border-warning rounded-pill mt-1" style="font-size: 0.65rem;">
+                                +1 Lượt Quay 🎡
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="mt-4 p-3 rounded-4 border d-flex align-items-center gap-3" style="background: #fffbeb; border-color: #fde68a !important;">
+            <div class="fs-4 text-warning"><i class="bi bi-lightning-charge-fill"></i></div>
+            <div class="small text-dark">
+                <strong>Quy tắc duy trì chuỗi:</strong> Mẹ cần vào điểm danh liên tiếp mỗi ngày. 
+                <span class="text-danger fw-bold">Nếu ngày mai không điểm danh, chuỗi tích lũy sẽ lập tức reset về điểm danh từ Ngày 1!</span> 
+                Hãy duy trì đủ 7 ngày liên tiếp để nhận trọn bộ Xu thưởng và <strong>1 Lượt Quay Bánh Xe May Mắn 🎡</strong> rinh Voucher xịn nhé mẹ!
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 2: Interactive Lucky Wheel -->
+    <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm border mb-5" id="wheelSection">
+        <div class="text-center mb-4">
+            <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-danger bg-opacity-10 text-danger small fw-bold mb-2">
+                <i class="bi bi-stars"></i> QUAY LÀ CÓ QUÀ 100%
+            </div>
+            <h2 class="display-6 fw-bold text-dark">Bánh Xe May Mắn Baby Club</h2>
+            <p class="text-muted" style="max-width: 600px; margin: 0 auto;">
+                Thử vận may của mẹ với 8 ô giải thưởng hấp dẫn. Mẹ đang có <strong class="text-danger fs-5" id="wheelSpinsCount">@availableSpins</strong> lượt quay!
+            </p>
+        </div>
+
+        <div class="row align-items-center justify-content-center g-5">
+            <!-- Wheel Column -->
+            <div class="col-12 col-md-7 col-lg-6 text-center">
+                <div class="wheel-container position-relative d-inline-block p-2">
+                    <!-- Top Arrow / Indicator -->
+                    <div class="wheel-pointer position-absolute start-50 translate-middle-x" style="top: -10px; z-index: 20;">
+                        <svg width="46" height="56" viewBox="0 0 46 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M23 56L0 15C0 6.71573 10.2975 0 23 0C35.7025 0 46 6.71573 46 15L23 56Z" fill="#F59E0B"/>
+                            <path d="M23 46L6 15C6 9.5 13.5 5 23 5C32.5 5 40 9.5 40 15L23 46Z" fill="#FBBF24"/>
+                            <circle cx="23" cy="16" r="6" fill="#FFFFFF"/>
+                        </svg>
+                    </div>
+
+                    <!-- Canvas Wheel -->
+                    <div class="wheel-outer-ring rounded-circle shadow-lg p-2" style="background: linear-gradient(135deg, #f59e0b, #d97706, #b45309);">
+                        <canvas id="wheelCanvas" width="400" height="400" class="rounded-circle"></canvas>
+                    </div>
+
+                    <!-- Center Spin Button -->
+                    <button type="button" id="btnSpinCenter" class="wheel-center-btn position-absolute top-50 start-50 translate-middle rounded-circle border-0 shadow fw-bold text-white d-flex flex-column align-items-center justify-content-center"
+                            onclick="triggerSpin()" style="width: 86px; height: 86px; z-index: 15; background: linear-gradient(135deg, #ff416c, #ff4b2b); font-size: 14px;">
+                        <span style="letter-spacing: 1px;">QUAY</span>
+                        <span style="font-size: 10px; opacity: 0.85;">NGAY</span>
+                    </button>
+                </div>
+
+                <!-- Spin Controls & Buy Spin Option -->
+                <div class="mt-4 d-flex justify-content-center align-items-center flex-wrap gap-3">
+                    <button type="button" class="btn btn-baby-primary rounded-pill px-4 py-2 fw-bold shadow-sm" onclick="triggerSpin()" id="btnSpinAction">
+                        <i class="bi bi-play-circle me-1"></i> Quay Thưởng Ngay
+                    </button>
+                    <button type="button" class="btn btn-outline-warning text-dark fw-bold rounded-pill px-4 py-2 shadow-sm" onclick="buySpinWithPoints()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Đổi 30 Xu Lấy 1 Lượt Quay
+                    </button>
+                </div>
+            </div>
+
+            <!-- Prizes Showcase & Instructions Column -->
+            <div class="col-12 col-md-5 col-lg-5">
+                <div class="p-4 rounded-4 bg-light border shadow-sm">
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-gift text-danger me-2"></i>Cơ Cấu Giải Thưởng:</h5>
+                    <ul class="list-unstyled mb-4">
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <span>🎟️ <strong>Voucher VIP 50.000đ</strong></span>
+                            <span class="badge bg-danger rounded-pill">Đơn từ 350k</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <span>🚚 <strong>Voucher Freeship 30K</strong></span>
+                            <span class="badge bg-primary rounded-pill">Đơn từ 200k</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <span>🎟️ <strong>Voucher May Mắn 20.000đ</strong></span>
+                            <span class="badge bg-warning text-dark rounded-pill">Đơn từ 150k</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <span>🪙 <strong>+50 Xu / +30 Xu / +15 Xu</strong></span>
+                            <span class="badge bg-success rounded-pill">Cộng trực tiếp</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                            <span>🎡 <strong>+1 Lượt Quay Miễn Phí</strong></span>
+                            <span class="badge bg-info text-dark rounded-pill">Thêm lượt</span>
+                        </li>
+                        <li class="d-flex align-items-center justify-content-between py-2">
+                            <span>🍀 <strong>Chúc Mẹ May Mắn</strong></span>
+                            <span class="badge bg-secondary rounded-pill">+5 Xu an ủi</span>
+                        </li>
+                    </ul>
+
+                    <div class="p-3 bg-white rounded-3 border small">
+                        <div class="fw-bold text-dark mb-1"><i class="bi bi-shield-check text-success me-1"></i>Cam kết minh bạch:</div>
+                        <p class="text-muted mb-0">Voucher trúng thưởng sẽ được tự động nạp thẳng vào <strong>Kho Voucher</strong> của mẹ và có thời hạn sử dụng trong vòng 14 ngày.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Section 3: History Tabs -->
+    <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm border">
+        <ul class="nav nav-tabs nav-fill mb-4" id="rewardTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active fw-bold text-dark py-3" id="history-tab" data-bs-toggle="tab" data-bs-target="#historyTabPane" type="button" role="tab">
+                    <i class="bi bi-clock-history me-1"></i> Lịch Sử Trúng Thưởng Của Mẹ
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link fw-bold text-dark py-3" id="rules-tab" data-bs-toggle="tab" data-bs-target="#rulesTabPane" type="button" role="tab">
+                    <i class="bi bi-file-text me-1"></i> Thể Lệ & Quy Định
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="rewardTabsContent">
+            <!-- Tab 1: User History -->
+            <div class="tab-pane fade show active" id="historyTabPane" role="tabpanel">
+                @if (userHistory != null && userHistory.Count > 0)
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thời Gian</th>
+                                    <th>Phần Quà Nhận Được</th>
+                                    <th>Loại Thưởng</th>
+                                    <th>Chi Tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var h in userHistory)
+                                {
+                                    <tr>
+                                        <td>@h.CreatedAt.ToString("HH:mm dd/MM/yyyy")</td>
+                                        <td class="fw-bold text-dark">@h.PrizeName</td>
+                                        <td>
+                                            @if (h.PrizeType == "Coupon")
+                                            {
+                                                <span class="badge bg-danger rounded-pill">Voucher Kho</span>
+                                            }
+                                            else if (h.PrizeType == "Points")
+                                            {
+                                                <span class="badge bg-success rounded-pill">+@h.PointsWon Xu</span>
+                                            }
+                                            else if (h.PrizeType == "Spin")
+                                            {
+                                                <span class="badge bg-warning text-dark rounded-pill">+1 Lượt</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary rounded-pill">+@h.PointsWon Xu</span>
+                                            }
+                                        </td>
+                                        <td class="small text-muted">
+                                            @(h.PrizeType == "Coupon" ? "Đã nạp vào Kho Voucher" : "Đã cộng vào tài khoản")
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        <p class="mb-0">Mẹ chưa có lượt quay nào. Hãy bấm "QUAY NGAY" để thử vận may nhé!</p>
+                    </div>
+                }
+            </div>
+
+            <!-- Tab 2: Rules -->
+            <div class="tab-pane fade" id="rulesTabPane" role="tabpanel">
+                <div class="p-3 p-md-4">
+                    <h5 class="fw-bold mb-3">1. Quy định Điểm Danh:</h5>
+                    <p class="text-muted">Mỗi tài khoản được điểm danh 1 lần mỗi ngày (tính từ 00:00 đến 23:59). Chuỗi điểm danh liên tục 7 ngày sẽ nhận phần thưởng tăng dần từ +10 đến +50 Xu. Đạt ngày thứ 7 sẽ được tặng thêm 1 Lượt Quay May Mắn miễn phí.</p>
+
+                    <h5 class="fw-bold mb-3 mt-4">2. Quy định Vòng Quay:</h5>
+                    <p class="text-muted">Lượt quay nhận được từ điểm danh, đăng ký tài khoản hoặc đổi 30 Xu lấy 1 lượt. Phần quà là Voucher sẽ tự động có hiệu lực trong 14 ngày và dùng để giảm giá tại bước Thanh toán.</p>
+
+                    <h5 class="fw-bold mb-3 mt-4">3. Quy đổi Xu Baby Club:</h5>
+                    <p class="text-muted mb-0">Xu Baby Club tích lũy có thể dùng để khấu trừ trực tiếp khi thanh toán đơn hàng (100 Xu = 10.000đ) hoặc dùng để đổi lượt quay may mắn bất cứ lúc nào.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Canvas Confetti Library CDN -->
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+@section Scripts {
+<script>
+    // Configuration for 8 Wheel Slices (Angles: 360 / 8 = 45 deg)
+    const PRIZES = [
+        { name: "+15 Xu", sub: "Baby Club", color: "#FF6B81", textColor: "#FFFFFF", icon: "🪙" },
+        { name: "Voucher 20K", sub: "Đơn từ 150k", color: "#FFD166", textColor: "#333333", icon: "🎟️" },
+        { name: "+30 Xu", sub: "Baby Club", color: "#06D6A0", textColor: "#FFFFFF", icon: "🪙" },
+        { name: "Freeship 30K", sub: "Đơn từ 200k", color: "#118AB2", textColor: "#FFFFFF", icon: "🚚" },
+        { name: "+50 Xu", sub: "Baby Club", color: "#FF9F45", textColor: "#FFFFFF", icon: "🪙" },
+        { name: "+5 Xu", sub: "May mắn", color: "#9D4EDD", textColor: "#FFFFFF", icon: "🍀" },
+        { name: "VIP 50K", sub: "Đơn từ 350k", color: "#EF476F", textColor: "#FFFFFF", icon: "👑" },
+        { name: "+1 Lượt", sub: "Quay miễn phí", color: "#4CC9F0", textColor: "#FFFFFF", icon: "🎡" }
+    ];
+
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const numSlices = 8;
+    const sliceAngle = (2 * Math.PI) / numSlices;
+    let currentRotationAngle = 0; // in radians
+    let isSpinning = false;
+
+    // Draw the Wheel on Canvas
+    function drawWheel(rotationOffset = 0) {
+        const radius = canvas.width / 2;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (let i = 0; i < numSlices; i++) {
+            const startAngle = i * sliceAngle + rotationOffset;
+            const endAngle = startAngle + sliceAngle;
+
+            // Draw slice background
+            ctx.beginPath();
+            ctx.moveTo(radius, radius);
+            ctx.arc(radius, radius, radius - 4, startAngle, endAngle);
+            ctx.fillStyle = PRIZES[i].color;
+            ctx.fill();
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.stroke();
+
+            // Draw text and icons inside slice
+            ctx.save();
+            ctx.translate(radius, radius);
+            ctx.rotate(startAngle + sliceAngle / 2);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = PRIZES[i].textColor;
+            ctx.font = 'bold 13px Outfit, sans-serif';
+
+            // Prize Name
+            ctx.fillText(PRIZES[i].name, radius - 35, 2);
+
+            // Prize Subtitle
+            ctx.font = '10px Outfit, sans-serif';
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillText(PRIZES[i].sub, radius - 35, 16);
+
+            // Icon
+            ctx.font = '18px sans-serif';
+            ctx.fillText(PRIZES[i].icon, radius - 12, 6);
+
+            ctx.restore();
+        }
+
+        // Draw outer ring decorative dots
+        const dotCount = 24;
+        for (let j = 0; j < dotCount; j++) {
+            const dotAngle = (j * (2 * Math.PI) / dotCount) + rotationOffset;
+            const x = radius + (radius - 8) * Math.cos(dotAngle);
+            const y = radius + (radius - 8) * Math.sin(dotAngle);
+
+            ctx.beginPath();
+            ctx.arc(x, y, 3.5, 0, 2 * Math.PI);
+            ctx.fillStyle = j % 2 === 0 ? '#FFFFFF' : '#FFDE59';
+            ctx.fill();
+        }
+    }
+
+    // Initial Wheel Render
+    drawWheel();
+
+    // Trigger Spin Function
+    async function triggerSpin() {
+        if (isSpinning) return;
+
+        @if (!(User.Identity?.IsAuthenticated ?? false))
+        {
+            <text>
+            Swal.fire({
+                icon: 'info',
+                title: 'Đăng Nhập Để Quay Thưởng',
+                text: 'Mẹ vui lòng đăng nhập tài khoản để tham gia Vòng Quay May Mắn và nhận quà nhé!',
+                confirmButtonText: 'Đăng Nhập Ngay',
+                confirmButtonColor: '#ff6b81',
+                showCancelButton: true,
+                cancelButtonText: 'Để sau'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                }
+            });
+            return;
+            </text>
+        }
+
+        const spinBtn = document.getElementById('btnSpinCenter');
+        const spinActionBtn = document.getElementById('btnSpinAction');
+
+        try {
+            isSpinning = true;
+            spinBtn.disabled = true;
+            if (spinActionBtn) spinActionBtn.disabled = true;
+
+            // Call Backend to compute winning prize securely
+            const response = await fetch('/Rewards/SpinWheel', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await response.json();
+
+            if (!data.success) {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                if (spinActionBtn) spinActionBtn.disabled = false;
+
+                if (data.requireLogin) {
+                    window.location.href = '/Account/Login';
+                    return;
+                }
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Thông Báo',
+                    text: data.message,
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#ff6b81'
+                });
+                return;
+            }
+
+            // Target Slice from Server (0 to 7)
+            const targetIndex = data.prizeIndex;
+
+            // Top pointer is at -90 degrees (or 270 deg / 1.5 * PI)
+            // Calculate target angle to land slice[targetIndex] at top pointer
+            const fullRotations = 6 + Math.floor(Math.random() * 2); // 6 or 7 full spins for exciting animation
+            const targetSliceCenter = (targetIndex + 0.5) * sliceAngle;
+            // Desired end angle modulo 2PI should align targetSliceCenter with top pointer (3*PI/2)
+            const pointerAngle = 1.5 * Math.PI;
+            const finalAngle = (fullRotations * 2 * Math.PI) + (pointerAngle - targetSliceCenter);
+
+            animateWheel(currentRotationAngle, currentRotationAngle + finalAngle, 4500, () => {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                if (spinActionBtn) spinActionBtn.disabled = false;
+
+                // Update UI Counters
+                document.getElementById('userSpinsDisplay').textContent = data.newSpins + ' Lượt';
+                document.getElementById('userPointsDisplay').textContent = data.newPoints.toLocaleString('vi-VN') + ' Xu';
+                document.getElementById('wheelSpinsCount').textContent = data.newSpins;
+
+                // Trigger Confetti Celebration
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 }
+                });
+
+                // SweetAlert Celebration Modal
+                Swal.fire({
+                    icon: 'success',
+                    title: '🎉 CHÚC MỪNG MẸ!',
+                    html: `
+                        <div class="fs-5 mb-2">Mẹ đã quay trúng:</div>
+                        <div class="badge bg-danger fs-5 px-3 py-2 rounded-pill mb-3">${data.prizeName}</div>
+                        <p class="text-muted small mb-0">${data.prizeType === 'Coupon' ? 'Voucher đã được nạp sẵn vào Kho Voucher của mẹ!' : 'Phần thưởng đã được cộng ngay vào tài khoản của mẹ!'}</p>
+                    `,
+                    confirmButtonText: 'Tuyệt Vời ✨',
+                    confirmButtonColor: '#ff6b81'
+                }).then(() => {
+                    location.reload();
+                });
+            });
+
+        } catch (err) {
+            console.error(err);
+            isSpinning = false;
+            spinBtn.disabled = false;
+            if (spinActionBtn) spinActionBtn.disabled = false;
+        }
+    }
+
+    // Smooth Deceleration Animation
+    function animateWheel(startAngle, endAngle, duration, onComplete) {
+        const startTime = performance.now();
+
+        function step(currentTime) {
+            const elapsed = currentTime - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            // Ease out cubic deceleration
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+            const currentAngle = startAngle + (endAngle - startAngle) * easeProgress;
+            drawWheel(currentAngle);
+
+            if (progress < 1) {
+                requestAnimationFrame(step);
+            } else {
+                currentRotationAngle = endAngle % (2 * Math.PI);
+                onComplete();
+            }
+        }
+
+        requestAnimationFrame(step);
+    }
+
+    // Daily Check-In AJAX Function
+    async function executeCheckIn() {
+        @if (!(User.Identity?.IsAuthenticated ?? false))
+        {
+            <text>
+            Swal.fire({
+                icon: 'info',
+                title: 'Đăng Nhập Điểm Danh',
+                text: 'Mẹ vui lòng đăng nhập để điểm danh nhận Xu Baby Club mỗi ngày nhé!',
+                confirmButtonText: 'Đăng Nhập',
+                confirmButtonColor: '#ff6b81',
+                showCancelButton: true,
+                cancelButtonText: 'Hủy'
+            }).then((res) => {
+                if (res.isConfirmed) {
+                    window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                }
+            });
+            return;
+            </text>
+        }
+
+        const btn = document.getElementById('btnCheckInAction');
+        if (btn) btn.disabled = true;
+
+        try {
+            const res = await fetch('/Rewards/CheckIn', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                confetti({
+                    particleCount: 80,
+                    spread: 60,
+                    origin: { y: 0.5 }
+                });
+
+                Swal.fire({
+                    icon: data.wasReset ? 'warning' : 'success',
+                    title: data.wasReset ? '⚠️ Chuỗi Đã Reset Về Ngày 1' : 'Điểm Danh Thành Công! ✨',
+                    text: data.message,
+                    confirmButtonText: 'Tuyệt Vời ✨',
+                    confirmButtonColor: '#ff6b81'
+                }).then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Thông Báo',
+                    text: data.message,
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#ff6b81'
+                });
+                if (btn) btn.disabled = false;
+            }
+        } catch (e) {
+            console.error(e);
+            if (btn) btn.disabled = false;
+        }
+    }
+
+    // Buy Spin with 30 Points Function
+    async function buySpinWithPoints() {
+        @if (!(User.Identity?.IsAuthenticated ?? false))
+        {
+            <text>
+            window.location.href = '/Account/Login';
+            return;
+            </text>
+        }
+
+        const result = await Swal.fire({
+            title: 'Đổi Lượt Quay May Mắn',
+            text: 'Mẹ có muốn dùng 30 Xu Baby Club để đổi lấy 1 Lượt Quay May Mắn không?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Đổi Ngay (30 Xu)',
+            cancelButtonText: 'Hủy',
+            confirmButtonColor: '#ff6b81'
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const res = await fetch('/Rewards/BuySpinWithPoints', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    document.getElementById('userSpinsDisplay').textContent = data.newSpins + ' Lượt';
+                    document.getElementById('userPointsDisplay').textContent = data.newPoints.toLocaleString('vi-VN') + ' Xu';
+                    document.getElementById('wheelSpinsCount').textContent = data.newSpins;
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Đổi Thành Công!',
+                        text: data.message,
+                        confirmButtonText: 'Quay Ngay ✨',
+                        confirmButtonColor: '#ff6b81'
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Không Đủ Xu',
+                        text: data.message,
+                        confirmButtonText: 'Đã hiểu',
+                        confirmButtonColor: '#ff6b81'
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+    }
+</script>
+
+<style>
+    .wheel-container {
+        user-select: none;
+    }
+    .wheel-center-btn {
+        cursor: pointer;
+        transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .wheel-center-btn:hover {
+        transform: translate(-50%, -50%) scale(1.08) !important;
+    }
+    .wheel-center-btn:active {
+        transform: translate(-50%, -50%) scale(0.95) !important;
+    }
+    .baby-pulse-btn {
+        animation: pulse 2s infinite;
+    }
+    @@keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(255, 107, 129, 0.6); }
+        70% { box-shadow: 0 0 0 10px rgba(255, 107, 129, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(255, 107, 129, 0); }
+    }
+    .backdrop-blur {
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+</style>
+}

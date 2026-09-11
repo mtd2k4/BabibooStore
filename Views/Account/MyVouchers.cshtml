@@ -1,0 +1,746 @@
+﻿@model List<WebsiteBabyShop.Models.UserCoupon>
+@{
+    ViewData["Title"] = "Kho Voucher Của Tôi - BabyShop";
+    string activeTab = ViewBag.ActiveTab as string ?? "available";
+    int availableCount = ViewBag.AvailableCount ?? 0;
+    int usedCount = ViewBag.UsedCount ?? 0;
+    int expiredCount = ViewBag.ExpiredCount ?? 0;
+    var exploreCoupons = ViewBag.ExploreCoupons as List<WebsiteBabyShop.Models.Coupon> ?? new List<WebsiteBabyShop.Models.Coupon>();
+    var flashHuntCoupons = ViewBag.FlashHuntUserCoupons as List<WebsiteBabyShop.Models.UserCoupon> ?? new List<WebsiteBabyShop.Models.UserCoupon>();
+    var now = DateTime.Now;
+
+    var filteredCoupons = activeTab switch
+    {
+        "used" => Model.Where(uc => uc.IsUsed).ToList(),
+        "expired" => Model.Where(uc => !uc.IsUsed && (uc.ExpiryDate < now || (uc.Coupon != null && !uc.Coupon.IsActive))).ToList(),
+        _ => Model.Where(uc => !uc.IsUsed && uc.ExpiryDate >= now && (uc.Coupon != null && uc.Coupon.IsActive)).ToList()
+    };
+}
+
+<div class="container py-3 py-md-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Account" asp-action="Profile">Tài Khoản</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Kho Voucher</li>
+        </ol>
+    </nav>
+
+    <!-- Header Banner -->
+    <div class="baby-wallet-hero mb-4 p-4 rounded-4 shadow-sm position-relative overflow-hidden">
+        <div class="row align-items-center position-relative" style="z-index: 2;">
+            <div class="col-lg-7">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-75 text-danger small fw-bold mb-2">
+                    <i class="bi bi-stars"></i> ĐẶC QUYỀN MUA SẮM CHO BÉ
+                </div>
+                <h2 class="fw-bold text-dark mb-2">Kho Voucher Của Mẹ & Bé 💕</h2>
+                <p class="text-muted mb-3 mb-lg-0">
+                    Lưu trữ toàn bộ mã giảm giá độc quyền. Mỗi tài khoản nhận 1 lần và áp dụng ngay khi thanh toán!
+                </p>
+            </div>
+            <div class="col-lg-5">
+                <!-- Nhập mã nhanh -->
+                <form asp-action="ClaimVoucherCode" method="post" class="bg-white p-3 rounded-4 shadow-sm border">
+                    @Html.AntiForgeryToken()
+                    <label class="form-label small fw-bold text-dark mb-2">
+                        <i class="bi bi-plus-circle-fill text-danger me-1"></i>Thêm Mã Vào Kho Voucher:
+                    </label>
+                    <div class="input-group">
+                        <input type="text" name="couponCode" class="form-control text-uppercase font-monospace" placeholder="Nhập mã voucher (VD: BABYNEW)..." required />
+                        <button type="submit" class="btn btn-baby-primary px-3 fw-bold">
+                            <i class="bi bi-download me-1"></i>Lưu Mã
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hộp Quà 12H - Dành Riêng Cho Bạn -->
+    <div class="baby-foryou-banner mb-4">
+        <div class="row align-items-center g-3">
+            <div class="col-auto">
+                <div class="baby-gift-box-wrapper">
+                    <i class="bi bi-gift-fill"></i>
+                </div>
+            </div>
+            <div class="col">
+                <div class="baby-foryou-tag mb-1">
+                    <i class="bi bi-stars"></i> Độc Quyền Baby Club • 12H Nhận 1 Lần
+                </div>
+                <h4 class="baby-foryou-title">🎁 Hộp Quà May Mắn 12H - Trúng Voucher Bất Ngờ</h4>
+                <p class="baby-foryou-desc">
+                    Cứ mỗi 12 tiếng, mẹ nhận ngay 1 voucher ngẫu nhiên cực sốc (lên đến 35% hoặc 100K)! Mã áp dụng 1 lần duy nhất khi đặt hàng!
+                </p>
+                <div id="forYouActiveNotice" class="mt-2 text-success small fw-bold" style="display: none;">
+                    <i class="bi bi-check-circle-fill me-1"></i>Voucher đang hiệu lực: <span id="forYouActiveCode" class="font-monospace text-danger bg-white px-2 py-05 rounded border"></span> - <span id="forYouActiveDesc"></span>
+                </div>
+            </div>
+            <div class="col-12 col-lg-auto d-flex flex-wrap align-items-center gap-3">
+                <div class="d-flex flex-column align-items-start align-items-lg-end">
+                    <span class="small fw-bold text-dark mb-1" id="forYouTimerLabel">Lượt mở quà tiếp theo sau:</span>
+                    <div class="baby-foryou-countdown">
+                        <div class="baby-countdown-block">
+                            <span class="baby-countdown-num" id="forYouHour">12</span>
+                            <span class="baby-countdown-lbl">Giờ</span>
+                        </div>
+                        <span class="baby-countdown-colon">:</span>
+                        <div class="baby-countdown-block">
+                            <span class="baby-countdown-num" id="forYouMin">00</span>
+                            <span class="baby-countdown-lbl">Phút</span>
+                        </div>
+                        <span class="baby-countdown-colon">:</span>
+                        <div class="baby-countdown-block">
+                            <span class="baby-countdown-num" id="forYouSec">00</span>
+                            <span class="baby-countdown-lbl">Giây</span>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <button type="button" id="btnClaimForYou" class="btn-foryou-claim" onclick="handleClaimForYou()">
+                        <i class="bi bi-box2-heart-fill"></i>
+                        <span id="btnClaimForYouText">Mở Quà 12H</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Khung Giờ Săn Mã Vàng - Mở Theo Giờ -->
+    @if (flashHuntCoupons.Any())
+    {
+        <div class="baby-flashhunt-banner mb-4 p-3 p-md-4 rounded-4 shadow-sm border">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2 border-bottom pb-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="baby-flashhunt-icon-badge">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <h5 class="fw-bold mb-0 text-dark">⚡ Săn Mã Giờ Vàng (Mở Theo Khung Giờ)</h5>
+                            <span class="badge bg-danger text-white rounded-pill px-2 py-1 small fw-bold">
+                                <i class="bi bi-check2-all me-1"></i>SẴN TRONG KHO MỌI NGƯỜI
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-0 mt-1">Mã giảm giá đã lưu sẵn trong kho của tất cả khách hàng. Canh đúng giờ mở để kích hoạt áp dụng khi thanh toán!</p>
+                    </div>
+                </div>
+                <div class="small text-muted">
+                    <i class="bi bi-clock-history text-danger me-1"></i>Đồng hồ đếm ngược trực tiếp
+                </div>
+            </div>
+
+            <div class="row g-3">
+                @foreach (var fUc in flashHuntCoupons)
+                {
+                    var fc = fUc.Coupon;
+                    if (fc == null) continue;
+                    bool isOpened = now >= fc.StartDate;
+                    var timeUntilStart = fc.StartDate - now;
+                    var totalWaitSeconds = (int)Math.Max(0, timeUntilStart.TotalSeconds);
+
+                    <div class="col-12 col-md-6">
+                        <div class="baby-flashhunt-card @(fUc.IsUsed ? "is-used" : isOpened ? "is-opened" : "is-waiting") p-3 rounded-4 border bg-white shadow-sm h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="baby-promo-code fs-6">@fc.Code</span>
+                                        <span class="badge @(fUc.IsUsed ? "bg-secondary" : isOpened ? "bg-danger" : "bg-warning text-dark") fw-bold rounded-pill px-2 py-1" style="font-size: 0.72rem;">
+                                            @(fc.DiscountType == WebsiteBabyShop.Models.DiscountType.Percentage ? $"Giảm {fc.DiscountValue:0.#}%" : $"Giảm {fc.DiscountValue:N0}đ")
+                                        </span>
+                                    </div>
+                                    <div>
+                                        @if (fUc.IsUsed)
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 small">
+                                                <i class="bi bi-check2-circle me-1"></i>Đã sử dụng
+                                            </span>
+                                        }
+                                        else if (isOpened)
+                                        {
+                                            <span class="badge bg-danger text-white rounded-pill px-2 py-1 small fw-bold">
+                                                <i class="bi bi-lightning-charge-fill me-1"></i>⚡ ĐANG MỞ - DÙNG NGAY
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark rounded-pill px-2 py-1 small fw-bold">
+                                                <i class="bi bi-alarm-fill me-1"></i>⏰ Sắp mở lúc @fc.StartDate.ToString("HH:mm dd/MM")
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+
+                                <h6 class="fw-bold text-dark mb-1">@fc.Title</h6>
+                                <p class="text-muted small mb-2" style="font-size: 0.82rem;">
+                                    @(string.IsNullOrEmpty(fc.Description) ? "Ưu đãi Săn Giờ Vàng siêu ưu đãi cho mẹ và bé" : fc.Description)
+                                </p>
+
+                                <div class="small text-muted mb-3" style="font-size: 0.8rem;">
+                                    <div><i class="bi bi-cart-check text-primary me-1"></i>Đơn tối thiểu: <strong>@fc.MinOrderAmount.ToString("N0") đ</strong></div>
+                                    <div><i class="bi bi-calendar-event text-primary me-1"></i>Khung giờ mở: <strong>@fc.StartDate.ToString("HH:mm dd/MM/yyyy")</strong> - @(fc.ExpiryDate?.ToString("dd/MM/yyyy") ?? "Vô hạn")</div>
+                                </div>
+                            </div>
+
+                            <!-- Countdown & Action Button -->
+                            <div class="pt-2 border-top d-flex flex-wrap justify-content-between align-items-center gap-2 mt-auto">
+                                <div>
+                                    @if (fUc.IsUsed)
+                                    {
+                                        <span class="text-muted small"><i class="bi bi-check-all text-success me-1"></i>Mã đã áp dụng 1 lần thành công</span>
+                                    }
+                                    else if (!isOpened)
+                                    {
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="small fw-bold text-danger"><i class="bi bi-stopwatch-fill me-1"></i>Mở sau:</span>
+                                            <div class="baby-hunt-clock" id="huntClock_@fc.Id" data-target="@fc.StartDate.ToString("yyyy-MM-ddTHH:mm:ss")">
+                                                <span class="hunt-digit" id="huntH_@fc.Id">00</span>:<span class="hunt-digit" id="huntM_@fc.Id">00</span>:<span class="hunt-digit" id="huntS_@fc.Id">00</span>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-danger small fw-bold"><i class="bi bi-fire me-1"></i>Khung giờ vàng đang mở! Nhanh tay dùng ngay!</span>
+                                    }
+                                </div>
+
+                                <div id="huntAction_@fc.Id">
+                                    @if (fUc.IsUsed)
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1 disabled" disabled>Đã dùng</button>
+                                    }
+                                    else if (!isOpened)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3 py-1 fw-bold disabled opacity-75" disabled title="Mã sẽ mở lúc @fc.StartDate.ToString("HH:mm dd/MM/yyyy")">
+                                            <i class="bi bi-lock-fill me-1"></i>Chưa đến giờ mở
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <a asp-controller="Cart" asp-action="Checkout" class="btn btn-sm btn-danger rounded-pill px-3 py-1 fw-bold shadow-sm">
+                                            <i class="bi bi-lightning-charge-fill me-1"></i>Săn ngay <i class="bi bi-arrow-right"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Navigation Tabs -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom mb-4 pb-2 gap-3">
+        <ul class="nav nav-pills baby-voucher-tabs">
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "available" ? "active" : "") rounded-pill px-3 py-2 fw-semibold" asp-action="MyVouchers" asp-route-tab="available">
+                    <i class="bi bi-ticket-perforated me-1"></i>Sẵn Sàng Dùng
+                    <span class="badge @(activeTab == "available" ? "bg-white text-danger" : "bg-danger-subtle text-danger") ms-1 rounded-pill">@availableCount</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "used" ? "active" : "") rounded-pill px-3 py-2 fw-semibold" asp-action="MyVouchers" asp-route-tab="used">
+                    <i class="bi bi-check2-circle me-1"></i>Đã Sử Dụng
+                    <span class="badge @(activeTab == "used" ? "bg-white text-dark" : "bg-secondary-subtle text-secondary") ms-1 rounded-pill">@usedCount</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link @(activeTab == "expired" ? "active" : "") rounded-pill px-3 py-2 fw-semibold" asp-action="MyVouchers" asp-route-tab="expired">
+                    <i class="bi bi-clock-history me-1"></i>Đã Hết Hạn
+                    <span class="badge @(activeTab == "expired" ? "bg-white text-dark" : "bg-secondary-subtle text-secondary") ms-1 rounded-pill">@expiredCount</span>
+                </a>
+            </li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2 text-muted small">
+            <i class="bi bi-info-circle text-primary"></i>Mỗi mã áp dụng 1 lần cho 1 tài khoản
+        </div>
+    </div>
+
+    <!-- Voucher Cards Grid -->
+    @if (filteredCoupons.Any())
+    {
+        <div class="row g-3 g-md-4 mb-5">
+            @foreach (var uc in filteredCoupons)
+            {
+                var c = uc.Coupon;
+                bool isExpired = uc.ExpiryDate < now;
+                bool isFlashNotStarted = c != null && c.IsFlashHunt && now < c.StartDate;
+                var timeLeft = uc.ExpiryDate - now;
+
+                <div class="col-lg-6">
+                    <div class="baby-wallet-card @(uc.IsUsed ? "is-used" : "") @(isExpired && !uc.IsUsed ? "is-expired" : "") @(c != null && c.IsFlashHunt ? "is-flashhunt" : "") @(c != null && c.IsForYou ? "is-foryou" : "") shadow-sm">
+                        <!-- Left Coupon Badge -->
+                        <div class="baby-wallet-card-left @(c != null && c.IsFlashHunt ? "baby-flashhunt-card-left" : "")">
+                            @if (c != null && c.IsFlashHunt)
+                            {
+                                <span class="baby-wallet-card-tag bg-danger text-white">⚡ GIỜ VÀNG</span>
+                            }
+                            else
+                            {
+                                <span class="baby-wallet-card-tag">Ưu đãi</span>
+                            }
+                            <div class="baby-wallet-card-value">
+                                @if (c != null)
+                                {
+                                    if (c.DiscountType == WebsiteBabyShop.Models.DiscountType.Percentage)
+                                    {
+                                        <span>@c.DiscountValue<small>%</small></span>
+                                    }
+                                    else
+                                    {
+                                        <span>@((c.DiscountValue / 1000).ToString("N0"))<small>k</small></span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span>VOUCHER</span>
+                                }
+                            </div>
+                            <span class="small fw-semibold mt-1">GIẢM GIÁ</span>
+                        </div>
+
+                        <!-- Right Coupon Details -->
+                        <div class="baby-wallet-card-right p-3 p-md-4 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="baby-promo-code">@(c?.Code ?? "CODE")</span>
+                                        @if (c != null && c.IsFlashHunt)
+                                        {
+                                            <span class="badge bg-danger text-white border border-danger-subtle small fw-bold" style="font-size: 0.68rem;">
+                                                <i class="bi bi-lightning-charge-fill me-1"></i>Săn Giờ Vàng
+                                            </span>
+                                        }
+                                        @if (c != null && c.IsForYou)
+                                        {
+                                            <span class="badge bg-warning text-dark border border-warning-subtle small fw-bold" style="font-size: 0.68rem;">
+                                                <i class="bi bi-gift-fill me-1"></i>Độc Quyền 12H
+                                            </span>
+                                        }
+                                    </div>
+                                    
+                                    @if (uc.IsUsed)
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 small">
+                                            <i class="bi bi-check2-circle me-1"></i>Đã sử dụng
+                                        </span>
+                                    }
+                                    else if (isExpired)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 small">
+                                            <i class="bi bi-clock me-1"></i>Hết hạn
+                                        </span>
+                                    }
+                                    else if (isFlashNotStarted)
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-2 py-1 small fw-bold">
+                                            <i class="bi bi-alarm-fill me-1"></i>⏰ Sắp mở lúc @(c?.StartDate.ToString("HH:mm dd/MM"))
+                                        </span>
+                                    }
+                                    else if (c != null && c.IsFlashHunt)
+                                    {
+                                        <span class="badge bg-danger text-white rounded-pill px-2 py-1 small fw-bold">
+                                            <i class="bi bi-lightning-charge-fill me-1"></i>⚡ Đang mở
+                                        </span>
+                                    }
+                                    else if (timeLeft.TotalHours < 24)
+                                    {
+                                        <span class="badge bg-danger text-white rounded-pill px-2 py-1 small fw-bold">
+                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Hết hạn hôm nay
+                                        </span>
+                                    }
+                                    else if (timeLeft.TotalDays < 3)
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-2 py-1 small fw-bold">
+                                            <i class="bi bi-clock me-1"></i>Còn @((int)timeLeft.TotalDays) ngày
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 small">
+                                            <i class="bi bi-shield-check me-1"></i>Khả dụng
+                                        </span>
+                                    }
+                                </div>
+
+                                <h6 class="fw-bold text-dark mb-1">@(c?.Title ?? "Ưu đãi mua sắm")</h6>
+                                <p class="text-muted small mb-2" style="font-size: 0.85rem;">
+                                    @(string.IsNullOrEmpty(c?.Description) ? "Áp dụng cho mọi đơn hàng hợp lệ của mẹ và bé" : c.Description)
+                                </p>
+
+                                <div class="small text-muted mb-2" style="font-size: 0.8rem;">
+                                    <div><i class="bi bi-cart-check me-1 text-primary"></i>Đơn tối thiểu: <strong>@((c?.MinOrderAmount ?? 0).ToString("N0")) đ</strong></div>
+                                    @if (c != null && c.MaxDiscountAmount.HasValue && c.MaxDiscountAmount.Value > 0)
+                                    {
+                                        <div><i class="bi bi-arrow-up-circle me-1 text-primary"></i>Giảm tối đa: <strong>@c.MaxDiscountAmount.Value.ToString("N0") đ</strong></div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Footer Card info & Actions -->
+                            <div class="pt-2 border-top d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+                                <div class="small text-muted" style="font-size: 0.78rem;">
+                                    <i class="bi bi-calendar-event me-1"></i>
+                                    @if (uc.IsUsed)
+                                    {
+                                        <span>Dùng lúc: @(uc.UsedAt?.ToString("dd/MM/yyyy HH:mm") ?? "N/A")</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Hạn dùng: <strong class="@(isExpired ? "text-danger" : "text-dark")">@uc.ExpiryDate.ToString("dd/MM/yyyy HH:mm")</strong></span>
+                                    }
+                                </div>
+
+                                <div class="d-flex align-items-center gap-2">
+                                    @if (!uc.IsUsed && !isExpired)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1 small" onclick="BabyAlert.copy('@(c?.Code)', 'mã voucher')">
+                                            <i class="bi bi-clipboard"></i>
+                                        </button>
+                                        @if (isFlashNotStarted)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3 py-1 small" disabled title="Mã Săn Giờ Vàng sẽ mở lúc @(c?.StartDate.ToString("HH:mm dd/MM/yyyy"))">
+                                                <i class="bi bi-lock-fill me-1"></i>Chưa đến giờ mở
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <a asp-controller="Cart" asp-action="Checkout" class="btn btn-sm btn-baby-primary rounded-pill px-3 py-1 small fw-bold">
+                                                Dùng ngay <i class="bi bi-arrow-right"></i>
+                                            </a>
+                                        }
+                                    }
+                                    else if (uc.IsUsed && uc.OrderId.HasValue)
+                                    {
+                                        <a asp-controller="Cart" asp-action="OrderSuccess" asp-route-id="@uc.OrderId.Value" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 small">
+                                            Xem đơn hàng
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="bg-white rounded-4 border p-5 text-center my-4 shadow-sm">
+            <div class="mb-3 text-muted" style="font-size: 3.5rem;">
+                <i class="bi bi-ticket-perforated"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Chưa có mã giảm giá nào trong mục này</h5>
+            <p class="text-muted small mb-4">
+                @(activeTab == "available" ? "Mẹ chưa lưu voucher nào khả dụng. Hãy khám phá và lưu ngay các voucher ưu đãi bên dưới nhé!" : "Không có dữ liệu voucher phù hợp.")
+            </p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-baby-primary rounded-pill px-4 py-2 fw-semibold">
+                <i class="bi bi-house-heart me-1"></i>Khám Phá Trang Chủ
+            </a>
+        </div>
+    }
+
+    <!-- Explore More Vouchers -->
+    @if (exploreCoupons.Any())
+    {
+        <div class="mt-5 pt-3">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0 text-dark">
+                    <i class="bi bi-stars text-warning me-2"></i>Voucher Mới Dành Cho Bạn
+                </h5>
+                <span class="small text-muted">Bấm "Lưu vào kho" để nhận ngay đặc quyền</span>
+            </div>
+
+            <div class="row g-3">
+                @foreach (var ec in exploreCoupons)
+                {
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card h-100 border rounded-4 shadow-sm p-3 text-center d-flex flex-column justify-content-between bg-light-subtle">
+                            <div>
+                                <span class="baby-promo-code d-inline-block mb-2">@ec.Code</span>
+                                <h6 class="fw-bold text-danger mb-1">
+                                    @(ec.DiscountType == WebsiteBabyShop.Models.DiscountType.Percentage ? $"Giảm {ec.DiscountValue}%" : $"Giảm {ec.DiscountValue:N0}đ")
+                                </h6>
+                                <p class="text-muted small mb-2" style="font-size: 0.78rem;">
+                                    @(string.IsNullOrEmpty(ec.Description) ? ec.Title : ec.Description)
+                                </p>
+                                <div class="text-muted small" style="font-size: 0.75rem;">
+                                    Đơn từ: @(ec.MinOrderAmount.ToString("N0"))đ • Hạn: @(ec.ExpiryDate?.ToString("dd/MM/yyyy") ?? "Vô thời hạn")
+                                </div>
+                            </div>
+                            <div class="mt-3 pt-2 border-top">
+                                <button type="button" class="btn btn-sm btn-baby-primary rounded-pill w-100 fw-bold" onclick="collectVoucherToWallet(@ec.Id, '@ec.Code', this)">
+                                    <i class="bi bi-download me-1"></i>Lưu vào kho
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function collectVoucherToWallet(couponId, couponCode, btnElem) {
+            if (!couponId && !couponCode) return;
+            
+            const originalHtml = btnElem ? btnElem.innerHTML : '';
+            if (btnElem) {
+                btnElem.disabled = true;
+                btnElem.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang lưu...';
+            }
+
+            fetch('/Account/CollectCouponAjax', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify({ couponId: couponId, couponCode: couponCode })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    BabyAlert.success('Đã Lưu Thành Công!', data.message);
+                    if (btnElem) {
+                        btnElem.className = 'btn btn-sm btn-outline-success rounded-pill w-100 fw-bold';
+                        btnElem.innerHTML = '<i class="bi bi-check2 me-1"></i>Đã trong kho';
+                    }
+                    setTimeout(() => { window.location.reload(); }, 1600);
+                } else {
+                    if (data.requiresLogin) {
+                        BabyAlert.confirm('Cần Đăng Nhập', data.message, 'Đăng nhập ngay').then(r => {
+                            if (r.isConfirmed) {
+                                window.location.href = '/Account/Login?returnUrl=' + encodeURIComponent(window.location.pathname);
+                            }
+                        });
+                    } else if (data.alreadyCollected) {
+                        BabyAlert.error('Đã Nhận Trước Đó', data.message);
+                        if (btnElem) {
+                            btnElem.className = 'btn btn-sm btn-outline-secondary rounded-pill w-100 fw-bold';
+                            btnElem.innerHTML = '<i class="bi bi-check2 me-1"></i>Đã trong kho';
+                        }
+                    } else {
+                        BabyAlert.error('Thông Báo', data.message);
+                    }
+                    if (btnElem && !data.alreadyCollected) {
+                        btnElem.disabled = false;
+                        btnElem.innerHTML = originalHtml;
+                    }
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                BabyAlert.error('Lỗi kết nối', 'Không thể lưu mã giảm giá, vui lòng thử lại sau.');
+                if (btnElem) {
+                    btnElem.disabled = false;
+                    btnElem.innerHTML = originalHtml;
+                }
+            });
+        }
+
+        // Tính Năng "Dành Cho Bạn" 12H Trong Kho Voucher
+        var forYouTimerInterval = null;
+        var forYouRemainingSeconds = 0;
+        var forYouCanClaim = false;
+
+        function formatTwoDigits(n) {
+            return String(Math.floor(n)).padStart(2, '0');
+        }
+
+        function updateForYouDisplay() {
+            var h = Math.floor(forYouRemainingSeconds / 3600);
+            var m = Math.floor((forYouRemainingSeconds % 3600) / 60);
+            var s = Math.floor(forYouRemainingSeconds % 60);
+
+            var elH = document.getElementById('forYouHour');
+            var elM = document.getElementById('forYouMin');
+            var elS = document.getElementById('forYouSec');
+            if (elH) elH.textContent = formatTwoDigits(h);
+            if (elM) elM.textContent = formatTwoDigits(m);
+            if (elS) elS.textContent = formatTwoDigits(s);
+
+            var btn = document.getElementById('btnClaimForYou');
+            var btnText = document.getElementById('btnClaimForYouText');
+            var timerLbl = document.getElementById('forYouTimerLabel');
+
+            if (forYouCanClaim || forYouRemainingSeconds <= 0) {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = 'btn-foryou-claim pulse-badge';
+                }
+                if (btnText) btnText.innerHTML = '<i class="bi bi-stars me-1"></i>Mở Quà 12H Ngay!';
+                if (timerLbl) timerLbl.textContent = 'Quà đã sẵn sàng!';
+            } else {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = 'btn-foryou-claim opacity-75';
+                }
+                if (btnText) btnText.textContent = 'Đang đếm ngược...';
+                if (timerLbl) timerLbl.textContent = 'Lượt mở tiếp theo sau:';
+            }
+        }
+
+        function startForYouCountdown() {
+            if (forYouTimerInterval) clearInterval(forYouTimerInterval);
+            updateForYouDisplay();
+            forYouTimerInterval = setInterval(function() {
+                if (forYouRemainingSeconds > 0) {
+                    forYouRemainingSeconds--;
+                    updateForYouDisplay();
+                } else {
+                    forYouCanClaim = true;
+                    updateForYouDisplay();
+                }
+            }, 1000);
+        }
+
+        function loadForYouStatus() {
+            fetch('/Account/GetForYouStatus')
+                .then(res => res.json())
+                .then(data => {
+                    forYouCanClaim = data.canClaim;
+                    forYouRemainingSeconds = data.remainingSeconds || 0;
+
+                    if (data.currentVoucher) {
+                        var noticeEl = document.getElementById('forYouActiveNotice');
+                        var codeEl = document.getElementById('forYouActiveCode');
+                        var descEl = document.getElementById('forYouActiveDesc');
+                        if (noticeEl && codeEl && descEl) {
+                            codeEl.textContent = data.currentVoucher.code;
+                            descEl.textContent = data.currentVoucher.title + ' (HSD: ' + data.currentVoucher.expiryDate + ')';
+                            noticeEl.style.display = 'block';
+                        }
+                    }
+                    startForYouCountdown();
+                })
+                .catch(err => {
+                    console.error('Lỗi tải trạng thái Dành Cho Bạn:', err);
+                });
+        }
+
+        function handleClaimForYou() {
+            if (!forYouCanClaim && forYouRemainingSeconds > 0) {
+                var h = Math.floor(forYouRemainingSeconds / 3600);
+                var m = Math.floor((forYouRemainingSeconds % 3600) / 60);
+                var s = Math.floor(forYouRemainingSeconds % 60);
+                var timeStr = formatTwoDigits(h) + ':' + formatTwoDigits(m) + ':' + formatTwoDigits(s);
+                BabyAlert.toast('Hộp quà đang nạp năng lượng! Vui lòng quay lại sau ' + timeStr + ' ✨', 'info');
+                return;
+            }
+
+            var btn = document.getElementById('btnClaimForYou');
+            var originalHtml = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang mở...';
+            }
+
+            fetch('/Account/ClaimForYouVoucher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    var rarityBadge = data.coupon.rarity 
+                        ? '<span class="badge ' + (data.coupon.rarityColor || 'bg-warning text-dark') + ' px-3 py-1 rounded-pill fw-bold fs-6 mb-2">' + data.coupon.rarity + '</span>'
+                        : '';
+                    var discountBadge = data.coupon.displayDiscount
+                        ? '<span class="badge bg-danger text-white rounded-pill px-3 py-1 fw-bold fs-6 mt-1">' + data.coupon.displayDiscount + '</span>'
+                        : '';
+
+                    Swal.fire({
+                        title: '🎉 CHÚC MỪNG MẸ TRÚNG QUÀ MAY MẮN!',
+                        html: '<div class="text-center py-2">' +
+                                '<div class="fs-1 mb-2 animate__animated animate__bounceIn">🎁✨🎲</div>' +
+                                rarityBadge +
+                                '<h5 class="fw-bold text-danger mb-1 mt-1">' + data.coupon.title + '</h5>' +
+                                '<p class="text-muted small mb-3">' + data.coupon.description + '</p>' +
+                                '<div class="p-3 bg-light rounded-4 border mb-3 shadow-sm">' +
+                                    '<span class="small text-muted d-block mb-1">Mã may mắn độc quyền dành riêng cho bạn:</span>' +
+                                    '<div class="fs-3 fw-bold font-monospace text-primary">' + data.coupon.code + '</div>' +
+                                    '<div class="d-flex justify-content-center align-items-center gap-2 mt-1">' +
+                                        discountBadge +
+                                        '<span class="small text-muted">Đơn từ: <strong>' + Number(data.coupon.minOrder || 0).toLocaleString('vi-VN') + 'đ</strong></span>' +
+                                    '</div>' +
+                                    '<div class="small text-muted mt-2"><i class="bi bi-clock me-1 text-primary"></i>Hiệu lực 12 giờ (Đến: <strong>' + data.coupon.expiryDate + '</strong>)</div>' +
+                                '</div>' +
+                                '<p class="small text-muted mb-0">Mã đã được cập nhật ngay trong Kho Voucher bên dưới để mẹ áp dụng khi thanh toán!</p>' +
+                              '</div>',
+                        icon: 'success',
+                        confirmButtonText: 'Xem Kho Voucher 💕',
+                        confirmButtonColor: '#E65100'
+                    }).then(() => {
+                        window.location.reload();
+                    });
+                } else {
+                    BabyAlert.error('Thông Báo', data.message);
+                    loadForYouStatus();
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                BabyAlert.error('Lỗi', 'Không thể kết nối máy chủ để mở quà.');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = originalHtml;
+                }
+            });
+        }
+
+        function initFlashHuntCountdowns() {
+            var clocks = document.querySelectorAll('.baby-hunt-clock');
+            if (!clocks || clocks.length === 0) return;
+
+            function tick() {
+                var now = new Date().getTime();
+                clocks.forEach(function(clock) {
+                    var targetIso = clock.getAttribute('data-target');
+                    if (!targetIso) return;
+                    var targetTime = new Date(targetIso).getTime();
+                    var diff = Math.floor((targetTime - now) / 1000);
+
+                    var id = clock.id.replace('huntClock_', '');
+                    var hEl = document.getElementById('huntH_' + id);
+                    var mEl = document.getElementById('huntM_' + id);
+                    var sEl = document.getElementById('huntS_' + id);
+                    var actionEl = document.getElementById('huntAction_' + id);
+
+                    if (diff <= 0) {
+                        if (hEl) hEl.innerText = '00';
+                        if (mEl) mEl.innerText = '00';
+                        if (sEl) sEl.innerText = '00';
+                        if (actionEl && actionEl.querySelector('button.disabled')) {
+                            actionEl.innerHTML = '<a href="/Cart/Checkout" class="btn btn-sm btn-danger rounded-pill px-3 py-1 fw-bold shadow-sm"><i class="bi bi-lightning-charge-fill me-1"></i>Săn ngay <i class="bi bi-arrow-right"></i></a>';
+                        }
+                    } else {
+                        var hours = Math.floor(diff / 3600);
+                        var mins = Math.floor((diff % 3600) / 60);
+                        var secs = diff % 60;
+                        if (hEl) hEl.innerText = String(hours).padStart(2, '0');
+                        if (mEl) mEl.innerText = String(mins).padStart(2, '0');
+                        if (sEl) sEl.innerText = String(secs).padStart(2, '0');
+                    }
+                });
+            }
+
+            tick();
+            setInterval(tick, 1000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadForYouStatus();
+            initFlashHuntCountdowns();
+        });
+    </script>
+}

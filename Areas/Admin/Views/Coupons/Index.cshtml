@@ -1,0 +1,252 @@
+﻿@model List<WebsiteBabyShop.Models.Coupon>
+@{
+    ViewData["Title"] = "Quản Lý Mã Giảm Giá & Voucher";
+    int totalCoupons = ViewBag.TotalCoupons ?? 0;
+    int activeCoupons = ViewBag.ActiveCoupons ?? 0;
+    int totalUsed = ViewBag.TotalUsed ?? 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="bi bi-ticket-perforated-fill text-warning-emphasis me-2"></i>Mã Giảm Giá & Voucher</h4>
+        <span class="text-muted small">Quản lý các chương trình ưu đãi, voucher giảm giá toàn sàn cho bé</span>
+    </div>
+    <a asp-action="Create" class="btn btn-primary-baby shadow-sm">
+        <i class="bi bi-plus-circle-fill me-1"></i> Tạo Mã Voucher Mới
+    </a>
+</div>
+
+<!-- Quick Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-md-4">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-tags-fill"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Tổng Số Voucher</span>
+                <h4 class="fw-bold m-0 text-dark">@totalCoupons</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-lightning-charge-fill"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Đang Có Hiệu Lực</span>
+                <h4 class="fw-bold m-0 text-success">@activeCoupons</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-md-4">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-bag-check-fill"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Lượt Khách Đã Dùng</span>
+                <h4 class="fw-bold m-0 text-danger">@totalUsed lượt</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Filter Card -->
+<div class="card border-0 rounded-4 shadow-sm mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Tìm theo mã hoặc tên chương trình..." value="@ViewBag.Search" />
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="type" class="form-select">
+                <option value="">-- Tất cả loại giảm --</option>
+                <option value="Percentage" selected="@(ViewBag.Type == "Percentage")">Giảm theo % (Phần trăm)</option>
+                <option value="FixedAmount" selected="@(ViewBag.Type == "FixedAmount")">Giảm tiền mặt (VNĐ)</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-3">
+            <select name="status" class="form-select">
+                <option value="">-- Tất cả trạng thái --</option>
+                <option value="Active" selected="@(ViewBag.Status == "Active")">Đang kích hoạt</option>
+                <option value="Expired" selected="@(ViewBag.Status == "Expired")">Đã hết hạn</option>
+                <option value="Disabled" selected="@(ViewBag.Status == "Disabled")">Đang tạm dừng</option>
+            </select>
+        </div>
+        <div class="col-12 col-md-2">
+            <button type="submit" class="btn btn-dark w-100 rounded-pill"><i class="bi bi-filter me-1"></i> Lọc dữ liệu</button>
+        </div>
+    </form>
+</div>
+
+<!-- Coupons Table -->
+<div class="card border-0 rounded-4 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Mã Voucher</th>
+                        <th>Tên Chương Trình</th>
+                        <th>Loại Giảm</th>
+                        <th>Mức Giảm</th>
+                        <th>Điều Kiện Đơn</th>
+                        <th>Lượt Dùng</th>
+                        <th>Hạn Dùng</th>
+                        <th>Trạng Thái</th>
+                        <th class="text-end pe-3">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            bool isExpired = item.ExpiryDate.HasValue && item.ExpiryDate.Value < DateTime.Now;
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="d-flex flex-column gap-1">
+                                        <span class="badge bg-warning-subtle text-warning-emphasis font-monospace px-3 py-2 fs-6 rounded-3 border border-warning">
+                                            @item.Code
+                                        </span>
+                                        @if (item.IsFlashHunt)
+                                        {
+                                            <span class="badge bg-danger text-white border border-danger-subtle small fw-bold" style="font-size: 0.68rem;">
+                                                <i class="bi bi-lightning-charge-fill me-1"></i>Săn Giờ Vàng
+                                            </span>
+                                        }
+                                        @if (item.IsForYou)
+                                        {
+                                            <span class="badge bg-warning text-dark border border-warning-subtle small fw-bold" style="font-size: 0.68rem;">
+                                                <i class="bi bi-gift-fill me-1"></i>Dành Cho Bạn
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.Title</div>
+                                    <span class="small text-muted text-truncate d-inline-block" style="max-width: 250px;">@(item.Description ?? "Không có mô tả")</span>
+                                </td>
+                                <td>
+                                    @if (item.DiscountType == WebsiteBabyShop.Models.DiscountType.Percentage)
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                                            <i class="bi bi-percent me-1"></i>Theo %
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                            <i class="bi bi-cash me-1"></i>Tiền mặt
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.DiscountType == WebsiteBabyShop.Models.DiscountType.Percentage)
+                                    {
+                                        <div class="fw-bold text-danger">@item.DiscountValue.ToString("0")%</div>
+                                        @if (item.MaxDiscountAmount.HasValue && item.MaxDiscountAmount.Value > 0)
+                                        {
+                                            <div class="small text-muted">Tối đa: @item.MaxDiscountAmount.Value.ToString("N0") đ</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="fw-bold text-danger">@item.DiscountValue.ToString("N0") đ</div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        Đơn từ: <strong class="text-dark">@(item.MinOrderAmount > 0 ? item.MinOrderAmount.ToString("N0") + " đ" : "0 đ (Mọi đơn)")</strong>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="fw-bold small">@item.UsedCount / @(item.UsageLimit?.ToString() ?? "∞")</span>
+                                    </div>
+                                    @if (item.UsageLimit.HasValue && item.UsageLimit.Value > 0)
+                                    {
+                                        int pct = Math.Min(100, (int)Math.Round((double)item.UsedCount / item.UsageLimit.Value * 100));
+                                        <div class="progress mt-1" style="height: 5px; width: 80px;">
+                                            <div class="progress-bar bg-primary" role="progressbar" style="width: @pct%"></div>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="small">
+                                        @if (item.IsFlashHunt)
+                                        {
+                                            <div class="text-primary fw-bold mb-1" style="font-size: 0.75rem;">
+                                                <i class="bi bi-alarm me-1"></i>Mở: @item.StartDate.ToString("HH:mm dd/MM")
+                                            </div>
+                                        }
+                                        @if (item.ExpiryDate.HasValue)
+                                        {
+                                            <span class="@(isExpired ? "text-danger fw-bold" : "text-dark")">
+                                                Hạn: @item.ExpiryDate.Value.ToString("dd/MM/yyyy")
+                                            </span>
+                                            @if (isExpired)
+                                            {
+                                                <span class="badge bg-danger ms-1">Hết hạn</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary-subtle text-secondary">Vô thời hạn</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <form asp-action="ToggleStatus" asp-route-id="@item.Id" method="post" class="d-inline">
+                                        @if (item.IsActive && !isExpired)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1" title="Bấm để tạm dừng">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Đang bật
+                                            </button>
+                                        }
+                                        else if (!item.IsActive)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" title="Bấm để kích hoạt">
+                                                <i class="bi bi-pause-circle me-1"></i>Tạm dừng
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger rounded-pill px-3 py-1">Hết hạn</span>
+                                        }
+                                    </form>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-circle" title="Chỉnh sửa voucher">
+                                            <i class="bi bi-pencil-square"></i>
+                                        </a>
+                                        <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa voucher @item.Code?');" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa voucher">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-ticket-perforated fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Chưa có voucher nào phù hợp với bộ lọc tìm kiếm.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_AdminPagination" />
+    </div>
+</div>

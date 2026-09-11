@@ -1,0 +1,388 @@
+﻿@{
+    ViewData["Title"] = "Trung Tâm Live Chat CSKH";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid py-2">
+    <div class="card shadow-sm border-0" style="border-radius: 16px; overflow: hidden; height: calc(100vh - 120px);">
+        <div class="row g-0 h-100">
+            <!-- Cột Trái: Danh sách Khách Hàng đang chat -->
+            <div class="col-md-4 col-lg-3 border-end d-flex flex-column h-100 bg-white">
+                <div class="p-3 border-bottom bg-light">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-chat-quote-fill text-primary me-1" style="color: var(--baby-primary, #C57B57) !important;"></i> Hộp Thư Tư Vấn
+                        </h6>
+                        <span class="badge bg-danger rounded-pill" id="totalUnreadBadge" style="display: none;">0 tin mới</span>
+                    </div>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="searchCustomerInput" class="form-control border-start-0" placeholder="Tìm tên hoặc số điện thoại..." onkeyup="filterConversations()">
+                    </div>
+                </div>
+
+                <!-- Danh sách hội thoại cuộn dọc -->
+                <div class="flex-grow-1 overflow-auto" id="conversationListContainer" style="max-height: calc(100% - 80px);">
+                    <div class="text-center py-5 text-muted" id="loadingConversations">
+                        <div class="spinner-border spinner-border-sm text-primary mb-2" role="status"></div>
+                        <div>Đang tải danh sách hội thoại...</div>
+                    </div>
+                    <div id="conversationsList"></div>
+                </div>
+            </div>
+
+            <!-- Cột Phải: Khung Chat Chi Tiết -->
+            <div class="col-md-8 col-lg-9 d-flex flex-column h-100 bg-light">
+                <!-- Khi chưa chọn cuộc hội thoại nào -->
+                <div id="noConversationSelected" class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-5">
+                    <div class="rounded-circle bg-white shadow-sm p-4 mb-3" style="width: 90px; height: 90px; display:flex; align-items:center; justify-content:center;">
+                        <i class="bi bi-chat-dots-fill text-muted" style="font-size: 2.5rem; color: #C57B57 !important;"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Chưa chọn cuộc trò chuyện</h5>
+                    <p class="text-muted small" style="max-width: 360px;">Vui lòng nhấp vào một khách hàng ở danh sách bên trái để xem tin nhắn và gửi phản hồi tư vấn trực tiếp.</p>
+                </div>
+
+                <!-- Khi đã chọn cuộc hội thoại -->
+                <div id="activeConversationArea" class="d-flex flex-column h-100" style="display: none !important;">
+                    <!-- Header của hội thoại đang chọn -->
+                    <div class="p-3 bg-white border-bottom d-flex justify-content-between align-items-center shadow-xs">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center" 
+                                 id="activeCustomerAvatar" 
+                                 style="width: 44px; height: 44px; background: #C57B57; font-size: 1.1rem;">
+                                K
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark" id="activeCustomerName">Khách Hàng</h6>
+                                <div class="d-flex align-items-center gap-2 small text-muted">
+                                    <span id="activeCustomerPhone"><i class="bi bi-telephone me-1"></i>Chưa có SĐT</span>
+                                    <span>•</span>
+                                    <span class="text-success"><i class="bi bi-circle-fill me-1" style="font-size: 8px;"></i>Đang kết nối</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-secondary btn-sm rounded-pill" onclick="refreshCurrentMessages()" title="Làm mới tin nhắn">
+                                <i class="bi bi-arrow-clockwise"></i> Làm mới
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Vùng hiển thị tin nhắn -->
+                    <div class="flex-grow-1 p-3 overflow-auto" id="messagesContainer" style="background: #F8F9FA;">
+                        <div id="messagesList" class="d-flex flex-column gap-3"></div>
+                    </div>
+
+                    <!-- Mẫu câu trả lời nhanh (Canned Replies) -->
+                    <div class="px-3 pt-2 bg-white border-top">
+                        <div class="d-flex gap-2 overflow-auto pb-1" style="white-space: nowrap;">
+                            <span class="badge bg-light text-secondary border rounded-pill py-2 px-3 canned-chip" style="cursor: pointer;" onclick="insertCannedReply('Dạ em chào mẹ ạ! Em là Thu Hà - chuyên viên tư vấn của BabyShop 🌸. Em có thể hỗ trợ gì cho mẹ ạ?')">
+                                💬 Chào đón
+                            </span>
+                            <span class="badge bg-light text-secondary border rounded-pill py-2 px-3 canned-chip" style="cursor: pointer;" onclick="insertCannedReply('Mẹ cho em xin cân nặng và chiều cao của bé để em tư vấn size chuẩn đẹp nhất nhé!')">
+                                📏 Hỏi size/cân nặng
+                            </span>
+                            <span class="badge bg-light text-secondary border rounded-pill py-2 px-3 canned-chip" style="cursor: pointer;" onclick="insertCannedReply('Dạ BabyShop MIỄN PHÍ GIAO HÀNG toàn quốc cho đơn từ 300K và hỗ trợ ĐỔI SIZE TẬN NHÀ trong 7 ngày mẹ nhé!')">
+                                📦 Freeship & Đổi size
+                            </span>
+                            <span class="badge bg-light text-secondary border rounded-pill py-2 px-3 canned-chip" style="cursor: pointer;" onclick="insertCannedReply('Mẹ cho em xin Số Điện Thoại để em gọi điện tư vấn trực tiếp và gửi ảnh thật cho mẹ nhé!')">
+                                📞 Xin số điện thoại
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Thanh nhập tin nhắn và nút gửi -->
+                    <div class="p-3 bg-white">
+                        <form id="adminReplyForm" onsubmit="handleSendReply(event)" class="d-flex gap-2">
+                            <input type="hidden" id="currentConversationId" value="" />
+                            <div class="input-group">
+                                <textarea id="replyMessageInput" 
+                                          class="form-control" 
+                                          rows="1" 
+                                          placeholder="Nhập nội dung phản hồi cho khách (Enter để gửi, Shift+Enter để xuống dòng)..." 
+                                          style="border-radius: 20px 0 0 20px; resize: none; padding: 10px 16px;" 
+                                          onkeydown="handleTextareaKeydown(event)" required></textarea>
+                                <button type="submit" class="btn text-white px-4" id="btnSendReply" style="background: #C57B57; border-radius: 0 20px 20px 0;">
+                                    <i class="bi bi-send-fill me-1"></i> Gửi
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .conversation-item {
+        padding: 12px 16px;
+        border-bottom: 1px solid #f1f5f9;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .conversation-item:hover {
+        background: #f8fafc;
+    }
+    .conversation-item.active {
+        background: #f1f5f9;
+        border-left: 4px solid #C57B57;
+    }
+    .canned-chip:hover {
+        background: #e2e8f0 !important;
+        color: #1e293b !important;
+    }
+    .chat-bubble-customer {
+        background: #ffffff;
+        color: #1e293b;
+        border-radius: 16px 16px 16px 4px;
+        padding: 10px 16px;
+        max-width: 70%;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+        border: 1px solid #e2e8f0;
+    }
+    .chat-bubble-staff {
+        background: #C57B57;
+        color: #ffffff;
+        border-radius: 16px 16px 4px 16px;
+        padding: 10px 16px;
+        max-width: 70%;
+        box-shadow: 0 2px 8px rgba(197, 123, 87, 0.25);
+    }
+</style>
+
+@section Scripts {
+<script>
+    let activeConversationId = null;
+    let conversationsData = [];
+    let pollTimer = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        loadConversations();
+        // Polling danh sách hội thoại mỗi 3 giây
+        pollTimer = setInterval(loadConversations, 3000);
+    });
+
+    async function loadConversations() {
+        try {
+            const resp = await fetch('/Admin/Chat/GetConversations');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            conversationsData = data;
+            renderConversationsList(data);
+
+            // Cập nhật số lượng chưa đọc tổng cộng
+            const unreadTotal = data.filter(c => c.hasUnreadAdmin).length;
+            const badge = document.getElementById('totalUnreadBadge');
+            if (badge) {
+                if (unreadTotal > 0) {
+                    badge.innerText = unreadTotal + ' tin mới';
+                    badge.style.display = 'inline-block';
+                } else {
+                    badge.style.display = 'none';
+                }
+            }
+
+            // Nếu đang mở 1 cuộc trò chuyện, tự động tải tin nhắn mới
+            if (activeConversationId) {
+                loadMessages(activeConversationId, false);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải danh sách chat:", e);
+        }
+    }
+
+    function renderConversationsList(list) {
+        const loading = document.getElementById('loadingConversations');
+        if (loading) loading.style.display = 'none';
+
+        const container = document.getElementById('conversationsList');
+        if (!container) return;
+
+        if (!list || list.length === 0) {
+            container.innerHTML = '<div class="p-4 text-center text-muted small">Chưa có khách hàng nào gửi tin nhắn tư vấn.</div>';
+            return;
+        }
+
+        let html = '';
+        list.forEach(c => {
+            const isActive = c.id === activeConversationId ? 'active' : '';
+            const unreadBadge = c.hasUnreadAdmin ? `<span class="badge bg-danger rounded-pill">${c.unreadCount > 0 ? c.unreadCount : 'Mới'}</span>` : '';
+            const firstLetter = (c.customerName || 'K').charAt(0).toUpperCase();
+
+            html += `
+                <div class="conversation-item ${isActive}" onclick="selectConversation(${c.id})">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle text-white fw-bold d-flex align-items-center justify-content-center flex-shrink-0" 
+                             style="width: 40px; height: 40px; background: ${c.hasUnreadAdmin ? '#dc2626' : '#64748b'}; font-size: 0.95rem;">
+                            ${firstLetter}
+                        </div>
+                        <div class="flex-grow-1 overflow-hidden">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <span class="fw-bold text-dark text-truncate" style="font-size: 0.9rem;">${escapeHtml(c.customerName)}</span>
+                                <span class="text-muted" style="font-size: 0.72rem;">${c.lastMessageAt}</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="text-muted text-truncate small" style="max-width: 170px;">
+                                    ${escapeHtml(c.lastMessage || 'Bắt đầu cuộc trò chuyện...')}
+                                </span>
+                                ${unreadBadge}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    }
+
+    async function selectConversation(id) {
+        activeConversationId = id;
+        document.getElementById('currentConversationId').value = id;
+
+        // Cập nhật UI item active
+        document.querySelectorAll('.conversation-item').forEach(el => el.classList.remove('active'));
+        event?.currentTarget?.classList.add('active');
+
+        // Ẩn bảng trống, hiện khung chat
+        document.getElementById('noConversationSelected').style.setProperty('display', 'none', 'important');
+        document.getElementById('activeConversationArea').style.setProperty('display', 'flex', 'important');
+
+        // Lấy thông tin cuộc trò chuyện
+        const conv = conversationsData.find(c => c.id === id);
+        if (conv) {
+            document.getElementById('activeCustomerName').innerText = conv.customerName;
+            document.getElementById('activeCustomerAvatar').innerText = (conv.customerName || 'K').charAt(0).toUpperCase();
+            document.getElementById('activeCustomerPhone').innerHTML = conv.customerPhone ? `<i class="bi bi-telephone me-1"></i>${conv.customerPhone}` : '<i class="bi bi-telephone me-1"></i>Chưa có SĐT';
+        }
+
+        await loadMessages(id, true);
+    }
+
+    async function loadMessages(id, shouldScroll) {
+        try {
+            const resp = await fetch(`/Admin/Chat/GetMessages?id=${id}`);
+            if (!resp.ok) return;
+            const data = await resp.json();
+
+            if (data.success && data.messages) {
+                renderMessages(data.messages, shouldScroll);
+            }
+        } catch (e) {
+            console.error("Lỗi khi tải tin nhắn:", e);
+        }
+    }
+
+    function renderMessages(messages, shouldScroll) {
+        const container = document.getElementById('messagesList');
+        if (!container) return;
+
+        if (messages.length === 0) {
+            container.innerHTML = '<div class="text-center text-muted py-4 small">Chưa có tin nhắn nào trong cuộc trò chuyện này.</div>';
+            return;
+        }
+
+        let html = '';
+        messages.forEach(m => {
+            const isStaff = m.sender === 'Staff';
+            if (isStaff) {
+                html += `
+                    <div class="d-flex flex-column align-items-end">
+                        <span class="text-muted small mb-1" style="font-size: 0.72rem;">${escapeHtml(m.senderName)} • ${m.time}</span>
+                        <div class="chat-bubble-staff">
+                            ${escapeHtml(m.message).replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="d-flex flex-column align-items-start">
+                        <span class="text-muted small mb-1" style="font-size: 0.72rem;">${escapeHtml(m.senderName)} • ${m.time}</span>
+                        <div class="chat-bubble-customer">
+                            ${escapeHtml(m.message).replace(/\n/g, '<br>')}
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        container.innerHTML = html;
+
+        if (shouldScroll) {
+            const scrollContainer = document.getElementById('messagesContainer');
+            if (scrollContainer) {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            }
+        }
+    }
+
+    async function handleSendReply(e) {
+        e.preventDefault();
+        const convId = parseInt(document.getElementById('currentConversationId').value);
+        const input = document.getElementById('replyMessageInput');
+        const msg = input.value.trim();
+        if (!msg || !convId) return;
+
+        const btn = document.getElementById('btnSendReply');
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch('/Admin/Chat/SendReply', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ conversationId: convId, message: msg })
+            });
+
+            const result = await resp.json();
+            if (result.success) {
+                input.value = '';
+                await loadMessages(convId, true);
+                loadConversations();
+            } else {
+                alert(result.message || 'Lỗi khi gửi tin nhắn');
+            }
+        } catch (e) {
+            alert('Không thể kết nối đến máy chủ.');
+        } finally {
+            btn.disabled = false;
+            input.focus();
+        }
+    }
+
+    function handleTextareaKeydown(e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            document.getElementById('adminReplyForm').requestSubmit();
+        }
+    }
+
+    function insertCannedReply(text) {
+        const input = document.getElementById('replyMessageInput');
+        input.value = text;
+        input.focus();
+    }
+
+    function refreshCurrentMessages() {
+        if (activeConversationId) {
+            loadMessages(activeConversationId, true);
+        }
+    }
+
+    function filterConversations() {
+        const q = document.getElementById('searchCustomerInput').value.toLowerCase();
+        const filtered = conversationsData.filter(c => 
+            (c.customerName && c.customerName.toLowerCase().includes(q)) || 
+            (c.customerPhone && c.customerPhone.includes(q))
+        );
+        renderConversationsList(filtered);
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+</script>
+}

@@ -1,0 +1,69 @@
+﻿@model WebsiteBabyShop.Models.Product
+
+<div class="baby-product-card">
+    <!-- Badges on image -->
+    @if (Model.IsFlashSaleActive)
+    {
+        <span class="baby-card-badge bg-danger text-white" style="background: linear-gradient(135deg, #ff416c, #ff4b2b) !important;">🔥 -@Model.DiscountPercentage%</span>
+    }
+    else if (Model.DiscountPercentage > 0)
+    {
+        <span class="baby-card-badge baby-badge-discount">-@Model.DiscountPercentage%</span>
+    }
+    @if (Model.IsNewArrival)
+    {
+        <span class="baby-card-badge baby-badge-new">Mới</span>
+    }
+    @if (Model.IsAddonDeal)
+    {
+        <span class="badge bg-warning text-dark position-absolute bottom-0 start-0 m-2 rounded-pill px-2 py-1 small shadow-sm" style="z-index: 2; font-size: 0.7rem;">
+            <i class="bi bi-gift-fill me-1"></i>Deal Mua Kèm
+        </span>
+    }
+
+    <!-- Wishlist Floating Button -->
+    <button type="button" class="baby-wishlist-btn" onclick="toggleWishlist(@Model.Id, event)" data-product-id="@Model.Id" title="Thêm vào yêu thích">
+        <i class="bi bi-heart"></i>
+    </button>
+
+    <!-- 3:4 Portrait Thumbnail -->
+    <a asp-controller="Product" asp-action="Details" asp-route-id="@Model.Id" class="baby-thumb-container">
+        <img src="@(string.IsNullOrEmpty(Model.MainImageUrl) ? "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=600&q=80" : Model.MainImageUrl)" 
+             alt="@Model.Name" loading="lazy" />
+    </a>
+
+    <!-- Card Content -->
+    <div class="baby-card-body">
+        <div class="baby-card-meta">
+            <span class="baby-card-cat">@(Model.Category?.Name ?? "Bộ Sưu Tập")</span>
+            <span class="baby-card-gender">
+                @(Model.Gender == "Bé gái" ? "Bé gái" : Model.Gender == "Bé trai" ? "Bé trai" : Model.Gender == "Sơ sinh" ? "Sơ sinh" : "Unisex")
+            </span>
+        </div>
+
+        <h4 class="baby-card-title">
+            <a asp-controller="Product" asp-action="Details" asp-route-id="@Model.Id" title="@Model.Name">@Model.Name</a>
+        </h4>
+
+        <!-- Rating Stars on Card -->
+        <div class="d-flex align-items-center gap-1 mb-2">
+            <span class="text-warning small"><i class="bi bi-star-fill"></i></span>
+            <span class="fw-bold small text-dark" style="font-size: 0.78rem;">@Model.AverageRating.ToString("0.0")</span>
+            <span class="text-muted small" style="font-size: 0.75rem;">(@Model.ReviewCount)</span>
+        </div>
+
+        <!-- Price -->
+        <div class="baby-card-price-row">
+            <span class="baby-current-price">@Model.CurrentPrice.ToString("N0") đ</span>
+            @if (Model.DiscountPrice.HasValue && Model.DiscountPrice < Model.Price)
+            {
+                <span class="baby-old-price">@Model.Price.ToString("N0") đ</span>
+            }
+        </div>
+
+        <!-- Action Button -->
+        <a asp-controller="Product" asp-action="Details" asp-route-id="@Model.Id" class="baby-btn-card-action">
+            <i class="bi bi-bag-plus"></i> Chọn Size & Mua
+        </a>
+    </div>
+</div>

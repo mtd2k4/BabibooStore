@@ -1,0 +1,1538 @@
+﻿@model WebsiteBabyShop.Models.Product
+@{
+    ViewData["Title"] = Model.Name + " - BabyShop";
+    var relatedProducts = ViewBag.RelatedProducts as List<WebsiteBabyShop.Models.Product> ?? new List<WebsiteBabyShop.Models.Product>();
+    var defaultVariant = Model.Variants.FirstOrDefault();
+    var availableSizes = Model.Variants.Where(v => !string.IsNullOrEmpty(v.Size)).Select(v => v.Size).Distinct().ToList();
+    var distinctColors = Model.Variants
+        .Where(v => !string.IsNullOrEmpty(v.Color))
+        .GroupBy(v => v.Color)
+        .Select(g => new {
+            Color = g.Key!,
+            ColorHex = g.FirstOrDefault(v => !string.IsNullOrEmpty(v.ColorHex))?.ColorHex ?? "#E2E8F0",
+            ImageUrl = g.FirstOrDefault(v => !string.IsNullOrEmpty(v.ImageUrl))?.ImageUrl ?? Model.MainImageUrl,
+            VariantId = g.First().Id
+        })
+        .ToList();
+}
+
+<div class="container py-3 py-md-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Product" asp-action="Index">Thời Trang Trẻ Em</a></li>
+            @if (Model.Category != null)
+            {
+                <li class="breadcrumb-item"><a asp-controller="Product" asp-action="Index" asp-route-category="@Model.Category.Slug">@Model.Category.Name</a></li>
+            }
+            <li class="breadcrumb-item active text-truncate" style="max-width: 250px;" aria-current="page">@Model.Name</li>
+        </ol>
+    </nav>
+
+    <!-- Main Product Card -->
+    <div class="bg-white p-4 p-lg-5 rounded-4 shadow-sm border mb-5">
+        <div class="row g-4 g-lg-5">
+            <!-- Left: Gallery -->
+            <div class="col-12 col-md-6">
+                <div class="rounded-4 overflow-hidden shadow-sm border mb-3 text-center position-relative" style="background-color: #FAF8F5; aspect-ratio: 3/4;">
+                    @if (Model.DiscountPercentage > 0)
+                    {
+                        <span class="baby-card-badge baby-badge-discount" style="top: 15px; left: 15px; font-size: 0.82rem; padding: 4px 10px;">-@Model.DiscountPercentage%</span>
+                    }
+                    @if (Model.IsNewArrival)
+                    {
+                        <span class="baby-card-badge baby-badge-new" style="top: 15px; right: 15px; font-size: 0.8rem; padding: 4px 10px;">Mới</span>
+                    }
+                    <img id="mainProductImg" src="@(string.IsNullOrEmpty(Model.MainImageUrl) ? "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=800&q=80" : Model.MainImageUrl)" 
+                         alt="@Model.Name" class="w-100 h-100 object-fit-cover" />
+                </div>
+
+                <!-- Thumbs -->
+                <div class="d-flex gap-2 overflow-auto py-2">
+                    <div class="border rounded-3 p-1 cursor-pointer" style="width: 75px; height: 75px; cursor: pointer;" onclick="changeMainImage('@Model.MainImageUrl')">
+                        <img src="@Model.MainImageUrl" class="w-100 h-100 object-fit-cover rounded-2" alt="Thumb" />
+                    </div>
+                    @foreach (var img in Model.Images)
+                    {
+                        <div class="border rounded-3 p-1 cursor-pointer" style="width: 75px; height: 75px; cursor: pointer;" onclick="changeMainImage('@img.ImageUrl')">
+                            <img src="@img.ImageUrl" class="w-100 h-100 object-fit-cover rounded-2" alt="Thumb" />
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Right: Info & Purchase Form -->
+            <div class="col-12 col-md-6">
+                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                    <span class="badge bg-light text-muted border px-3 py-2 rounded-pill">Mã: @(Model.Sku ?? "BS-" + Model.Id)</span>
+                    <span class="badge bg-light text-primary border px-3 py-2 rounded-pill">
+                        @(Model.Gender == "Bé gái" ? "👗 Bé Gái" : Model.Gender == "Bé trai" ? "👕 Bé Trai" : Model.Gender == "Sơ sinh" ? "👶 Sơ Sinh" : "✨ Unisex")
+                    </span>
+                    @if (!string.IsNullOrEmpty(Model.AgeRange))
+                    {
+                        <span class="badge bg-light text-success border px-3 py-2 rounded-pill">Độ tuổi: @Model.AgeRange</span>
+                    }
+                </div>
+                <h1 class="h2 fw-bold text-dark mb-2">@Model.Name</h1>
+
+                <!-- Rating Star Line -->
+                <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+                    <div class="d-inline-flex align-items-center gap-1 px-2 py-1 rounded-pill" style="background-color: #FFF9E6; border: 1px solid #FFE082;">
+                        <span class="text-warning fw-bold small"><i class="bi bi-star-fill"></i> @Model.AverageRating.ToString("0.0")</span>
+                        <span class="text-muted small">/ 5.0</span>
+                    </div>
+                    <span class="text-muted small">•</span>
+                    <a href="#reviews-tab" onclick="openReviewsTab(); return false;" class="small text-muted text-decoration-none">
+                        <i class="bi bi-chat-heart text-danger me-1"></i><strong>@Model.ReviewCount</strong> đánh giá từ phụ huynh
+                    </a>
+                    <span class="text-muted small">•</span>
+                    <span class="small text-success"><i class="bi bi-patch-check-fill me-1"></i>100% Vải Organic an toàn da bé</span>
+                </div>
+
+                <!-- Price Area / Flash Sale Banner -->
+                @if (Model.IsFlashSaleActive)
+                {
+                    <div class="rounded-4 mb-4 overflow-hidden shadow-sm" style="background: linear-gradient(135deg, #ff416c, #ff4b2b); color: white;">
+                        <div class="p-3 d-flex justify-content-between align-items-center flex-wrap gap-2 border-bottom border-white border-opacity-25">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="badge bg-warning text-dark fw-bold px-2 py-1 fs-6">
+                                    <i class="bi bi-lightning-charge-fill text-danger"></i> FLASH SALE
+                                </span>
+                                <span class="fw-bold small text-uppercase tracking-wider">Đang Cháy Hàng 🔥</span>
+                            </div>
+                            <div class="d-flex align-items-center gap-2 small">
+                                <i class="bi bi-clock-history"></i> Kết thúc sau:
+                                <span id="detailFlashSaleTimer" class="badge bg-dark text-warning font-monospace px-2 py-1 fs-6">--:--:--</span>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-white text-dark">
+                            <div class="d-flex align-items-baseline gap-3 mb-2">
+                                <span class="display-6 fw-bold text-danger">@Model.CurrentPrice.ToString("N0") đ</span>
+                                <span class="text-decoration-line-through text-muted fs-5">@Model.Price.ToString("N0") đ</span>
+                                <span class="badge bg-danger text-white rounded-pill px-2 py-1 small">-@Model.DiscountPercentage% GIẢM</span>
+                            </div>
+                            @if (Model.FlashSaleQuantity > 0)
+                            {
+                                int sold = Model.FlashSaleSold;
+                                int totalQty = Model.FlashSaleQuantity;
+                                int pct = Math.Min(100, (int)Math.Round((double)sold / totalQty * 100));
+                                <div class="mt-2">
+                                    <div class="d-flex justify-content-between align-items-center small mb-1">
+                                        <span class="text-muted small">Đã bán <strong>@sold/@totalQty</strong> suất</span>
+                                        <span class="text-danger fw-bold small">@(pct >= 80 ? "Sắp hết hàng!" : "Số lượng có hạn")</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px; border-radius: 4px; background: #fee2e2;">
+                                        <div class="progress-bar bg-danger progress-bar-striped progress-bar-animated" role="progressbar" style="width: @pct%;"></div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 rounded-4 mb-4" style="background-color: var(--baby-primary-light); border: 1px solid var(--baby-border);">
+                        <div class="d-flex align-items-baseline gap-3">
+                            <span class="display-6 fw-bold" style="color: var(--baby-dark);">@Model.CurrentPrice.ToString("N0") đ</span>
+                            @if (Model.DiscountPrice.HasValue && Model.DiscountPrice < Model.Price)
+                            {
+                                <span class="text-decoration-line-through text-muted fs-5">@Model.Price.ToString("N0") đ</span>
+                                <span class="badge bg-white text-muted border rounded-pill px-2 py-1 small">-@Model.DiscountPercentage% TIẾT KIỆM</span>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- Short Description -->
+                @if (!string.IsNullOrEmpty(Model.ShortDescription))
+                {
+                    <p class="text-muted mb-4">@Model.ShortDescription</p>
+                }
+
+                <!-- Add to Cart Form -->
+                <form asp-controller="Cart" asp-action="AddToCart" method="post" id="addToCartForm">
+                    <input type="hidden" name="productId" value="@Model.Id" />
+                    <input type="hidden" name="variantId" id="selectedVariantId" value="@(defaultVariant?.Id)" />
+                    <input type="hidden" name="size" id="selectedSize" value="@(defaultVariant?.Size ?? "")" />
+                    <input type="hidden" name="color" id="selectedColor" value="@(defaultVariant?.Color ?? (distinctColors.FirstOrDefault()?.Color ?? ""))" />
+
+                    <!-- Size Selection -->
+                    @if (availableSizes.Any())
+                    {
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                <label class="fw-bold small text-uppercase">1. Kích Cỡ: <span id="sizeLabel" class="text-primary fw-bold">@(defaultVariant?.Size)</span></label>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 py-1 shadow-sm fw-semibold" data-bs-toggle="modal" data-bs-target="#sizeGuideModal">
+                                    <i class="bi bi-magic text-warning me-1"></i> 📏 Gợi ý chọn size cho bé
+                                </button>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                @for (int i = 0; i < availableSizes.Count; i++)
+                                {
+                                    var sz = availableSizes[i];
+                                    <button type="button" class="variant-btn-pill @(i == 0 ? "active" : "")" 
+                                            onclick="selectSize('@sz', this)">
+                                        @sz
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Color Selection -->
+                    @if (distinctColors.Any())
+                    {
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <label class="fw-bold small text-uppercase">
+                                    2. Màu Sắc: <span id="colorLabel" class="text-primary fw-bold">@(defaultVariant?.Color ?? distinctColors.First().Color)</span>
+                                </label>
+                                <span class="badge bg-light text-muted border rounded-pill small px-2 py-1">
+                                    <i class="bi bi-palette2 me-1"></i>@(distinctColors.Count) màu
+                                </span>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2" id="colorSwatchesContainer">
+                                @for (int i = 0; i < distinctColors.Count; i++)
+                                {
+                                    var clr = distinctColors[i];
+                                    var isFirst = (defaultVariant != null && defaultVariant.Color == clr.Color) || (defaultVariant == null && i == 0);
+                                    <button type="button" 
+                                            class="variant-color-swatch @(isFirst ? "active" : "")" 
+                                            data-color="@clr.Color"
+                                            data-hex="@clr.ColorHex"
+                                            data-image="@(clr.ImageUrl ?? Model.MainImageUrl)"
+                                            data-variant-id="@clr.VariantId"
+                                            onclick="selectColor('@clr.Color', '@clr.ColorHex', '@(clr.ImageUrl ?? Model.MainImageUrl)', @clr.VariantId, this)"
+                                            title="Xem biến thể màu @clr.Color">
+                                        <span class="swatch-color-circle" style="background-color: @clr.ColorHex;"></span>
+                                        <span class="swatch-color-name">@clr.Color</span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Quantity -->
+                    <div class="mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <label class="fw-bold small text-uppercase m-0">3. Số Lượng:</label>
+                            <div id="stockBadgeContainer">
+                                @if (defaultVariant != null && defaultVariant.StockQuantity > 0)
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small" id="stockBadge">
+                                        <i class="bi bi-box-seam me-1"></i>Còn <strong id="stockNumDisplay">@defaultVariant.StockQuantity</strong> sản phẩm trong kho
+                                    </span>
+                                }
+                                else if (defaultVariant != null && defaultVariant.StockQuantity <= 0)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 small" id="stockBadge">
+                                        <i class="bi bi-x-circle me-1"></i>Tạm hết hàng
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small" id="stockBadge">
+                                        <i class="bi bi-box-seam me-1"></i>Còn <strong id="stockNumDisplay">@Model.TotalStock</strong> sản phẩm trong kho
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="qty-wrapper">
+                                <button type="button" class="qty-btn" onclick="adjustQty(-1)"><i class="bi bi-dash"></i></button>
+                                <input type="number" name="quantity" id="productQty" class="qty-input" value="@(defaultVariant != null && defaultVariant.StockQuantity <= 0 ? "0" : "1")" min="@(defaultVariant != null && defaultVariant.StockQuantity <= 0 ? "0" : "1")" max="@(defaultVariant?.StockQuantity ?? Model.TotalStock)" />
+                                <button type="button" class="qty-btn" onclick="adjustQty(1)"><i class="bi bi-plus"></i></button>
+                            </div>
+                            <span class="text-success small fw-bold" id="shippingReadyNotice"><i class="bi bi-check2-circle"></i> Sẵn sàng đóng gói giao ngay</span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap gap-3 mb-4">
+                        <button type="submit" id="btnAddToCart" class="btn btn-baby-primary flex-grow-1 justify-content-center py-3 fs-6" @(defaultVariant != null && defaultVariant.StockQuantity <= 0 ? "disabled" : "")>
+                            <i class="bi bi-bag-plus fs-5 me-1"></i> <span id="btnAddToCartText">@(defaultVariant != null && defaultVariant.StockQuantity <= 0 ? "TẠM HẾT HÀNG" : "THÊM VÀO GIỎ HÀNG")</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-danger px-4 py-3 rounded-pill d-flex align-items-center justify-content-center baby-wishlist-detail-btn" 
+                                onclick="toggleWishlist(@Model.Id, event)" data-product-id="@Model.Id" title="Thêm vào yêu thích">
+                            <i class="bi bi-heart fs-5 me-2"></i> <span>Yêu thích</span>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Commitments Checklist -->
+                <div class="p-3 rounded-4 small border mb-4" style="background: var(--baby-bg);">
+                    <div class="row g-2">
+                        <div class="col-6"><i class="bi bi-shield-check text-success me-1"></i> 100% Vải Organic an toàn da bé</div>
+                        <div class="col-6"><i class="bi bi-arrow-clockwise text-primary me-1"></i> Đổi size 7 ngày miễn phí</div>
+                        <div class="col-6"><i class="bi bi-box2-heart text-danger me-1"></i> Kiểm tra hàng trước khi nhận</div>
+                        <div class="col-6"><i class="bi bi-truck text-warning me-1"></i> Freeship đơn từ 300.000đ</div>
+                    </div>
+                </div>
+
+                <!-- Mua Kèm Deal Sốc (Add-on Deals) -->
+                @{
+                    var addonList = ViewBag.AddonProducts as List<WebsiteBabyShop.Models.Product>;
+                }
+                @if (addonList != null && addonList.Any())
+                {
+                    <div class="card border rounded-4 shadow-sm mb-4 overflow-hidden" style="background: #fffdfa; border-color: #fef08a !important;">
+                        <div class="p-3 border-bottom d-flex align-items-center justify-content-between" style="background: #fef9c3;">
+                            <div class="fw-bold text-dark small">
+                                <i class="bi bi-gift-fill text-danger me-1"></i> MUA KÈM DEAL SỐC (Tiết kiệm tới 60%)
+                            </div>
+                            <span class="badge bg-danger text-white rounded-pill small">Combo phụ kiện</span>
+                        </div>
+                        <div class="p-3">
+                            <div class="d-flex flex-column gap-3">
+                                @foreach (var addon in addonList)
+                                {
+                                    <div class="d-flex align-items-center justify-content-between gap-2 p-2 rounded-3 bg-white border">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <img src="@(string.IsNullOrEmpty(addon.MainImageUrl) ? "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=100&q=80" : addon.MainImageUrl)" 
+                                                 alt="@addon.Name" class="rounded-2 flex-shrink-0" style="width: 48px; height: 48px; object-fit: cover;" />
+                                            <div>
+                                                <a asp-controller="Product" asp-action="Details" asp-route-id="@addon.Id" class="fw-semibold text-dark text-decoration-none small d-block text-truncate" style="max-width: 200px;">
+                                                    @addon.Name
+                                                </a>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <span class="fw-bold text-danger small">@addon.AddonPrice?.ToString("N0") đ</span>
+                                                    <span class="text-decoration-line-through text-muted small" style="font-size: 0.75rem;">@addon.Price.ToString("N0") đ</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <form asp-controller="Cart" asp-action="AddToCart" method="post" class="m-0">
+                                            <input type="hidden" name="productId" value="@addon.Id" />
+                                            <input type="hidden" name="isAddon" value="true" />
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3 py-1 small fw-semibold text-nowrap">
+                                                <i class="bi bi-plus-lg me-1"></i> Mua kèm
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Description Tabs -->
+        <div class="mt-5 pt-4 border-top">
+            <ul class="nav nav-pills mb-4" id="prodTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-bold px-4 py-2 me-2 rounded-pill" id="desc-tab" data-bs-toggle="tab" data-bs-target="#desc-tab-pane" type="button" role="tab">
+                        <i class="bi bi-file-text me-1"></i> Chi Tiết Sản Phẩm
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold px-4 py-2 me-2 rounded-pill" id="material-tab" data-bs-toggle="tab" data-bs-target="#material-tab-pane" type="button" role="tab">
+                        <i class="bi bi-heart-pulse me-1"></i> Chất Liệu & An Toàn
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold px-4 py-2 me-2 rounded-pill" id="policy-tab" data-bs-toggle="tab" data-bs-target="#policy-tab-pane" type="button" role="tab">
+                        <i class="bi bi-patch-check me-1"></i> Chính Sách Đổi Trả
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-bold px-4 py-2 rounded-pill position-relative" id="reviews-tab" data-bs-toggle="tab" data-bs-target="#reviews-tab-pane" type="button" role="tab">
+                        <i class="bi bi-star-fill text-warning me-1"></i> Đánh Giá & Nhận Xét 
+                        <span class="badge bg-danger rounded-pill ms-1">@Model.ReviewCount</span>
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content p-3" id="prodTabContent">
+                <div class="tab-pane fade show active" id="desc-tab-pane" role="tabpanel" tabindex="0">
+                    <div class="lead-text lh-lg">
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            @Html.Raw(Model.Description)
+                        }
+                        else
+                        {
+                            <p>Sản phẩm thời trang cao cấp dành cho bé yêu, được sản xuất theo quy trình kiểm duyệt chất lượng nghiêm ngặt. Đường chỉ may êm phẳng, không gây cọ xát ngứa ngáy cho bé khi vận động hoặc ngủ.</p>
+                        }
+                    </div>
+                </div>
+
+                <div class="tab-pane fade" id="material-tab-pane" role="tabpanel" tabindex="0">
+                    <h5 class="fw-bold mb-3">Thông Tin Chất Liệu & Hướng Dẫn Giặt</h5>
+                    <ul class="list-unstyled d-flex flex-column gap-2">
+                        <li><strong>Chất liệu chính:</strong> @(string.IsNullOrEmpty(Model.Material) ? "100% Cotton Organic mềm mại, kháng khuẩn tự nhiên" : Model.Material)</li>
+                        <li><strong>Hướng dẫn bảo quản:</strong> @(string.IsNullOrEmpty(Model.CareInstructions) ? "Nên giặt tay hoặc giặt máy chế độ nhẹ, dùng nước giặt chuyên dụng cho em bé, phơi trong bóng râm" : Model.CareInstructions)</li>
+                        <li><strong>Chứng nhận:</strong> Tiêu chuẩn dệt may quốc tế Oeko-Tex Standard 100 an toàn cho làn da nhạy cảm của trẻ sơ sinh và trẻ nhỏ.</li>
+                    </ul>
+                </div>
+
+                <div class="tab-pane fade" id="policy-tab-pane" role="tabpanel" tabindex="0">
+                    <h5 class="fw-bold mb-3">Chính Sách Đổi Size & Bảo Hành</h5>
+                    <p>BabyShop hiểu rằng việc chọn quần áo cho bé đôi khi mẹ có thể nhầm kích thước hoặc bé phát triển nhanh. Do đó, BabyShop cam kết:</p>
+                    <ul>
+                        <li>Hỗ trợ <strong>đổi size trong vòng 7 ngày</strong> kể từ khi nhận hàng.</li>
+                        <li>Sản phẩm đổi còn nguyên tem mác, chưa qua giặt ủi và không bị dơ bẩn.</li>
+                        <li>Shipper sẽ đến tận nhà thu hàng đổi và giao size mới cho mẹ (rất tiện lợi cho các mẹ bận chăm bé).</li>
+                    </ul>
+                    <div class="mt-3 pt-2 border-top">
+                        <a asp-controller="Policy" asp-action="Return" class="btn btn-sm btn-outline-secondary rounded-pill me-2 mb-1">
+                            <i class="bi bi-arrow-repeat me-1"></i> Chi tiết chính sách đổi trả
+                        </a>
+                        <a asp-controller="Policy" asp-action="Care" class="btn btn-sm btn-outline-secondary rounded-pill mb-1">
+                            <i class="bi bi-flower1 me-1"></i> Hướng dẫn bảo quản đồ cho bé
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 4. REVIEWS & RATINGS TAB -->
+                @{
+                    var approvedReviews = Model.Reviews.Where(r => r.IsApproved).OrderByDescending(r => r.CreatedAt).ToList();
+                    var totalRev = approvedReviews.Count;
+                    var count5 = approvedReviews.Count(r => r.Rating == 5);
+                    var count4 = approvedReviews.Count(r => r.Rating == 4);
+                    var count3 = approvedReviews.Count(r => r.Rating == 3);
+                    var count2 = approvedReviews.Count(r => r.Rating == 2);
+                    var count1 = approvedReviews.Count(r => r.Rating == 1);
+
+                    var pct5 = totalRev > 0 ? (int)Math.Round((double)count5 / totalRev * 100) : 100;
+                    var pct4 = totalRev > 0 ? (int)Math.Round((double)count4 / totalRev * 100) : 0;
+                    var pct3 = totalRev > 0 ? (int)Math.Round((double)count3 / totalRev * 100) : 0;
+                    var pct2 = totalRev > 0 ? (int)Math.Round((double)count2 / totalRev * 100) : 0;
+                    var pct1 = totalRev > 0 ? (int)Math.Round((double)count1 / totalRev * 100) : 0;
+
+                    var avatarColors = new[] { "linear-gradient(135deg, #E07A5F, #C57B57)", "linear-gradient(135deg, #819875, #607255)", "linear-gradient(135deg, #4A90E2, #357ABD)", "linear-gradient(135deg, #F4A261, #E76F51)", "linear-gradient(135deg, #9C27B0, #673AB7)" };
+                }
+                <div class="tab-pane fade" id="reviews-tab-pane" role="tabpanel" tabindex="0">
+                    @if (TempData["ReviewSuccess"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible fade show rounded-4 p-3 mb-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+                            <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+                            <div>
+                                <strong class="d-block text-success fw-bold">Gửi đánh giá thành công!</strong>
+                                <span>@TempData["ReviewSuccess"]</span>
+                            </div>
+                            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    }
+
+                    <!-- 1. Review Summary Score Card -->
+                    <div class="baby-review-summary-card p-4 p-md-5 mb-4 shadow-sm">
+                        <div class="row g-4 align-items-center">
+                            <!-- Left: Big Score Display -->
+                            <div class="col-12 col-md-4 text-center border-md-end pb-3 pb-md-0">
+                                <div class="text-muted small fw-bold text-uppercase mb-1">Đánh Giá Tổng Quan</div>
+                                <div class="baby-score-display mb-2">@Model.AverageRating.ToString("0.0")</div>
+                                <div class="d-flex justify-content-center gap-1 text-warning fs-5 mb-2">
+                                    @{
+                                        int fullStars = (int)Math.Floor(Model.AverageRating);
+                                        bool hasHalfStar = (Model.AverageRating - fullStars) >= 0.3;
+                                    }
+                                    @for (int s = 1; s <= 5; s++)
+                                    {
+                                        if (s <= fullStars)
+                                        {
+                                            <i class="bi bi-star-fill"></i>
+                                        }
+                                        else if (s == fullStars + 1 && hasHalfStar)
+                                        {
+                                            <i class="bi bi-star-half"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="bi bi-star text-black-50"></i>
+                                        }
+                                    }
+                                </div>
+                                <div class="text-muted small">Dựa trên <strong>@totalRev</strong> lượt nhận xét thực tế</div>
+                                <div class="badge bg-success-subtle text-success border rounded-pill mt-2 px-3 py-2 small">
+                                    <i class="bi bi-patch-check-fill me-1"></i>98% phụ huynh khuyên dùng
+                                </div>
+                            </div>
+
+                            <!-- Middle: Rating Breakdown Progress Bars -->
+                            <div class="col-12 col-md-5">
+                                <div class="d-flex flex-column gap-2 small">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="width: 45px;" class="fw-semibold">5 sao</span>
+                                        <div class="progress flex-grow-1 baby-rating-progress">
+                                            <div class="baby-rating-progress-bar" style="width: @pct5%;"></div>
+                                        </div>
+                                        <span style="width: 40px;" class="text-end text-muted">@pct5%</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="width: 45px;" class="fw-semibold">4 sao</span>
+                                        <div class="progress flex-grow-1 baby-rating-progress">
+                                            <div class="baby-rating-progress-bar" style="width: @pct4%;"></div>
+                                        </div>
+                                        <span style="width: 40px;" class="text-end text-muted">@pct4%</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="width: 45px;" class="fw-semibold">3 sao</span>
+                                        <div class="progress flex-grow-1 baby-rating-progress">
+                                            <div class="baby-rating-progress-bar" style="width: @pct3%;"></div>
+                                        </div>
+                                        <span style="width: 40px;" class="text-end text-muted">@pct3%</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="width: 45px;" class="fw-semibold">2 sao</span>
+                                        <div class="progress flex-grow-1 baby-rating-progress">
+                                            <div class="baby-rating-progress-bar" style="width: @pct2%;"></div>
+                                        </div>
+                                        <span style="width: 40px;" class="text-end text-muted">@pct2%</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span style="width: 45px;" class="fw-semibold">1 sao</span>
+                                        <div class="progress flex-grow-1 baby-rating-progress">
+                                            <div class="baby-rating-progress-bar" style="width: @pct1%;"></div>
+                                        </div>
+                                        <span style="width: 40px;" class="text-end text-muted">@pct1%</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Call to Action Button -->
+                            <div class="col-12 col-md-3 text-center border-md-start pt-3 pt-md-0">
+                                <p class="text-muted small mb-3">Mẹ đã mua đồ này cho bé? Hãy chia sẻ trải nghiệm để giúp các mẹ khác chọn size nhé!</p>
+                                @if (User.Identity?.IsAuthenticated ?? false)
+                                {
+                                    <button type="button" class="btn btn-baby-primary w-100 justify-content-center py-2 px-3 fw-semibold shadow-sm" onclick="toggleReviewForm()">
+                                        <i class="bi bi-pencil-square me-2"></i> Viết Đánh Giá Của Mẹ
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", "Product", new { id = Model.Id })" 
+                                       class="btn btn-baby-primary w-100 justify-content-center py-2 px-3 fw-semibold shadow-sm">
+                                        <i class="bi bi-box-arrow-in-right me-2"></i> Đăng Nhập Để Đánh Giá
+                                    </a>
+                                    <div class="small text-muted mt-2">
+                                        Chưa có tài khoản? <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Url.Action("Details", "Product", new { id = Model.Id })" class="text-primary fw-bold">Đăng ký ngay</a>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (User.Identity?.IsAuthenticated ?? false)
+                    {
+                        <!-- 2. Interactive Review Submission Form (Collapsible) -->
+                        <div class="p-4 p-md-5 rounded-4 border bg-white shadow-sm mb-5" id="reviewFormWrap" style="display: none; border-color: var(--baby-primary) !important;">
+                            <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                                <div>
+                                    <h5 class="fw-bold text-dark mb-1">
+                                        <i class="bi bi-chat-left-heart text-danger me-2"></i>Gửi Đánh Giá Cho Sản Phẩm
+                                    </h5>
+                                    <div class="small text-muted">Nhận xét của mẹ giúp BabyShop hoàn thiện chất lượng và hỗ trợ cộng đồng bỉm sữa</div>
+                                </div>
+                                <button type="button" class="btn-close" onclick="toggleReviewForm()" aria-label="Đóng"></button>
+                            </div>
+
+                            <form asp-controller="Product" asp-action="AddReview" method="post" id="addReviewForm">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="productId" value="@Model.Id" />
+                                <input type="hidden" name="rating" id="reviewRatingInput" value="5" />
+
+                                <!-- Star Picker -->
+                                <div class="mb-4 text-center py-3 bg-light rounded-4">
+                                    <label class="form-label fw-bold text-dark d-block mb-2">1. Mẹ hài lòng với sản phẩm ở mức nào?</label>
+                                    <div class="baby-interactive-stars" id="starPicker">
+                                        <input type="radio" id="star5" name="starRating" value="5" checked onclick="setRating(5)" />
+                                        <label for="star5" title="5 sao - Rất hài lòng"><i class="bi bi-star-fill"></i></label>
+                                        <input type="radio" id="star4" name="starRating" value="4" onclick="setRating(4)" />
+                                        <label for="star4" title="4 sao - Hài lòng"><i class="bi bi-star-fill"></i></label>
+                                        <input type="radio" id="star3" name="starRating" value="3" onclick="setRating(3)" />
+                                        <label for="star3" title="3 sao - Bình thường"><i class="bi bi-star-fill"></i></label>
+                                        <input type="radio" id="star2" name="starRating" value="2" onclick="setRating(2)" />
+                                        <label for="star2" title="2 sao - Chưa ưng ý"><i class="bi bi-star-fill"></i></label>
+                                        <input type="radio" id="star1" name="starRating" value="1" onclick="setRating(1)" />
+                                        <label for="star1" title="1 sao - Rất thất vọng"><i class="bi bi-star-fill"></i></label>
+                                    </div>
+                                    <div class="fw-bold text-primary mt-2 small" id="ratingTextDisplay">⭐ 5 sao - Rất hài lòng, chất vải đẹp chuẩn form!</div>
+                                </div>
+
+                                <div class="row g-3 mb-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-bold small">Họ và tên của mẹ <span class="text-danger">*</span></label>
+                                        <input type="text" name="customerName" class="form-control rounded-3" 
+                                               value="@(User.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value ?? User.Identity?.Name)" 
+                                               placeholder="Ví dụ: Mẹ Bảo An / Chị Thu Hà" required />
+                                    </div>
+
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label fw-bold small">Thông tin bé (Tuổi & Cân nặng)</label>
+                                        <input type="text" name="babyInfo" class="form-control rounded-3" 
+                                               placeholder="Ví dụ: Bé gái 18 tháng • 11.5 kg (rất hữu ích cho mẹ khác chọn size)" />
+                                    </div>
+
+                                    <div class="col-12">
+                                        <label class="form-label fw-bold small">Nội dung nhận xét chi tiết <span class="text-danger">*</span></label>
+                                        <textarea name="comment" class="form-control rounded-3" rows="3" 
+                                                  placeholder="Chia sẻ cảm nhận của mẹ về chất vải, độ mềm mát, đường may, form dáng bé mặc vừa vặn không..." required></textarea>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-outline-secondary rounded-pill px-4" onclick="toggleReviewForm()">Hủy</button>
+                                    <button type="submit" class="btn btn-baby-primary rounded-pill px-4 fw-semibold">
+                                        <i class="bi bi-send-fill me-1"></i> GỬI ĐÁNH GIÁ NGAY
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Login Prompt Card for Unauthenticated Users -->
+                        <div class="p-4 p-md-5 rounded-4 border bg-white shadow-sm mb-5 text-center" style="border: 2px dashed #E07A5F !important; background: #FFFDFB !important;">
+                            <div class="mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 62px; height: 62px; background: linear-gradient(135deg, rgba(224, 122, 95, 0.15), rgba(197, 123, 87, 0.25)); border-radius: 50%; color: var(--baby-primary);">
+                                <i class="bi bi-star-fill fs-3 text-warning"></i>
+                            </div>
+                            <h5 class="fw-bold text-dark mb-2">Đăng Nhập Tài Khoản Để Đánh Giá & Chấm Sao</h5>
+                            <p class="text-muted small mx-auto mb-4" style="max-width: 520px;">
+                                Để bảo vệ tính khách quan và uy tín từ những chia sẻ thực tế của ba mẹ, BabyShop yêu cầu đăng nhập tài khoản trước khi viết nhận xét và xếp hạng sao cho sản phẩm.
+                            </p>
+                            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", "Product", new { id = Model.Id })" 
+                                   class="btn btn-baby-primary rounded-pill px-4 py-2 fw-semibold shadow-sm">
+                                    <i class="bi bi-box-arrow-in-right me-2"></i> Đăng Nhập Để Đánh Giá
+                                </a>
+                                <a asp-controller="Account" asp-action="Register" asp-route-returnUrl="@Url.Action("Details", "Product", new { id = Model.Id })" 
+                                   class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-semibold">
+                                    <i class="bi bi-person-plus me-2"></i> Tạo Tài Khoản Mới
+                                </a>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- 3. Reviews List -->
+                    <div class="reviews-list-container">
+                        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+                            <h5 class="fw-bold text-dark mb-0">Nhận Xét Từ Khách Hàng (@totalRev)</h5>
+                            <span class="small text-muted"><i class="bi bi-shield-check text-success me-1"></i>Đánh giá được chứng thực từ đơn mua thật</span>
+                        </div>
+
+                        @if (!approvedReviews.Any())
+                        {
+                            <div class="text-center py-5 bg-light rounded-4">
+                                <i class="bi bi-chat-square-heart display-4 text-muted mb-3 d-block"></i>
+                                <h6 class="fw-bold text-dark">Chưa có đánh giá nào cho sản phẩm này</h6>
+                                <p class="text-muted small mb-3">Mẹ hãy là người đầu tiên để lại nhận xét đáng yêu cho bé nhé!</p>
+                                @if (User.Identity?.IsAuthenticated ?? false)
+                                {
+                                    <button type="button" class="btn btn-baby-primary btn-sm px-4 rounded-pill" onclick="toggleReviewForm()">
+                                        <i class="bi bi-pencil-square me-1"></i> Viết đánh giá đầu tiên
+                                    </button>
+                                }
+                                else
+                                {
+                                    <a asp-controller="Account" asp-action="Login" asp-route-returnUrl="@Url.Action("Details", "Product", new { id = Model.Id })" 
+                                       class="btn btn-baby-primary btn-sm px-4 rounded-pill">
+                                        <i class="bi bi-box-arrow-in-right me-1"></i> Đăng nhập để viết đánh giá đầu tiên
+                                    </a>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="d-flex flex-column gap-4">
+                                @for (int i = 0; i < approvedReviews.Count; i++)
+                                {
+                                    var rev = approvedReviews[i];
+                                    var color = avatarColors[i % avatarColors.Length];
+                                    var initial = string.IsNullOrEmpty(rev.CustomerName) ? "M" : rev.CustomerName.Substring(0, 1).ToUpper();
+
+                                    <div class="baby-review-item">
+                                        <div class="d-flex gap-3">
+                                            <!-- Reviewer Avatar -->
+                                            <div class="baby-reviewer-avatar flex-shrink-0" style="background: @color;">
+                                                @initial
+                                            </div>
+
+                                            <div class="flex-grow-1">
+                                                <!-- Reviewer Name & Verified Badge -->
+                                                <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                                    <span class="fw-bold text-dark">@rev.CustomerName</span>
+                                                    @if (rev.IsVerifiedPurchase)
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success border rounded-pill small" style="font-size: 0.72rem;">
+                                                            <i class="bi bi-patch-check-fill me-1"></i>Đã mua tại BabyShop
+                                                        </span>
+                                                    }
+                                                    <span class="text-muted small ms-auto">@rev.CreatedAt.ToString("dd/MM/yyyy")</span>
+                                                </div>
+
+                                                <!-- Star rating row -->
+                                                <div class="d-flex align-items-center gap-2 mb-2">
+                                                    <div class="text-warning small">
+                                                        @for (int st = 1; st <= 5; st++)
+                                                        {
+                                                            if (st <= rev.Rating)
+                                                            {
+                                                                <i class="bi bi-star-fill"></i>
+                                                            }
+                                                            else
+                                                            {
+                                                                <i class="bi bi-star text-black-50"></i>
+                                                            }
+                                                        }
+                                                    </div>
+
+                                                    @if (!string.IsNullOrEmpty(rev.BabyInfo))
+                                                    {
+                                                        <span class="baby-info-chip">
+                                                            <i class="bi bi-person-badge"></i> @rev.BabyInfo
+                                                        </span>
+                                                    }
+                                                </div>
+
+                                                <!-- Review Content -->
+                                                <div class="text-dark lh-base mb-2" style="font-size: 0.95rem;">
+                                                    @rev.Comment
+                                                </div>
+
+                                                <!-- Helpful Action -->
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <button type="button" class="baby-helpful-btn" onclick="likeReview(this, @rev.HelpfulCount)">
+                                                        <i class="bi bi-hand-thumbs-up me-1"></i> Hữu ích (<span class="like-count">@rev.HelpfulCount</span>)
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Products -->
+    @if (relatedProducts.Any())
+    {
+        <div class="mt-5">
+            <div class="baby-section-header">
+                <div>
+                    <span class="baby-section-tag">Gợi Ý Cho Mẹ</span>
+                    <h3 class="baby-section-title">Sản Phẩm Tương Tự Được Yêu Thích</h3>
+                </div>
+            </div>
+            <div class="row g-3 g-md-4">
+                @foreach (var prod in relatedProducts)
+                {
+                    <div class="col-6 col-md-3">
+                        @await Html.PartialAsync("_ProductCard", prod)
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    .baby-size-glow {
+        animation: sizeGlowPulse 1.2s ease-in-out;
+        box-shadow: 0 0 0 4px rgba(197, 123, 87, 0.4) !important;
+        border-color: #C57B57 !important;
+    }
+    @@keyframes sizeGlowPulse {
+        0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(197, 123, 87, 0.7); }
+        50% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(197, 123, 87, 0); }
+        100% { transform: scale(1); box-shadow: 0 0 0 4px rgba(197, 123, 87, 0.4); }
+    }
+</style>
+
+<!-- Modal: Bảng Đo Size Chuẩn & Máy Tính Gợi Ý Thông Minh Cho Bé -->
+<div class="modal fade" id="sizeGuideModal" tabindex="-1" aria-labelledby="sizeGuideModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 pb-0 pt-4 px-4">
+                <div>
+                    <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2" id="sizeGuideModalLabel">
+                        <span class="rounded-circle bg-primary-subtle text-primary p-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                            <i class="bi bi-rulers fs-6"></i>
+                        </span>
+                        <span>Trợ Lý Gợi Ý & Bảng Đo Size Chuẩn Cho Bé</span>
+                    </h5>
+                    <p class="text-muted small mb-0 mt-1">Chọn size vừa vặn giúp bé cử động dễ chịu và mẹ yên tâm không lo đổi trả</p>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            
+            <div class="modal-body p-4">
+                <!-- Nav Tabs -->
+                <ul class="nav nav-pills nav-fill bg-light rounded-pill p-1 mb-4" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill fw-bold py-2 small" id="smart-tab" data-bs-toggle="pill" data-bs-target="#smart-tab-pane" type="button" role="tab">
+                            <i class="bi bi-magic text-warning me-1"></i> Máy Tính Gợi Ý Size Thông Minh
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill fw-bold py-2 small" id="chart-tab" data-bs-toggle="pill" data-bs-target="#chart-tab-pane" type="button" role="tab">
+                            <i class="bi bi-table text-primary me-1"></i> Bảng Tra Cứu Toàn Bộ Kích Cỡ
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- Tab 1: Máy tính thông minh -->
+                    <div class="tab-pane fade show active" id="smart-tab-pane" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="form-label fw-bold small text-dark">
+                                    <i class="bi bi-calendar-event text-primary me-1"></i> Độ Tuổi / Tháng Tuổi Của Bé
+                                </label>
+                                <select id="calcAgeSelect" class="form-select rounded-3" onchange="calculateRecommendedSize()">
+                                    <optgroup label="👶 Bé Sơ Sinh (Theo tháng)">
+                                        <option value="0-3m">0 - 3 tháng (Sơ sinh < 5kg)</option>
+                                        <option value="3-6m">3 - 6 tháng (5 - 7kg)</option>
+                                        <option value="6-9m">6 - 9 tháng (7 - 9kg)</option>
+                                        <option value="9-12m" selected>9 - 12 tháng (9 - 11kg)</option>
+                                        <option value="12-18m">12 - 18 tháng (11 - 13kg)</option>
+                                    </optgroup>
+                                    <optgroup label="👕 Bé Nhỏ & Bé Lớn (Theo tuổi)">
+                                        <option value="1-2y">1 - 2 tuổi (9 - 11kg)</option>
+                                        <option value="2-3y">2 - 3 tuổi (12 - 14kg)</option>
+                                        <option value="3-4y">3 - 4 tuổi (15 - 17kg)</option>
+                                        <option value="4-5y">4 - 5 tuổi (17 - 19kg)</option>
+                                        <option value="5-6y">5 - 6 tuổi (20 - 23kg)</option>
+                                        <option value="6-8y">6 - 8 tuổi (24 - 28kg)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+
+                            <div class="col-12 col-md-6">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label fw-bold small text-dark m-0">
+                                        <i class="bi bi-speedometer2 text-danger me-1"></i> Cân Nặng Hiện Tại Của Bé
+                                    </label>
+                                    <span class="badge bg-primary fs-6 px-3 py-1 rounded-pill" id="weightDisplayBadge">10.0 kg</span>
+                                </div>
+                                <input type="range" class="form-range" id="calcWeightSlider" min="3" max="28" step="0.5" value="10" oninput="onWeightSliderChange(this.value)" />
+                                <div class="d-flex justify-content-between text-muted small" style="font-size: 0.75rem;">
+                                    <span>3 kg</span>
+                                    <span>10 kg</span>
+                                    <span>18 kg</span>
+                                    <span>28 kg</span>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label fw-bold small text-dark mb-2">
+                                    <i class="bi bi-person-standing text-success me-1"></i> Vóc Dáng Của Bé
+                                </label>
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <input type="radio" class="btn-check" name="calcBuild" id="buildSlim" value="slim" autocomplete="off" onchange="calculateRecommendedSize()">
+                                    <label class="btn btn-outline-secondary rounded-pill btn-sm px-3" for="buildSlim">
+                                        🌱 Dài người / Mảnh mai
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="calcBuild" id="buildNormal" value="normal" checked autocomplete="off" onchange="calculateRecommendedSize()">
+                                    <label class="btn btn-outline-primary rounded-pill btn-sm px-3" for="buildNormal">
+                                        ⭐ Chuẩn dáng cân đối
+                                    </label>
+
+                                    <input type="radio" class="btn-check" name="calcBuild" id="buildChubby" value="chubby" autocomplete="off" onchange="calculateRecommendedSize()">
+                                    <label class="btn btn-outline-warning rounded-pill btn-sm px-3 text-dark" for="buildChubby">
+                                        🍼 Bắp tay/bụng tròn trịa (+1 size mặc thoải mái)
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Khung Kết Quả Đề Xuất -->
+                        <div class="mt-4 p-4 rounded-4 border" style="background: linear-gradient(135deg, #F9F7F5 0%, #FFF5ED 100%); border-color: #FFE3D1 !important;">
+                            <div class="d-flex align-items-start gap-3 flex-wrap">
+                                <div class="rounded-circle bg-white shadow-sm p-3 flex-shrink-0 text-center" style="width: 60px; height: 60px; border: 2px solid #FF8E53;">
+                                    <i class="bi bi-stars text-danger fs-4"></i>
+                                </div>
+                                <div class="flex-grow-1" style="min-width: 240px;">
+                                    <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                        <span class="badge bg-danger rounded-pill px-2 py-1 small">GỢI Ý CHUẨN XÁC</span>
+                                        <span class="text-muted small" id="recommendationStatusText">Sẵn sàng áp dụng</span>
+                                    </div>
+                                    <h4 class="fw-bold text-dark m-0" id="recommendedSizeTitle">Size 90 (1 - 2T, 9 - 11kg)</h4>
+                                    <p class="text-muted small mb-3 mt-1" id="recommendedSizeAdvice">
+                                        Dựa trên cân nặng 10kg và vóc dáng của bé, kích cỡ này sẽ vừa vặn, bé bò trườn hay chạy nhảy không bị tức bụng.
+                                    </p>
+                                    
+                                    <div class="d-flex gap-2 flex-wrap align-items-center">
+                                        <button type="button" class="btn btn-primary-baby rounded-pill px-4 py-2 fw-bold shadow-sm" id="applySizeBtn" onclick="applyRecommendedSize()">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Chọn Size Này Cho Bé Ngay
+                                        </button>
+                                        <span class="small text-success fw-semibold" id="sizeMatchAlert">
+                                            <i class="bi bi-patch-check-fill me-1"></i> Mẫu quần áo này đang có sẵn size này!
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab 2: Bảng Tra Cứu Toàn Bộ Kích Cỡ -->
+                    <div class="tab-pane fade" id="chart-tab-pane" role="tabpanel">
+                        <div class="alert alert-light border rounded-3 p-3 mb-3 small text-muted">
+                            <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                            Bé sơ sinh và trẻ nhỏ tăng trưởng rất nhanh. Nếu số đo của bé nằm ở ngưỡng giữa 2 size, BabyShop khuyên mẹ nên chọn <strong>size lớn hơn</strong> để bé mặc được lâu và thoải mái hơn.
+                        </div>
+
+                        <div class="accordion" id="sizeGuideAccordion">
+                            <!-- Bảng 1: Đồ sơ sinh -->
+                            <div class="accordion-item border-0 mb-2 rounded-3 overflow-hidden shadow-sm">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button bg-light fw-bold py-3 text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#accNewborn">
+                                        👶 1. Bảng Size Đồ Sơ Sinh (0 - 18 tháng tuổi)
+                                    </button>
+                                </h2>
+                                <div id="accNewborn" class="accordion-collapse collapse show" data-bs-parent="#sizeGuideAccordion">
+                                    <div class="accordion-body p-0">
+                                        <table class="table table-sm table-striped align-middle mb-0 small">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Kích Cỡ</th>
+                                                    <th>Độ Tuổi</th>
+                                                    <th>Cân Nặng Chuẩn</th>
+                                                    <th>Chiều Dài Bé</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td><strong>0 - 3 tháng</strong></td><td>0 - 3 tháng</td><td>3 - 5 kg</td><td>50 - 59 cm</td></tr>
+                                                <tr><td><strong>3 - 6 tháng</strong></td><td>3 - 6 tháng</td><td>5 - 7 kg</td><td>60 - 66 cm</td></tr>
+                                                <tr><td><strong>6 - 9 tháng</strong></td><td>6 - 9 tháng</td><td>7 - 9 kg</td><td>67 - 73 cm</td></tr>
+                                                <tr><td><strong>9 - 12 tháng</strong></td><td>9 - 12 tháng</td><td>9 - 11 kg</td><td>74 - 80 cm</td></tr>
+                                                <tr><td><strong>12 - 18 tháng</strong></td><td>12 - 18 tháng</td><td>11 - 13 kg</td><td>80 - 86 cm</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bảng 2: Quần áo size số -->
+                            <div class="accordion-item border-0 mb-2 rounded-3 overflow-hidden shadow-sm">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-light fw-bold py-3 text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#accSizeNumber">
+                                        👕 2. Bảng Quần Áo Bé Theo Size Số (Size 90 - 140)
+                                    </button>
+                                </h2>
+                                <div id="accSizeNumber" class="accordion-collapse collapse" data-bs-parent="#sizeGuideAccordion">
+                                    <div class="accordion-body p-0">
+                                        <table class="table table-sm table-striped align-middle mb-0 small">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th>Size Số</th>
+                                                    <th>Độ Tuổi</th>
+                                                    <th>Cân Nặng Chuẩn</th>
+                                                    <th>Chiều Cao Bé</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr><td><strong class="text-primary">Size 90</strong></td><td>1 - 2 tuổi</td><td>9 - 11 kg</td><td>80 - 90 cm</td></tr>
+                                                <tr><td><strong class="text-primary">Size 100</strong></td><td>2 - 3 tuổi</td><td>12 - 14 kg</td><td>90 - 100 cm</td></tr>
+                                                <tr><td><strong class="text-primary">Size 110</strong></td><td>3 - 4 tuổi</td><td>15 - 17 kg</td><td>100 - 110 cm</td></tr>
+                                                <tr><td><strong class="text-primary">Size 120</strong></td><td>4 - 5 tuổi</td><td>17 - 19 kg</td><td>110 - 120 cm</td></tr>
+                                                <tr><td><strong class="text-primary">Size 130</strong></td><td>5 - 6 tuổi</td><td>20 - 23 kg</td><td>120 - 130 cm</td></tr>
+                                                <tr><td><strong class="text-primary">Size 140</strong></td><td>6 - 8 tuổi</td><td>24 - 28 kg</td><td>130 - 140 cm</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Bảng 3: Giày dép & Bỉm -->
+                            <div class="accordion-item border-0 rounded-3 overflow-hidden shadow-sm">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed bg-light fw-bold py-3 text-dark" type="button" data-bs-toggle="collapse" data-bs-target="#accShoesDiaper">
+                                        👟 3. Bảng Size Giày Dép Tập Đi & Bỉm Tã
+                                    </button>
+                                </h2>
+                                <div id="accShoesDiaper" class="accordion-collapse collapse" data-bs-parent="#sizeGuideAccordion">
+                                    <div class="accordion-body p-3">
+                                        <div class="row g-3">
+                                            <div class="col-12 col-md-6">
+                                                <h6 class="fw-bold text-dark mb-2">Giày Dép Tập Đi Cho Bé</h6>
+                                                <ul class="list-unstyled small text-muted mb-0">
+                                                    <li class="py-1 border-bottom"><strong>Size 11:</strong> Dài bàn chân 10.5cm (6 - 9M)</li>
+                                                    <li class="py-1 border-bottom"><strong>Size 12:</strong> Dài bàn chân 11.5cm (9 - 12M)</li>
+                                                    <li class="py-1 border-bottom"><strong>Size 13:</strong> Dài bàn chân 12.5cm (12 - 18M)</li>
+                                                    <li class="py-1 border-bottom"><strong>Size 14:</strong> Dài bàn chân 13.5cm (1.5 - 2 tuổi)</li>
+                                                    <li class="py-1"><strong>Size 15:</strong> Dài bàn chân 14.5cm (2 - 3 tuổi)</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-12 col-md-6">
+                                                <h6 class="fw-bold text-dark mb-2">Bỉm & Tã Trẻ Em</h6>
+                                                <ul class="list-unstyled small text-muted mb-0">
+                                                    <li class="py-1 border-bottom"><strong>Size NB:</strong> Bé sơ sinh (&lt; 5kg)</li>
+                                                    <li class="py-1 border-bottom"><strong>Size S:</strong> Cân nặng 4 - 8 kg</li>
+                                                    <li class="py-1 border-bottom"><strong>Size M:</strong> Cân nặng 6 - 11 kg</li>
+                                                    <li class="py-1 border-bottom"><strong>Size L:</strong> Cân nặng 9 - 14 kg</li>
+                                                    <li class="py-1"><strong>Size XL:</strong> Cân nặng 12 - 17 kg</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer border-0 pt-0 px-4 pb-4">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const productVariants = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Variants.Select(v => new {
+            id = v.Id,
+            size = v.Size,
+            color = v.Color,
+            stock = v.StockQuantity,
+            imageUrl = v.ImageUrl
+        })));
+
+        function changeMainImage(src) {
+            if (src) {
+                var mainImg = document.getElementById('mainProductImg');
+                if (mainImg) {
+                    mainImg.style.transition = 'opacity 0.15s ease-out';
+                    mainImg.style.opacity = '0.35';
+                    setTimeout(function() {
+                        mainImg.src = src;
+                        mainImg.style.opacity = '1';
+                    }, 100);
+                }
+            }
+        }
+
+        function updateVariantStock() {
+            var selectedSize = document.getElementById('selectedSize') ? document.getElementById('selectedSize').value : '';
+            var selectedColor = document.getElementById('selectedColor') ? document.getElementById('selectedColor').value : '';
+            
+            var matched = null;
+            if (productVariants && productVariants.length > 0) {
+                if (selectedSize && selectedColor) {
+                    matched = productVariants.find(function(v) {
+                        return v.size.toLowerCase() === selectedSize.toLowerCase() && v.color.toLowerCase() === selectedColor.toLowerCase();
+                    });
+                }
+                if (!matched && selectedColor) {
+                    matched = productVariants.find(function(v) {
+                        return v.color.toLowerCase() === selectedColor.toLowerCase();
+                    });
+                }
+                if (!matched && selectedSize) {
+                    matched = productVariants.find(function(v) {
+                        return v.size.toLowerCase() === selectedSize.toLowerCase();
+                    });
+                }
+                if (!matched) {
+                    matched = productVariants[0];
+                }
+            }
+
+            var currentStock = matched ? matched.stock : @Model.TotalStock;
+            var vInput = document.getElementById('selectedVariantId');
+            if (vInput && matched) {
+                vInput.value = matched.id;
+            }
+
+            var badge = document.getElementById('stockBadge');
+            var btn = document.getElementById('btnAddToCart');
+            var btnText = document.getElementById('btnAddToCartText');
+            var qtyInput = document.getElementById('productQty');
+            var shippingNotice = document.getElementById('shippingReadyNotice');
+
+            if (currentStock > 0) {
+                if (badge) {
+                    badge.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 small';
+                    badge.innerHTML = '<i class="bi bi-box-seam me-1"></i>Còn <strong>' + currentStock + '</strong> sản phẩm trong kho';
+                }
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = 'btn btn-baby-primary flex-grow-1 justify-content-center py-3 fs-6';
+                }
+                if (btnText) btnText.textContent = 'THÊM VÀO GIỎ HÀNG';
+                if (qtyInput) {
+                    qtyInput.setAttribute('max', currentStock);
+                    qtyInput.setAttribute('min', 1);
+                    var val = parseInt(qtyInput.value) || 1;
+                    if (val < 1) qtyInput.value = 1;
+                    if (val > currentStock) qtyInput.value = currentStock;
+                }
+                if (shippingNotice) {
+                    shippingNotice.innerHTML = '<i class="bi bi-check2-circle"></i> Sẵn sàng đóng gói giao ngay';
+                    shippingNotice.className = 'text-success small fw-bold';
+                }
+            } else {
+                if (badge) {
+                    badge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 small';
+                    badge.innerHTML = '<i class="bi bi-x-circle me-1"></i>Tạm hết hàng';
+                }
+                if (btn) {
+                    btn.disabled = true;
+                    btn.className = 'btn btn-secondary flex-grow-1 justify-content-center py-3 fs-6 opacity-75';
+                }
+                if (btnText) btnText.textContent = 'TẠM HẾT HÀNG';
+                if (qtyInput) {
+                    qtyInput.setAttribute('max', 0);
+                    qtyInput.setAttribute('min', 0);
+                    qtyInput.value = 0;
+                }
+                if (shippingNotice) {
+                    shippingNotice.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Tạm thời hết phân loại này';
+                    shippingNotice.className = 'text-danger small fw-bold';
+                }
+            }
+        }
+
+        function selectSize(size, el) {
+            document.getElementById('selectedSize').value = size;
+            var sizeLabel = document.getElementById('sizeLabel');
+            if (sizeLabel) sizeLabel.textContent = size;
+            var buttons = el.parentNode.querySelectorAll('.variant-btn-pill');
+            buttons.forEach(function(btn) { btn.classList.remove('active'); });
+            el.classList.add('active');
+            updateVariantStock();
+        }
+
+        function selectColor(color, hex, imgUrl, variantId, el) {
+            // Support both (color, el) and (color, hex, imgUrl, variantId, el)
+            if (!el && hex && typeof hex === 'object') {
+                el = hex;
+                hex = null;
+                imgUrl = null;
+                variantId = null;
+            }
+
+            document.getElementById('selectedColor').value = color;
+            var colorLabel = document.getElementById('colorLabel');
+            if (colorLabel) colorLabel.textContent = color;
+
+            if (el && el.parentNode) {
+                var buttons = el.parentNode.querySelectorAll('.variant-color-swatch, .variant-btn-pill');
+                buttons.forEach(function(btn) { btn.classList.remove('active'); });
+                el.classList.add('active');
+            }
+
+            if (variantId) {
+                var vInput = document.getElementById('selectedVariantId');
+                if (vInput) vInput.value = variantId;
+            }
+
+            if (imgUrl) {
+                var mainImg = document.getElementById('mainProductImg');
+                if (mainImg && mainImg.src !== imgUrl) {
+                    mainImg.style.transition = 'opacity 0.15s ease-out, transform 0.15s ease-out';
+                    mainImg.style.opacity = '0.35';
+                    mainImg.style.transform = 'scale(0.98)';
+                    setTimeout(function() {
+                        mainImg.src = imgUrl;
+                        mainImg.onload = function() {
+                            mainImg.style.opacity = '1';
+                            mainImg.style.transform = 'scale(1)';
+                        };
+                        setTimeout(function() {
+                            mainImg.style.opacity = '1';
+                            mainImg.style.transform = 'scale(1)';
+                        }, 120);
+                    }, 100);
+                }
+            }
+
+            updateVariantStock();
+        }
+
+        function adjustQty(delta) {
+            var input = document.getElementById('productQty');
+            if (!input) return;
+            var maxStock = parseInt(input.getAttribute('max'));
+            if (isNaN(maxStock)) maxStock = 99;
+
+            var val = parseInt(input.value) || 1;
+
+            if (maxStock <= 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tạm Hết Hàng!',
+                    text: 'Phân loại sản phẩm này hiện đã hết hàng trong kho. Mẹ vui lòng chọn mẫu hoặc kích cỡ khác nhé!',
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#ff6b81',
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-baby-primary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+                input.value = 0;
+                return;
+            }
+
+            if (delta > 0 && val >= maxStock) {
+                var prodName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name));
+                var curSize = document.getElementById('selectedSize')?.value || '';
+                var curColor = document.getElementById('selectedColor')?.value || '';
+                var variantDesc = '';
+                if (curSize || curColor) {
+                    var parts = [];
+                    if (curSize) parts.push('Size: ' + curSize);
+                    if (curColor) parts.push('Màu: ' + curColor);
+                    variantDesc = ' (' + parts.join(', ') + ')';
+                }
+
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Đã Đạt Giới Hạn Tồn Kho!',
+                    html: `
+                        <div class="text-start fs-6">
+                            <p class="mb-2">Sản phẩm <strong>${prodName}</strong>${variantDesc} hiện chỉ còn tối đa <strong>${maxStock}</strong> sản phẩm trong kho.</p>
+                            <p class="mb-0 text-muted small"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Mẹ không thể tăng thêm số lượng vượt quá số hàng có sẵn trong kho nhé!</p>
+                        </div>
+                    `,
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#ff6b81',
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-baby-primary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+                input.value = maxStock;
+                return;
+            }
+
+            var newVal = val + delta;
+            if (newVal < 1) newVal = 1;
+            if (newVal > maxStock) {
+                newVal = maxStock;
+            }
+            input.value = newVal;
+        }
+
+        // Reviews & Ratings Controls
+        function openReviewsTab() {
+            var triggerEl = document.getElementById('reviews-tab');
+            if (triggerEl) {
+                var tab = new bootstrap.Tab(triggerEl);
+                tab.show();
+                triggerEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        }
+
+        function toggleReviewForm() {
+            var form = document.getElementById('reviewFormWrap');
+            if (form) {
+                if (form.style.display === 'none' || form.style.display === '') {
+                    form.style.display = 'block';
+                    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    form.style.display = 'none';
+                }
+            }
+        }
+
+        function setRating(val) {
+            document.getElementById('reviewRatingInput').value = val;
+            var textMap = {
+                5: '⭐ 5 sao - Rất hài lòng, chất vải đẹp chuẩn form!',
+                4: '⭐ 4 sao - Hài lòng, sản phẩm chất lượng tốt',
+                3: '⭐ 3 sao - Bình thường, tạm ổn trong tầm giá',
+                2: '⭐ 2 sao - Chưa ưng ý lắm, cần cải thiện',
+                1: '⭐ 1 sao - Rất thất vọng'
+            };
+            var textEl = document.getElementById('ratingTextDisplay');
+            if (textEl && textMap[val]) {
+                textEl.textContent = textMap[val];
+            }
+        }
+
+        function likeReview(btn, initialCount) {
+            var span = btn.querySelector('.like-count');
+            if (!btn.classList.contains('is-liked')) {
+                btn.classList.add('is-liked');
+                var count = parseInt(span.textContent) || initialCount || 0;
+                span.textContent = count + 1;
+            }
+        }
+
+        // SMART SIZE FINDER LOGIC
+        const productAvailableSizes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(availableSizes));
+        let recommendedCalculatedSize = null;
+
+        function onWeightSliderChange(val) {
+            const badge = document.getElementById('weightDisplayBadge');
+            if (badge) badge.textContent = parseFloat(val).toFixed(1) + ' kg';
+            calculateRecommendedSize();
+        }
+
+        function calculateRecommendedSize() {
+            const ageSelect = document.getElementById('calcAgeSelect');
+            if (!ageSelect) return;
+
+            const ageVal = ageSelect.value;
+            const weight = parseFloat(document.getElementById('calcWeightSlider').value);
+            const build = document.querySelector('input[name="calcBuild"]:checked')?.value || 'normal';
+
+            // Base size mapping based on weight & age
+            let baseSizeCode = "";
+            let baseSizeLabel = "";
+            let baseKeywords = [];
+
+            if (weight < 5.5 || ageVal === '0-3m') {
+                baseSizeCode = "0-3m";
+                baseSizeLabel = "0 - 3 tháng (3 - 5kg)";
+                baseKeywords = ["0 - 3 tháng", "0-3", "XS", "Sơ sinh", "NB"];
+            } else if (weight < 7.5 || ageVal === '3-6m') {
+                baseSizeCode = "3-6m";
+                baseSizeLabel = "3 - 6 tháng (5 - 7kg)";
+                baseKeywords = ["3 - 6 tháng", "3-6", "Sơ sinh"];
+            } else if (weight < 9.5 || ageVal === '6-9m') {
+                baseSizeCode = "6-9m";
+                baseSizeLabel = "6 - 9 tháng (7 - 9kg)";
+                baseKeywords = ["6 - 9 tháng", "6-9"];
+            } else if (weight < 11.5 || ageVal === '9-12m' || ageVal === '1-2y') {
+                baseSizeCode = "size-90";
+                baseSizeLabel = "Size 90 (1 - 2T, 9 - 11kg)";
+                baseKeywords = ["Size 90", "90", "1 - 2 tuổi", "1-2", "9 - 12 tháng", "12 - 18 tháng", "S"];
+            } else if (weight < 14.5 || ageVal === '2-3y') {
+                baseSizeCode = "size-100";
+                baseSizeLabel = "Size 100 (2 - 3T, 12 - 14kg)";
+                baseKeywords = ["Size 100", "100", "2 - 3 tuổi", "2-3", "M"];
+            } else if (weight < 17.5 || ageVal === '3-4y') {
+                baseSizeCode = "size-110";
+                baseSizeLabel = "Size 110 (3 - 4T, 15 - 17kg)";
+                baseKeywords = ["Size 110", "110", "3 - 4 tuổi", "3-4", "L"];
+            } else if (weight < 20.5 || ageVal === '4-5y') {
+                baseSizeCode = "size-120";
+                baseSizeLabel = "Size 120 (4 - 5T, 17 - 19kg)";
+                baseKeywords = ["Size 120", "120", "4 - 5 tuổi", "4-5", "L"];
+            } else if (weight < 23.5 || ageVal === '5-6y') {
+                baseSizeCode = "size-130";
+                baseSizeLabel = "Size 130 (5 - 6T, 20 - 23kg)";
+                baseKeywords = ["Size 130", "130", "5 - 6 tuổi", "5-6", "XL"];
+            } else {
+                baseSizeCode = "size-140";
+                baseSizeLabel = "Size 140 (6 - 8T, 24 - 28kg)";
+                baseKeywords = ["Size 140", "140", "6 - 8 tuổi", "6-8", "XL", "XXL"];
+            }
+
+            // Điều chỉnh vóc dáng
+            let adviceNote = `Dựa trên cân nặng ${weight.toFixed(1)}kg và độ tuổi của bé, kích cỡ này sẽ vừa vặn, bé vận động không bị gò bó.`;
+            if (build === 'chubby') {
+                adviceNote = `Bé trộm vía bụ bẫm tròn người: BabyShop khuyên mẹ nên lấy tăng 1 nấc size để bé mặc cử động, bò trườn dễ chịu nhất!`;
+                if (baseSizeCode === '0-3m') { baseSizeCode = '3-6m'; baseSizeLabel = '3 - 6 tháng (5 - 7kg)'; baseKeywords = ["3 - 6 tháng", "3-6"]; }
+                else if (baseSizeCode === '3-6m') { baseSizeCode = '6-9m'; baseSizeLabel = '6 - 9 tháng (7 - 9kg)'; baseKeywords = ["6 - 9 tháng", "6-9"]; }
+                else if (baseSizeCode === '6-9m') { baseSizeCode = 'size-90'; baseSizeLabel = 'Size 90 (1 - 2T, 9 - 11kg)'; baseKeywords = ["Size 90", "90", "1 - 2 tuổi"]; }
+                else if (baseSizeCode === 'size-90') { baseSizeCode = 'size-100'; baseSizeLabel = 'Size 100 (2 - 3T, 12 - 14kg)'; baseKeywords = ["Size 100", "100", "2 - 3 tuổi"]; }
+                else if (baseSizeCode === 'size-100') { baseSizeCode = 'size-110'; baseSizeLabel = 'Size 110 (3 - 4T, 15 - 17kg)'; baseKeywords = ["Size 110", "110", "3 - 4 tuổi"]; }
+                else if (baseSizeCode === 'size-110') { baseSizeCode = 'size-120'; baseSizeLabel = 'Size 120 (4 - 5T, 17 - 19kg)'; baseKeywords = ["Size 120", "120", "4 - 5 tuổi"]; }
+                else if (baseSizeCode === 'size-120') { baseSizeCode = 'size-130'; baseSizeLabel = 'Size 130 (5 - 6T, 20 - 23kg)'; baseKeywords = ["Size 130", "130", "5 - 6 tuổi"]; }
+                else if (baseSizeCode === 'size-130') { baseSizeCode = 'size-140'; baseSizeLabel = 'Size 140 (6 - 8T, 24 - 28kg)'; baseKeywords = ["Size 140", "140", "6 - 8 tuổi"]; }
+            } else if (build === 'slim') {
+                adviceNote = `Bé trộm vía dài người mảnh khảnh: Size chuẩn sẽ ôm dáng đẹp, gấu quần và ống tay không bị lùng bùng.`;
+            }
+
+            // So khớp với danh sách size THỰC TẾ của sản phẩm
+            let matchedSize = null;
+            if (productAvailableSizes && productAvailableSizes.length > 0) {
+                // Ưu tiên 1: So khớp từ khóa
+                for (let kw of baseKeywords) {
+                    matchedSize = productAvailableSizes.find(s => s.toLowerCase().includes(kw.toLowerCase()));
+                    if (matchedSize) break;
+                }
+                // Ưu tiên 2: Free size fallback
+                if (!matchedSize) {
+                    matchedSize = productAvailableSizes.find(s => s.toLowerCase().includes("free size") || s.toLowerCase().includes("tiêu chuẩn"));
+                }
+                // Ưu tiên 3: Size đầu tiên có sẵn
+                if (!matchedSize) {
+                    matchedSize = productAvailableSizes[0];
+                }
+            }
+
+            recommendedCalculatedSize = matchedSize || baseSizeLabel;
+
+            // Cập nhật giao diện
+            const titleEl = document.getElementById('recommendedSizeTitle');
+            const adviceEl = document.getElementById('recommendedSizeAdvice');
+            const matchAlert = document.getElementById('sizeMatchAlert');
+            const applyBtn = document.getElementById('applySizeBtn');
+
+            if (titleEl) titleEl.textContent = recommendedCalculatedSize;
+            if (adviceEl) adviceEl.textContent = adviceNote;
+
+            if (matchAlert && applyBtn) {
+                if (matchedSize) {
+                    matchAlert.innerHTML = `<i class="bi bi-patch-check-fill me-1"></i> Mẫu sản phẩm này đang có sẵn size <strong>${matchedSize}</strong>!`;
+                    matchAlert.className = "small text-success fw-semibold";
+                    applyBtn.disabled = false;
+                    applyBtn.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Chọn Size ${matchedSize} Ngay`;
+                } else {
+                    matchAlert.innerHTML = `<i class="bi bi-info-circle me-1"></i> Mẫu này có các size: ${productAvailableSizes.join(', ')}`;
+                    matchAlert.className = "small text-muted fw-semibold";
+                    applyBtn.disabled = false;
+                    applyBtn.innerHTML = `<i class="bi bi-check-circle-fill me-1"></i> Áp Dụng Size Này`;
+                }
+            }
+        }
+
+        function applyRecommendedSize() {
+            if (!recommendedCalculatedSize) return;
+
+            // Tìm nút size pill tương ứng trên giao diện sản phẩm
+            const sizeButtons = document.querySelectorAll('.variant-btn-pill');
+            let matchedBtn = null;
+
+            sizeButtons.forEach(btn => {
+                const btnText = btn.textContent.trim().toLowerCase();
+                const targetText = recommendedCalculatedSize.toLowerCase();
+                if (btnText === targetText || btnText.includes(targetText) || targetText.includes(btnText)) {
+                    matchedBtn = btn;
+                }
+            });
+
+            if (matchedBtn) {
+                matchedBtn.click();
+                matchedBtn.classList.add('baby-size-glow');
+                setTimeout(() => matchedBtn.classList.remove('baby-size-glow'), 2000);
+            } else if (sizeButtons.length > 0) {
+                sizeButtons[0].click();
+            }
+
+            // Đóng modal
+            const modalEl = document.getElementById('sizeGuideModal');
+            if (modalEl) {
+                const modalInst = bootstrap.Modal.getInstance(modalEl);
+                if (modalInst) {
+                    modalInst.hide();
+                }
+            }
+        }
+
+        // Tự động tính toán khi trang tải xong
+        document.addEventListener('DOMContentLoaded', function() {
+            calculateRecommendedSize();
+            updateVariantStock();
+
+            var form = document.getElementById('addToCartForm');
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    var input = document.getElementById('productQty');
+                    var qty = parseInt(input ? input.value : 1) || 1;
+                    var maxStock = parseInt(input ? input.getAttribute('max') : 99);
+                    if (isNaN(maxStock)) maxStock = 99;
+
+                    if (maxStock <= 0) {
+                        e.preventDefault();
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Tạm Hết Hàng!',
+                            text: 'Phân loại sản phẩm bạn chọn hiện đã hết hàng trong kho. Vui lòng chọn phân loại hoặc kích cỡ khác!',
+                            confirmButtonText: 'Đã hiểu',
+                            confirmButtonColor: '#ff6b81'
+                        });
+                        return false;
+                    }
+
+                    if (qty > maxStock) {
+                        e.preventDefault();
+                        var prodName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name));
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Vượt Quá Tồn Kho Có Sẵn!',
+                            html: `
+                                <div class="text-start fs-6">
+                                    <p class="mb-2">Sản phẩm <strong>${prodName}</strong> hiện chỉ còn <strong>${maxStock}</strong> sản phẩm trong kho.</p>
+                                    <p class="mb-0 text-muted small"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Số lượng đã được tự động điều chỉnh về mức <strong>${maxStock}</strong>.</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Đã hiểu',
+                            confirmButtonColor: '#ff6b81'
+                        });
+                        if (input) input.value = maxStock;
+                        return false;
+                    }
+                });
+            }
+
+            var qtyInput = document.getElementById('productQty');
+            if (qtyInput) {
+                qtyInput.addEventListener('change', function() {
+                    var maxStock = parseInt(this.getAttribute('max'));
+                    if (isNaN(maxStock)) maxStock = 99;
+                    var val = parseInt(this.value) || 1;
+                    if (maxStock <= 0) {
+                        this.value = 0;
+                        return;
+                    }
+                    if (val > maxStock) {
+                        var prodName = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name));
+                        var curSize = document.getElementById('selectedSize')?.value || '';
+                        var curColor = document.getElementById('selectedColor')?.value || '';
+                        var variantDesc = '';
+                        if (curSize || curColor) {
+                            var parts = [];
+                            if (curSize) parts.push('Size: ' + curSize);
+                            if (curColor) parts.push('Màu: ' + curColor);
+                            variantDesc = ' (' + parts.join(', ') + ')';
+                        }
+                        this.value = maxStock;
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Đã Đạt Giới Hạn Tồn Kho!',
+                            html: `
+                                <div class="text-start fs-6">
+                                    <p class="mb-2">Sản phẩm <strong>${prodName}</strong>${variantDesc} hiện chỉ còn tối đa <strong>${maxStock}</strong> sản phẩm trong kho.</p>
+                                    <p class="mb-0 text-muted small"><i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>Số lượng đã được tự động điều chỉnh về mức tối đa <strong>${maxStock}</strong>!</p>
+                                </div>
+                            `,
+                            confirmButtonText: 'Đã hiểu',
+                            confirmButtonColor: '#ff6b81',
+                            customClass: {
+                                popup: 'baby-swal-popup',
+                                title: 'baby-swal-title',
+                                confirmButton: 'btn btn-baby-primary rounded-pill px-4'
+                            },
+                            buttonsStyling: false
+                        });
+                    } else if (val < 1) {
+                        this.value = 1;
+                    }
+                });
+            }
+
+            @if (Model.IsFlashSaleActive && Model.FlashSaleEndTime.HasValue)
+            {
+                @:initDetailFlashSaleTimer("@Model.FlashSaleEndTime.Value.ToString("yyyy-MM-ddTHH:mm:ss")");
+            }
+        });
+
+        function initDetailFlashSaleTimer(endTimeStr) {
+            var endTime = new Date(endTimeStr).getTime();
+            function updateTimer() {
+                var now = new Date().getTime();
+                var diff = endTime - now;
+                var el = document.getElementById("detailFlashSaleTimer");
+                if (!el) return;
+                if (diff <= 0) {
+                    el.innerText = "00:00:00 (Hết hạn)";
+                    return;
+                }
+                var hours = Math.floor(diff / (1000 * 60 * 60));
+                var minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                var seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                el.innerText = String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(seconds).padStart(2, '0');
+            }
+            updateTimer();
+            setInterval(updateTimer, 1000);
+        }
+    </script>
+}
+

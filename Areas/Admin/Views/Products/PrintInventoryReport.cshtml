@@ -1,0 +1,273 @@
+﻿@model List<WebsiteBabyShop.Models.Product>
+@{
+    Layout = null;
+    var selectedCat = ViewBag.SelectedCategory as WebsiteBabyShop.Models.Category;
+    string stockStatus = ViewBag.StockStatus as string ?? "";
+    DateTime printedAt = ViewBag.PrintedAt != null ? (DateTime)ViewBag.PrintedAt : DateTime.Now;
+
+    int totalVariants = Model.Sum(p => p.Variants.Count);
+    int totalStockQty = Model.Sum(p => p.TotalStock);
+    decimal totalStockValue = Model.Sum(p => (decimal)p.TotalStock * (p.DiscountPrice ?? p.Price));
+    int lowStockCount = Model.Count(p => p.TotalStock <= 5 && p.TotalStock > 0);
+    int outOfStockCount = Model.Count(p => p.TotalStock == 0);
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Báo Cáo Kiểm Kê Tồn Kho - BabyShop</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            color: #1e293b;
+            background-color: #f8fafc;
+            padding: 20px 0;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+        .report-page {
+            max-width: 1100px;
+            margin: 0 auto;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+        }
+        .table th {
+            background-color: #f1f5f9 !important;
+            color: #475569;
+            font-weight: 700;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+        .table td {
+            vertical-align: middle;
+            font-size: 0.9rem;
+        }
+        .kpi-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 16px;
+            text-align: center;
+        }
+        @@media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            .report-page {
+                box-shadow: none !important;
+                padding: 0 !important;
+                max-width: 100% !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+        /* Contrast Safeguards */
+        .bg-success-subtle { background-color: #dcfce7 !important; color: #15803d !important; }
+        .bg-warning-subtle { background-color: #fef3c7 !important; color: #92400e !important; }
+        .bg-danger-subtle { background-color: #fee2e2 !important; color: #b91c1c !important; }
+        .bg-secondary-subtle { background-color: #f1f5f9 !important; color: #475569 !important; }
+        .text-success { color: #15803d !important; }
+        .text-warning-emphasis { color: #92400e !important; }
+        .text-danger { color: #b91c1c !important; }
+        .badge { font-weight: 600; }
+        .badge.bg-light, .badge.bg-white { color: #1e293b !important; background-color: #f8fafc !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Controls Bar -->
+    <div class="container mb-4 no-print" style="max-width: 1100px;">
+        <div class="d-flex justify-content-between align-items-center bg-white p-3 rounded-3 shadow-sm border">
+            <div class="d-flex align-items-center gap-2">
+                <a href="/Admin/Products" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                    <i class="bi bi-arrow-left me-1"></i> Trở Về Quản Lý Sản Phẩm
+                </a>
+                <span class="text-muted small">|</span>
+                <span class="text-muted small">Lọc tình trạng:</span>
+                <a href="/Admin/Products/PrintInventoryReport" class="btn btn-sm @(string.IsNullOrEmpty(stockStatus) ? "btn-primary" : "btn-light border") rounded-pill">Tất cả</a>
+                <a href="/Admin/Products/PrintInventoryReport?stockStatus=low" class="btn btn-sm @(stockStatus == "low" ? "btn-warning text-dark" : "btn-light border") rounded-pill">Sắp hết hàng (≤ 5)</a>
+                <a href="/Admin/Products/PrintInventoryReport?stockStatus=out" class="btn btn-sm @(stockStatus == "out" ? "btn-danger" : "btn-light border") rounded-pill">Hết hàng (0)</a>
+            </div>
+            <div>
+                <button onclick="window.print()" class="btn btn-success fw-bold rounded-pill px-4 shadow-sm">
+                    <i class="bi bi-printer-fill me-2"></i> In Báo Cáo / Xuất PDF
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Report Page -->
+    <div class="report-page">
+        <!-- Header -->
+        <div class="row align-items-center pb-4 mb-4 border-bottom">
+            <div class="col-7">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width: 48px; height: 48px; background: #C57B57; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                        <i class="bi bi-balloon-heart-fill"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0 text-dark">BABY SHOP VIỆT NAM</h4>
+                        <span class="text-muted small">Hệ thống thời trang & đồ dùng cho mẹ & bé cao cấp</span>
+                    </div>
+                </div>
+            </div>
+            <div class="col-5 text-end">
+                <h5 class="fw-bold text-uppercase text-primary mb-1">Báo Cáo Kiểm Kê Tồn Kho</h5>
+                <div class="text-muted small">Thời điểm xuất: <strong>@printedAt.ToString("dd/MM/yyyy HH:mm")</strong></div>
+                <div class="text-muted small">Phạm vi: <strong>@(selectedCat != null ? selectedCat.Name : "Toàn bộ danh mục")</strong></div>
+            </div>
+        </div>
+
+        <!-- KPI Summary Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-3">
+                <div class="kpi-card">
+                    <span class="text-muted small">Tổng Sản Phẩm</span>
+                    <h4 class="fw-bold text-dark mt-1 mb-0">@Model.Count</h4>
+                    <span class="text-muted" style="font-size: 0.75rem;">(@totalVariants biến thể)</span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="kpi-card">
+                    <span class="text-muted small">Tổng Số Lượng Tồn</span>
+                    <h4 class="fw-bold text-primary mt-1 mb-0">@totalStockQty.ToString("N0") <span class="fs-6 fw-normal">cái</span></h4>
+                    <span class="text-muted" style="font-size: 0.75rem;">Sẵn sàng xuất bán</span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="kpi-card">
+                    <span class="text-muted small">Ước Tính Giá Trị Kho</span>
+                    <h4 class="fw-bold text-success mt-1 mb-0">@totalStockValue.ToString("N0") <span class="fs-6 fw-normal">đ</span></h4>
+                    <span class="text-muted" style="font-size: 0.75rem;">Theo giá bán hiện tại</span>
+                </div>
+            </div>
+            <div class="col-3">
+                <div class="kpi-card">
+                    <span class="text-muted small">Cảnh Báo Kho</span>
+                    <h4 class="fw-bold text-danger mt-1 mb-0">@outOfStockCount <span class="fs-6 fw-normal text-muted">hết</span> / @lowStockCount <span class="fs-6 fw-normal text-muted">sắp hết</span></h4>
+                    <span class="text-muted" style="font-size: 0.75rem;">Cần lên lịch nhập hàng</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered table-hover align-middle">
+                <thead>
+                    <tr class="text-center">
+                        <th style="width: 40px;">STT</th>
+                        <th style="width: 90px;">Mã SKU</th>
+                        <th style="width: 240px;">Tên Sản Phẩm</th>
+                        <th style="width: 140px;">Danh Mục</th>
+                        <th>Chi Tiết Biến Thể & Số Lượng</th>
+                        <th style="width: 90px;">Tổng Tồn</th>
+                        <th style="width: 110px;">Đơn Giá</th>
+                        <th style="width: 130px;">Trị Giá Tồn</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        int stt = 1;
+                        foreach (var item in Model)
+                        {
+                            decimal itemPrice = item.DiscountPrice ?? item.Price;
+                            decimal itemStockValue = item.TotalStock * itemPrice;
+                            <tr>
+                                <td class="text-center fw-semibold text-muted">@(stt++)</td>
+                                <td class="text-center font-monospace small">@(item.Sku ?? $"BS-{item.Id}")</td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@item.Name</div>
+                                    @if (item.IsFlashSaleActive)
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle" style="font-size: 0.7rem;">🔥 Flash Sale</span>
+                                    }
+                                </td>
+                                <td>@(item.Category?.Name ?? "N/A")</td>
+                                <td>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @if (item.Variants.Any())
+                                        {
+                                            foreach (var v in item.Variants)
+                                            {
+                                                string badgeColor = v.StockQuantity == 0 ? "bg-danger-subtle text-danger border-danger-subtle" : (v.StockQuantity <= 5 ? "bg-warning-subtle text-warning-emphasis border-warning-subtle" : "bg-light text-dark border");
+                                                <span class="badge @badgeColor border px-2 py-1" style="font-size: 0.75rem;">
+                                                    @v.Size / @v.Color: <strong>@v.StockQuantity</strong>
+                                                </span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted small fst-italic">Chưa có biến thể</span>
+                                        }
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    @if (item.TotalStock == 0)
+                                    {
+                                        <span class="badge bg-danger text-white rounded-pill px-2">Hết hàng (0)</span>
+                                    }
+                                    else if (item.TotalStock <= 5)
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-2">Sắp hết (@item.TotalStock)</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2">@item.TotalStock</span>
+                                    }
+                                </td>
+                                <td class="text-end fw-semibold">@itemPrice.ToString("N0")đ</td>
+                                <td class="text-end fw-bold text-dark">@itemStockValue.ToString("N0")đ</td>
+                            </tr>
+                        }
+                        <tr class="table-light fw-bold">
+                            <td colspan="5" class="text-end text-uppercase">TỔNG CỘNG TOÀN KHO:</td>
+                            <td class="text-center text-primary fs-6">@totalStockQty.ToString("N0")</td>
+                            <td></td>
+                            <td class="text-end text-success fs-6">@totalStockValue.ToString("N0")đ</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">Không tìm thấy sản phẩm nào phù hợp điều kiện báo cáo.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Signatures -->
+        <div class="row pt-4 mt-5 text-center">
+            <div class="col-4">
+                <div class="fw-bold">NGƯỜI LẬP BÁO CÁO</div>
+                <div class="text-muted small fst-italic">(Ký, họ tên)</div>
+                <div style="height: 80px;"></div>
+                <div class="fw-semibold">Bộ phận Kho Vận</div>
+            </div>
+            <div class="col-4">
+                <div class="fw-bold">KẾ TOÁN KHO</div>
+                <div class="text-muted small fst-italic">(Ký, họ tên)</div>
+                <div style="height: 80px;"></div>
+                <div class="fw-semibold">Phòng Kế Toán</div>
+            </div>
+            <div class="col-4">
+                <div class="fw-bold">GIÁM ĐỐC DUYỆT</div>
+                <div class="text-muted small fst-italic">(Ký, đóng dấu)</div>
+                <div style="height: 80px;"></div>
+                <div class="fw-semibold">Ban Giám Đốc</div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,197 @@
+﻿@model List<WebsiteBabyShop.Models.Order>
+@{
+    ViewData["Title"] = "Quản Lý Đơn Đặt Hàng";
+    string currentStatus = ViewBag.CurrentStatus as string ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div>
+        <h4 class="fw-bold m-0"><i class="bi bi-receipt text-primary me-2"></i>Danh Sách Đơn Hàng (@(ViewBag.TotalItems ?? Model.Count))</h4>
+        <span class="text-muted small">Theo dõi trạng thái đơn hàng, in vận đơn nhiệt K80 và xuất danh sách soạn hàng kho</span>
+    </div>
+    <div class="d-flex gap-2">
+        <button type="button" id="btnBatchPickingList" class="btn btn-outline-primary rounded-pill px-3 shadow-sm">
+            <i class="bi bi-clipboard-check me-1"></i> In Phiếu Soạn Hàng Kho
+        </button>
+        <a asp-action="PrintReport" asp-route-status="@currentStatus" target="_blank" class="btn btn-outline-secondary rounded-pill px-3 shadow-sm">
+            <i class="bi bi-printer me-1"></i> Báo Cáo Doanh Thu (PDF)
+        </a>
+    </div>
+</div>
+
+<!-- Status Filters -->
+<div class="d-flex flex-wrap gap-2 mb-4">
+    <a asp-action="Index" class="btn btn-sm rounded-pill @(string.IsNullOrEmpty(currentStatus) ? "btn-dark" : "btn-light border")">
+        Tất cả
+    </a>
+    <a asp-action="Index" asp-route-status="Pending" class="btn btn-sm rounded-pill @(currentStatus == "Pending" ? "btn-warning text-dark fw-bold" : "btn-light border")">
+        Chờ xác nhận
+    </a>
+    <a asp-action="Index" asp-route-status="Processing" class="btn btn-sm rounded-pill @(currentStatus == "Processing" ? "btn-info text-dark fw-bold" : "btn-light border")">
+        Đang chuẩn bị hàng
+    </a>
+    <a asp-action="Index" asp-route-status="Shipping" class="btn btn-sm rounded-pill @(currentStatus == "Shipping" ? "btn-primary fw-bold" : "btn-light border")">
+        Đang giao hàng
+    </a>
+    <a asp-action="Index" asp-route-status="Completed" class="btn btn-sm rounded-pill @(currentStatus == "Completed" ? "btn-success fw-bold" : "btn-light border")">
+        Đã hoàn thành
+    </a>
+    <a asp-action="Index" asp-route-status="Cancelled" class="btn btn-sm rounded-pill @(currentStatus == "Cancelled" ? "btn-danger fw-bold" : "btn-light border")">
+        Đã hủy
+    </a>
+</div>
+
+<!-- Table -->
+<div class="card border-0 rounded-4 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3" style="width: 40px;">
+                            <input type="checkbox" id="selectAllOrders" class="form-check-input" title="Chọn tất cả" />
+                        </th>
+                        <th>Mã đơn</th>
+                        <th>Khách hàng</th>
+                        <th>Số điện thoại</th>
+                        <th>Địa chỉ giao hàng</th>
+                        <th>Tổng tiền</th>
+                        <th>Thanh toán</th>
+                        <th>Trạng thái</th>
+                        <th>Thời gian</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var order in Model)
+                        {
+                            <tr>
+                                <td class="ps-3">
+                                    <input type="checkbox" class="form-check-input order-checkbox" value="@order.Id" />
+                                </td>
+                                <td><strong class="text-danger font-monospace">@order.OrderCode</strong></td>
+                                <td class="fw-bold">@order.CustomerName</td>
+                                <td>@order.CustomerPhone</td>
+                                <td class="small text-truncate" style="max-width: 180px;" title="@order.ShippingAddress">
+                                    @order.ShippingAddress
+                                </td>
+                                <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") đ</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">@order.PaymentMethod</span>
+                                    @if (order.IsPaid)
+                                    {
+                                        <span class="badge bg-success small">Đã trả</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary small">Chưa trả</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (order.OrderStatus == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark">Chờ xác nhận</span>
+                                    }
+                                    else if (order.OrderStatus == "Processing")
+                                    {
+                                        <span class="badge bg-info text-dark">Đang chuẩn bị</span>
+                                    }
+                                    else if (order.OrderStatus == "Shipping")
+                                    {
+                                        <span class="badge bg-primary">Đang giao</span>
+                                    }
+                                    else if (order.OrderStatus == "Completed")
+                                    {
+                                        <span class="badge bg-success">Hoàn thành</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">@order.OrderStatus</span>
+                                    }
+                                </td>
+                                <td class="small text-muted">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end pe-3">
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary rounded-pill dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false" title="In vận đơn">
+                                                <i class="bi bi-printer"></i>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                                <li>
+                                                    <a class="dropdown-item small" asp-action="PrintWaybill" asp-route-id="@order.Id" asp-route-format="k80" target="_blank">
+                                                        <i class="bi bi-receipt me-2"></i>In Bill Nhiệt K80 (Shipper)
+                                                    </a>
+                                                </li>
+                                                <li>
+                                                    <a class="dropdown-item small" asp-action="PrintWaybill" asp-route-id="@order.Id" asp-route-format="a5" target="_blank">
+                                                        <i class="bi bi-file-earmark-text me-2"></i>In Vận Đơn Khổ A5
+                                                    </a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                        <a asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            Chi tiết
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="10" class="text-center py-5 text-muted">
+                                Không có đơn hàng nào trong mục này.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_AdminPagination" />
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        var selectAll = document.getElementById("selectAllOrders");
+        var checkboxes = document.querySelectorAll(".order-checkbox");
+        var btnBatchPicking = document.getElementById("btnBatchPickingList");
+
+        if (selectAll) {
+            selectAll.addEventListener("change", function() {
+                checkboxes.forEach(function(cb) {
+                    cb.checked = selectAll.checked;
+                });
+            });
+        }
+
+        if (btnBatchPicking) {
+            btnBatchPicking.addEventListener("click", function() {
+                var selectedIds = [];
+                document.querySelectorAll(".order-checkbox:checked").forEach(function(cb) {
+                    selectedIds.push(cb.value);
+                });
+
+                if (selectedIds.length === 0) {
+                    // Nếu chưa tick đơn nào, in tất cả các đơn trên trang hiện tại
+                    var allIds = [];
+                    document.querySelectorAll(".order-checkbox").forEach(function(cb) {
+                        allIds.push(cb.value);
+                    });
+                    if (allIds.length === 0) {
+                        alert("Không có đơn hàng nào trên trang để lập phiếu soạn hàng.");
+                        return;
+                    }
+                    if (confirm("Bạn chưa chọn đơn hàng cụ thể. Bạn có muốn lập Phiếu Soạn Hàng cho TOÀN BỘ " + allIds.length + " đơn trên trang này không?")) {
+                        window.open("/Admin/Orders/PrintPickingList?ids=" + allIds.join(","), "_blank");
+                    }
+                } else {
+                    window.open("/Admin/Orders/PrintPickingList?ids=" + selectedIds.join(","), "_blank");
+                }
+            });
+        }
+    });
+</script>

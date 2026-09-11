@@ -1,0 +1,248 @@
+﻿@model WebsiteBabyShop.Models.Order
+@{
+    ViewData["Title"] = "Đặt Hàng Thành Công - " + Model.OrderCode;
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-7">
+            <div class="bg-white rounded-4 shadow-sm border p-4 p-md-5 text-center">
+                <!-- Success icon -->
+                <div class="rounded-circle bg-success-subtle text-success mx-auto d-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px; font-size: 2.5rem;">
+                    <i class="bi bi-check-lg"></i>
+                </div>
+
+                <h2 class="fw-bold text-dark mb-2">Đặt Hàng Thành Công!</h2>
+                <p class="text-muted mb-4">Cảm ơn mẹ đã tin tưởng và lựa chọn những bộ đồ xinh xắn cho bé tại BabyShop.</p>
+
+                @if (!string.IsNullOrWhiteSpace(Model.CustomerEmail))
+                {
+                    <div class="alert alert-success d-flex align-items-center mb-4 text-start rounded-4 border-success-subtle bg-success-subtle text-success-emphasis p-3 p-md-4 shadow-sm">
+                        <div class="rounded-circle bg-success text-white p-3 me-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+                            <i class="bi bi-envelope-check-fill fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-bold fs-6 text-success-emphasis">Email xác nhận đơn hàng đã được gửi thành công!</div>
+                            <div class="small text-muted mt-1">
+                                Chi tiết đơn hàng và hướng dẫn đã được gửi tới địa chỉ: <strong class="text-dark">@Model.CustomerEmail</strong>. 
+                                Mẹ vui lòng kiểm tra hộp thư đến (hoặc hòm thư Spam/Quảng cáo) nhé!
+                            </div>
+                            <div class="mt-2">
+                                <a href="/emails/order-@(Model.OrderCode).html" target="_blank" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1 small fw-semibold">
+                                    <i class="bi bi-envelope-open me-1"></i> Xem nội dung email xác nhận
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="p-3 rounded-4 bg-light text-start mb-4">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Mã đơn hàng:</span>
+                        <strong class="text-danger fs-5">@Model.OrderCode</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Ngày đặt:</span>
+                        <span>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Người nhận:</span>
+                        <strong>@Model.CustomerName (@Model.CustomerPhone)</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Địa chỉ nhận hàng:</span>
+                        <span>@Model.ShippingAddress</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Phương thức thanh toán:</span>
+                        <span class="badge bg-primary">@(Model.PaymentMethod == "COD" ? "Thanh toán khi nhận hàng (COD)" : "Chuyển khoản ngân hàng")</span>
+                    </div>
+                    <hr class="my-2" />
+                    <div class="d-flex justify-content-between mb-1 small">
+                        <span class="text-muted">Tiền hàng:</span>
+                        <span>@Model.SubTotal.ToString("N0") đ</span>
+                    </div>
+                    @if (Model.DiscountAmount > 0)
+                    {
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span class="text-success"><i class="bi bi-tag-fill me-1"></i>Giảm giá voucher (@Model.CouponCode):</span>
+                            <span class="text-danger fw-bold">-@Model.DiscountAmount.ToString("N0") đ</span>
+                        </div>
+                    }
+                    @if (Model.MemberDiscount > 0)
+                    {
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span class="text-primary"><i class="bi bi-award-fill me-1"></i>Chiết khấu thành viên:</span>
+                            <span class="text-danger fw-bold">-@Model.MemberDiscount.ToString("N0") đ</span>
+                        </div>
+                    }
+                    @if (Model.PointDiscount > 0)
+                    {
+                        <div class="d-flex justify-content-between mb-1 small">
+                            <span class="text-warning-emphasis"><i class="bi bi-star-fill text-warning me-1"></i>Điểm thưởng Baby Club (@Model.PointsUsed pts):</span>
+                            <span class="text-danger fw-bold">-@Model.PointDiscount.ToString("N0") đ</span>
+                        </div>
+                    }
+                    <div class="d-flex justify-content-between mb-2 small">
+                        <span class="text-muted">Phí giao hàng:</span>
+                        <span>@(Model.ShippingFee == 0 ? "Miễn phí" : Model.ShippingFee.ToString("N0") + " đ")</span>
+                    </div>
+                    <hr class="my-2" />
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold fs-5">Tổng thanh toán:</span>
+                        <strong class="text-danger fs-4">@Model.TotalAmount.ToString("N0") đ</strong>
+                    </div>
+
+                    @if (Model.UserId.HasValue || (User.Identity?.IsAuthenticated ?? false))
+                    {
+                        var estPoints = (int)Math.Floor(Model.TotalAmount / 1000m);
+                        <div class="mt-3 p-2 px-3 rounded-3 bg-warning-subtle bg-opacity-25 border border-warning-subtle d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <div class="small">
+                                <i class="bi bi-star-fill text-warning me-1"></i>
+                                <span class="fw-semibold text-dark">Tích lũy Baby Club:</span>
+                                <span class="text-muted">Đơn hàng sẽ được tích <strong>+@estPoints.ToString("N0") điểm</strong> (100k = 100 điểm) ngay sau khi giao hàng thành công!</span>
+                            </div>
+                            <span class="badge bg-warning text-dark fw-bold">100 điểm = 10k</span>
+                        </div>
+                    }
+                </div>
+
+                @if (Model.PaymentMethod == "BankTransfer")
+                {
+                    var bankId = "MB";
+                    var bankName = "MB Bank (Ngân hàng Quân Đội)";
+                    var accountNo = "212882";
+                    var accountName = "MAI TIEN DUNG";
+                    var transferAmount = (long)Model.TotalAmount;
+                    var transferMemo = Model.OrderCode;
+                    var qrUrl = $"https://img.vietqr.io/image/{bankId}-{accountNo}-compact2.png?amount={transferAmount}&addInfo={Uri.EscapeDataString(transferMemo)}&accountName={Uri.EscapeDataString(accountName)}";
+
+                    <div class="baby-qr-payment-card border border-primary-subtle rounded-4 p-3 p-md-4 mb-4 text-start bg-white shadow-sm">
+                        <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">
+                                    <i class="bi bi-qr-code-scan text-primary me-2"></i>Quét Mã VietQR Để Thanh Toán
+                                </h5>
+                                <span class="text-muted small">Mở App ngân hàng bất kỳ để quét mã chuyển khoản tự động 24/7</span>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small fw-bold">
+                                <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>Xác nhận tự động
+                            </span>
+                        </div>
+
+                        <div class="row g-4 align-items-center">
+                            <!-- Left: QR Code Preview -->
+                            <div class="col-12 col-md-5 text-center">
+                                <div class="p-2 border rounded-4 bg-light d-inline-block shadow-sm">
+                                    <img src="@qrUrl" alt="VietQR Thanh Toán @Model.OrderCode" class="img-fluid rounded-3" style="max-width: 250px; height: auto;" />
+                                    <div class="mt-2 text-center">
+                                        <a href="@qrUrl" download="VietQR-@Model.OrderCode" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 small">
+                                            <i class="bi bi-download me-1"></i> Tải mã QR
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="small text-muted mt-2">
+                                    <i class="bi bi-shield-check text-success me-1"></i>Hỗ trợ mọi App Ngân hàng & Ví điện tử
+                                </div>
+                            </div>
+
+                            <!-- Right: Transfer Details & Copy Buttons -->
+                            <div class="col-12 col-md-7">
+                                <div class="d-flex flex-column gap-2">
+                                    <!-- Bank Name -->
+                                    <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-muted" style="font-size: 0.78rem;">Ngân hàng thụ hưởng:</div>
+                                            <div class="fw-bold text-dark small">@bankName</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Account Number -->
+                                    <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-muted" style="font-size: 0.78rem;">Số tài khoản:</div>
+                                            <div class="fw-bold fs-5 text-primary font-monospace" id="bankAccNo">@accountNo</div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyTransferText('bankAccNo', this)">
+                                            <i class="bi bi-copy me-1"></i> Sao chép
+                                        </button>
+                                    </div>
+
+                                    <!-- Account Name -->
+                                    <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-muted" style="font-size: 0.78rem;">Chủ tài khoản:</div>
+                                            <div class="fw-bold text-dark text-uppercase small">@accountName</div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Transfer Amount -->
+                                    <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-muted" style="font-size: 0.78rem;">Số tiền chuyển khoản:</div>
+                                            <div class="fw-bold fs-5 text-danger font-monospace" id="bankAmount">@transferAmount.ToString("N0") đ</div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3" onclick="copyTransferText('@transferAmount', this, true)">
+                                            <i class="bi bi-copy me-1"></i> Sao chép
+                                        </button>
+                                    </div>
+
+                                    <!-- Transfer Memo / Content -->
+                                    <div class="p-2 px-3 rounded-3 bg-warning-subtle border border-warning-subtle d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="small text-dark fw-bold" style="font-size: 0.78rem;">Nội dung chuyển khoản (bắt buộc):</div>
+                                            <div class="fw-bold fs-5 text-danger font-monospace" id="bankMemo">@transferMemo</div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold" onclick="copyTransferText('bankMemo', this)">
+                                            <i class="bi bi-copy me-1"></i> Sao chép
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info py-2 px-3 rounded-3 small mt-3 mb-0" style="font-size: 0.8rem;">
+                                    <i class="bi bi-info-circle-fill me-1 text-primary"></i>
+                                    <strong>Lưu ý quan trọng:</strong> Mẹ vui lòng giữ nguyên nội dung chuyển khoản là mã đơn <strong class="text-danger">@Model.OrderCode</strong> để hệ thống tự động gạch nợ và xác nhận đơn trong 1-3 phút nhé!
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a asp-controller="OrderTracking" asp-action="Index" asp-route-orderCode="@Model.OrderCode" asp-route-phone="@Model.CustomerPhone" class="btn btn-baby-primary">
+                        <i class="bi bi-truck me-1"></i> Theo Dõi Tiến Độ Đơn Hàng
+                    </a>
+                    <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-house-door me-1"></i> Về Trang Chủ
+                    </a>
+                    <a asp-controller="Product" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4 fw-semibold">
+                        <i class="bi bi-bag-plus me-1"></i> Xem Thêm Đồ Cho Bé
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyTransferText(elementIdOrValue, btn, isDirectValue) {
+            var text = isDirectValue ? elementIdOrValue : (document.getElementById(elementIdOrValue)?.innerText || elementIdOrValue);
+            navigator.clipboard.writeText(text).then(function() {
+                var originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check-lg me-1 text-success"></i> Đã chép!';
+                btn.classList.add('btn-success', 'text-white');
+                btn.classList.remove('btn-outline-secondary', 'btn-outline-danger');
+                setTimeout(function() {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('btn-success', 'text-white');
+                    if (elementIdOrValue === 'bankMemo') {
+                        btn.classList.add('btn-outline-danger');
+                    } else {
+                        btn.classList.add('btn-outline-secondary');
+                    }
+                }, 2000);
+            });
+        }
+    </script>
+}

@@ -1,0 +1,128 @@
+﻿@{
+    ViewData["Title"] = "Chính Sách Bảo Mật Thông Tin Khách Hàng - BabyShop Studio Kids";
+}
+
+<!-- Breadcrumb -->
+<div class="bg-light py-3 border-bottom">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0 small">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang Chủ</a></li>
+                <li class="breadcrumb-item"><span class="text-muted">Chính Sách</span></li>
+                <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Bảo Mật Thông Tin</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<!-- Hero Banner -->
+<section class="py-5" style="background: linear-gradient(135deg, #FAF7F2 0%, #F1F5F9 100%);">
+    <div class="container text-center py-3">
+        <span class="badge rounded-pill px-3 py-2 text-uppercase fw-bold mb-3" style="background: #E2E8F0; color: #1E293B; letter-spacing: 1px; font-size: 0.75rem;">
+            Bảo Mật Tuyệt Đối & Minh Bạch
+        </span>
+        <h1 class="display-6 fw-bold text-dark mb-3">Chính Sách Bảo Mật Thông Tin</h1>
+        <p class="text-muted mx-auto" style="max-width: 650px; line-height: 1.7;">
+            BabyShop cam kết tôn trọng và bảo vệ tối đa quyền riêng tư cùng dữ liệu cá nhân của quý phụ huynh và các bé. Chúng tôi tuân thủ nghiêm ngặt các quy định pháp luật về bảo vệ dữ liệu người tiêu dùng tại Việt Nam.
+        </p>
+    </div>
+</section>
+
+<!-- 4 Trụ Cột Bảo Mật -->
+<section class="py-5 bg-white">
+    <div class="container">
+        <div class="row g-4">
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #EBF3EE; color: var(--baby-sage); font-size: 1.5rem;">
+                        <i class="bi bi-shield-lock-fill"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Mã Hóa SSL 256-bit</h6>
+                    <p class="small text-muted mb-0">Toàn bộ dữ liệu truyền tải giữa thiết bị của mẹ và máy chủ BabyShop đều được mã hóa theo giao thức bảo mật cao cấp SSL/TLS.</p>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #FAF7F2; color: var(--baby-primary); font-size: 1.5rem;">
+                        <i class="bi bi-person-slash"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Không Chia Sẻ Dữ Liệu</h6>
+                    <p class="small text-muted mb-0">Tuyệt đối không bán, trao đổi hay chia sẻ số điện thoại, địa chỉ của ba mẹ cho bất kỳ bên thứ ba nào vì mục đích quảng cáo rác.</p>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #FDF2F4; color: var(--baby-rose); font-size: 1.5rem;">
+                        <i class="bi bi-credit-card-2-front"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">An Toàn Thanh Toán</h6>
+                    <p class="small text-muted mb-0">Hỗ trợ nhận hàng trả tiền (COD) hoặc quét mã VietQR qua ứng dụng ngân hàng chính chủ, không lưu trữ thông tin thẻ tín dụng của khách.</p>
+                </div>
+            </div>
+
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="p-4 rounded-4 border h-100 text-center shadow-xs">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" style="width: 58px; height: 58px; background: #F1F5F9; color: #1E293B; font-size: 1.5rem;">
+                        <i class="bi bi-sliders"></i>
+                    </div>
+                    <h6 class="fw-bold mb-2">Quyền Kiểm Soát Dữ Liệu</h6>
+                    <p class="small text-muted mb-0">Ba mẹ có toàn quyền yêu cầu chỉnh sửa, cập nhật hoặc xóa toàn bộ thông tin tài khoản cá nhân khỏi hệ thống của BabyShop bất cứ lúc nào.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Chi Tiết 6 Điều Khoản Bảo Mật -->
+<section class="py-5" style="background: #FAF9F6;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-9">
+                <div class="bg-white p-4 p-md-5 rounded-4 shadow-sm border mb-4">
+                    <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-1-circle text-primary me-2" style="color: var(--baby-primary) !important;"></i>1. Mục Đích Thu Thập Thông Tin</h4>
+                    <p class="text-muted small mb-4" style="line-height: 1.8;">
+                        BabyShop thu thập thông tin khách hàng nhằm mục đích duy nhất:
+                        <br />• Xử lý và hoàn tất các đơn đặt hàng trang phục trẻ em.
+                        <br />• Điều phối dịch vụ giao hàng tận nơi và dịch vụ đổi size tận nhà trong 7 ngày.
+                        <br />• Liên hệ xác nhận đơn hàng hoặc giải đáp thắc mắc của khách hàng qua Hotline và Live Chat.
+                        <br />• Gửi thông báo ưu đãi, voucher sinh nhật của bé (chỉ áp dụng khi khách hàng có đăng ký nhận tin).
+                    </p>
+
+                    <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-2-circle text-primary me-2" style="color: var(--baby-primary) !important;"></i>2. Phạm Vi Thu Thập Dữ Liệu</h4>
+                    <p class="text-muted small mb-4" style="line-height: 1.8;">
+                        Các thông tin cơ bản bao gồm: Họ và tên phụ huynh, Số điện thoại, Địa chỉ nhận hàng, Email và Tên tài khoản (đối với thành viên đã đăng ký).
+                        <br />Chúng tôi <strong>không bao giờ thu thập</strong> các thông tin nhạy cảm như số CMND/CCCD, thông tin tài chính cá nhân hay số tài khoản ngân hàng mật.
+                    </p>
+
+                    <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-3-circle text-primary me-2" style="color: var(--baby-primary) !important;"></i>3. Thời Gian Lưu Trữ Thông Tin</h4>
+                    <p class="text-muted small mb-4" style="line-height: 1.8;">
+                        Dữ liệu cá nhân của khách hàng sẽ được lưu trữ an toàn trong hệ thống máy chủ của BabyShop cho đến khi có yêu cầu hủy bỏ từ phía khách hàng hoặc khách hàng tự đăng nhập để xóa tài khoản.
+                    </p>
+
+                    <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-4-circle text-primary me-2" style="color: var(--baby-primary) !important;"></i>4. Những Người Hoặc Tổ Chức Có Thể Tiếp Cận Thông Tin</h4>
+                    <p class="text-muted small mb-4" style="line-height: 1.8;">
+                        Thông tin của khách hàng chỉ được cung cấp cho:
+                        <br />• Đội ngũ nhân viên nội bộ của BabyShop (bộ phận đóng gói kho và bộ phận CSKH) để xử lý đơn hàng.
+                        <br />• Đơn vị vận chuyển đối tác (GHTK, Viettel Post): Chỉ nhận thông tin Tên, Số điện thoại và Địa chỉ để giao bưu kiện.
+                        <br />• Cơ quan pháp luật có thẩm quyền khi có yêu cầu bằng văn bản theo đúng luật định.
+                    </p>
+
+                    <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-5-circle text-primary me-2" style="color: var(--baby-primary) !important;"></i>5. Quyền Lợi Của Khách Hàng</h4>
+                    <p class="text-muted small mb-4" style="line-height: 1.8;">
+                        Khách hàng có quyền tự kiểm tra, cập nhật, điều chỉnh thông tin cá nhân của mình bằng cách đăng nhập vào tài khoản tại trang <a asp-controller="Account" asp-action="Profile" class="fw-bold text-decoration-none" style="color: var(--baby-primary);">Thông Tin Cá Nhân</a> hoặc liên hệ ban quản trị website để yêu cầu hỗ trợ.
+                    </p>
+
+                    <h4 class="fw-bold mb-3 text-dark"><i class="bi bi-6-circle text-primary me-2" style="color: var(--baby-primary) !important;"></i>6. Thông Tin Đơn Vị Quản Lý</h4>
+                    <div class="p-3 rounded-3 bg-light border small text-muted">
+                        <p class="mb-1 fw-bold text-dark">HỆ THỐNG THỜI TRANG TRẺ EM BABYSHOP STUDIO KIDS</p>
+                        <p class="mb-1"><i class="bi bi-geo-alt me-2"></i>Địa chỉ Showroom: 123 Cầu Giấy, TP. Hà Nội</p>
+                        <p class="mb-1"><i class="bi bi-telephone me-2"></i>Hotline bảo mật & CSKH: <strong>1900 633 520</strong></p>
+                        <p class="mb-0"><i class="bi bi-envelope me-2"></i>Email hỗ trợ quyền riêng tư: <strong>privacy@babyshop.vn</strong> / <strong>cskh@babyshop.vn</strong></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>

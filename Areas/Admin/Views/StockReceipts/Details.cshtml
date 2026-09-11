@@ -1,0 +1,203 @@
+﻿@model WebsiteBabyShop.Models.StockReceipt
+@{
+    ViewData["Title"] = "Chi Tiết Phiếu Nhập " + Model.ReceiptCode;
+    int totalQty = Model.ReceiptDetails.Sum(d => d.Quantity);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom d-print-none">
+    <div>
+        <h4 class="fw-bold m-0 text-dark">Phiếu Nhập Kho: <span class="text-primary font-monospace">@Model.ReceiptCode</span></h4>
+        <span class="small text-muted">Lập lúc: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm:ss") bởi <strong>@Model.CreatedBy</strong></span>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+        <button type="button" class="btn btn-dark rounded-pill btn-sm shadow-sm" onclick="window.print()">
+            <i class="bi bi-printer me-1"></i> In Phiếu Nhập Kho
+        </button>
+    </div>
+</div>
+
+<!-- Print Header (Chỉ hiện khi In) -->
+<div class="d-none d-print-block mb-4">
+    <div class="row align-items-center">
+        <div class="col-8">
+            <h4 class="fw-bold mb-1">BABYSHOP STUDIO KIDS</h4>
+            <div class="small text-muted">Hệ Thống Thời Trang Thiết Kế Cho Trẻ Em Cao Cấp</div>
+            <div class="small">Địa chỉ kho: 123 Cầu Giấy, Quan Hoa, Cầu Giấy, Hà Nội | Hotline: 1900 633 520</div>
+        </div>
+        <div class="col-4 text-end">
+            <h5 class="fw-bold text-dark m-0">PHIẾU NHẬP KHO</h5>
+            <div class="font-monospace fw-bold">Mã: @Model.ReceiptCode</div>
+            <div class="small">Ngày: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+        </div>
+    </div>
+    <hr class="my-3 border-2" />
+</div>
+
+<div class="row g-4">
+    <!-- Cột Trái: Bảng Sản Phẩm Nhập -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 rounded-4 shadow-sm mb-4">
+            <div class="card-header bg-white py-3 border-0">
+                <h5 class="fw-bold m-0"><i class="bi bi-box-seam text-danger me-2"></i>Danh Sách Mặt Hàng Nhập Kho (@Model.ReceiptDetails.Count mục - @totalQty chiếc)</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Sản Phẩm</th>
+                                <th>Phân Loại</th>
+                                <th class="text-center">Số Lượng</th>
+                                <th class="text-end">Giá Vốn</th>
+                                <th class="text-end pe-3">Thành Tiền</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.ReceiptDetails)
+                            {
+                                var itemImg = !string.IsNullOrEmpty(item.ProductVariant?.ImageUrl) 
+                                    ? item.ProductVariant.ImageUrl 
+                                    : (!string.IsNullOrEmpty(item.Product?.MainImageUrl) ? item.Product.MainImageUrl : "/images/placeholder.png");
+                                var hex = item.ProductVariant?.ColorHex;
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-3">
+                                            <img src="@itemImg" alt="@item.ProductName" class="rounded-3 border d-print-none flex-shrink-0" style="width: 48px; height: 48px; object-fit: cover;" onerror="this.src='/images/placeholder.png'" />
+                                            <div>
+                                                <h6 class="fw-bold mb-0 text-dark">@item.ProductName</h6>
+                                                @if (item.Product != null && !string.IsNullOrEmpty(item.Product.Sku))
+                                                {
+                                                    <span class="small text-muted font-monospace">SKU SP: @item.Product.Sku</span>
+                                                }
+                                                @if (item.ProductVariant != null && !string.IsNullOrEmpty(item.ProductVariant.Sku))
+                                                {
+                                                    <span class="small text-muted font-monospace ms-2">Mã BT: @item.ProductVariant.Sku</span>
+                                                }
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                                            @if (!string.IsNullOrEmpty(item.Color))
+                                            {
+                                                <span class="badge bg-light text-dark border d-inline-flex align-items-center gap-1">
+                                                    @if (!string.IsNullOrEmpty(hex))
+                                                    {
+                                                        <span style="display:inline-block; width:11px; height:11px; border-radius:50%; background-color:@hex; border:1px solid rgba(0,0,0,0.2);"></span>
+                                                    }
+                                                    @item.Color
+                                                </span>
+                                            }
+                                            @if (!string.IsNullOrEmpty(item.Size))
+                                            {
+                                                <span class="badge bg-light text-dark border">@item.Size</span>
+                                            }
+                                        </div>
+                                        @if (item.ProductVariant != null)
+                                        {
+                                            <div class="small text-muted mt-1" style="font-size: 0.76rem;">
+                                                <i class="bi bi-box2 me-1"></i>Tồn hiện tại: <strong>@item.ProductVariant.StockQuantity</strong> chiếc
+                                            </div>
+                                        }
+                                    </td>
+                                    <td class="text-center fw-bold fs-6">@item.Quantity</td>
+                                    <td class="text-end">@item.ImportPrice.ToString("N0") đ</td>
+                                    <td class="text-end pe-3 fw-bold text-danger">@item.TotalPrice.ToString("N0") đ</td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-light fw-bold">
+                                <td colspan="2" class="text-end">TỔNG CỘNG:</td>
+                                <td class="text-center text-primary fs-6">@totalQty chiếc</td>
+                                <td></td>
+                                <td class="text-end pe-3 text-danger fs-5">@Model.TotalAmount.ToString("N0") đ</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chữ Ký Khi In Khổ A4 -->
+        <div class="d-none d-print-block mt-5 pt-4">
+            <div class="row text-center">
+                <div class="col-4">
+                    <strong>Người Giao Hàng</strong>
+                    <div class="text-muted small">(Ký, ghi rõ họ tên)</div>
+                    <div style="height: 70px;"></div>
+                </div>
+                <div class="col-4">
+                    <strong>Thủ Kho Nhận Hàng</strong>
+                    <div class="text-muted small">(Ký, ghi rõ họ tên)</div>
+                    <div style="height: 70px;"></div>
+                </div>
+                <div class="col-4">
+                    <strong>Kế Toán / Quản Trị</strong>
+                    <div class="text-muted small">(Ký, ghi rõ họ tên)</div>
+                    <div style="height: 70px;">@Model.CreatedBy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột Phải: Thông Tin Nhà Cung Cấp & Tình Trạng -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 rounded-4 shadow-sm p-4 mb-3">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-building text-primary me-2"></i>Nhà Cung Cấp</h5>
+            <div class="mb-3">
+                <label class="text-muted small">Tên xưởng / Đơn vị:</label>
+                <div class="fw-bold text-dark fs-6">@Model.SupplierName</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Số điện thoại liên hệ:</label>
+                <div class="fw-bold">@(Model.SupplierPhone ?? "Chưa cập nhật")</div>
+            </div>
+            <div class="mb-3">
+                <label class="text-muted small">Địa chỉ xưởng may:</label>
+                <div>@(Model.SupplierAddress ?? "Chưa cập nhật")</div>
+            </div>
+            <div class="mb-0">
+                <label class="text-muted small">Ghi chú đợt hàng:</label>
+                <div class="p-2 bg-light rounded-3 small">@(string.IsNullOrEmpty(Model.Note) ? "Không có ghi chú" : Model.Note)</div>
+            </div>
+        </div>
+
+        <div class="card border-0 rounded-4 shadow-sm p-4">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-info-circle text-success me-2"></i>Trạng Thái Phiếu</h5>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small">Tình trạng nhập:</span>
+                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                    <i class="bi bi-check-circle-fill me-1"></i>Đã nhập kho thành công
+                </span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small">Người lập phiếu:</span>
+                <strong class="text-dark">@Model.CreatedBy</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-0">
+                <span class="text-muted small">Ngày giờ lưu kho:</span>
+                <span>@Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        body {
+            background: white !important;
+            color: black !important;
+        }
+        .admin-sidebar, .admin-navbar, .d-print-none {
+            display: none !important;
+        }
+        .card {
+            box-shadow: none !important;
+            border: 1px solid #dee2e6 !important;
+        }
+    }
+</style>

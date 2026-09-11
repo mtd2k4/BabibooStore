@@ -1,0 +1,87 @@
+﻿@model WebsiteBabyShop.Models.User
+@{
+    ViewData["Title"] = "Thêm Tài Khoản Người Dùng Mới";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="bi bi-person-plus text-primary me-2"></i>Thêm Tài Khoản Người Dùng</h4>
+        <span class="text-muted small">Tạo mới tài khoản Quản trị viên, Nhân viên hoặc Khách hàng thành viên</span>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 rounded-4 shadow-sm p-4">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small" role="alert"></div>
+
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label asp-for="FullName" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="FullName" class="form-control" placeholder="VD: Nguyễn Thu Hà" required />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Username" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="Username" class="form-control" placeholder="VD: thuha_baby" required />
+                        <span asp-validation-for="Username" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Email" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="Email" type="email" class="form-control" placeholder="VD: thuha@gmail.com" required />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small">Mật khẩu khởi tạo</label> <span class="text-danger">*</span>
+                        <input name="password" type="password" class="form-control" placeholder="Tối thiểu 6 ký tự" required />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="PhoneNumber" class="form-label fw-bold small"></label>
+                        <input asp-for="PhoneNumber" class="form-control" placeholder="VD: 0912345678" />
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Role" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <select asp-for="Role" class="form-select">
+                            <option value="Customer">Khách Hàng (Customer)</option>
+                            <option value="Admin">Quản Trị Viên (Admin)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Address" class="form-label fw-bold small"></label>
+                        <textarea asp-for="Address" class="form-control" rows="2" placeholder="Địa chỉ giao nhận hàng mặc định..."></textarea>
+                    </div>
+
+                    <div class="col-12 mt-3">
+                        <div class="form-check form-switch p-3 bg-light rounded-3">
+                            <input class="form-check-input ms-0 me-3" type="checkbox" asp-for="IsActive" id="isActiveSwitch" checked>
+                            <label class="form-check-label fw-bold" for="isActiveSwitch">
+                                Kích hoạt tài khoản ngay sau khi tạo
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-light rounded-pill px-4">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary-baby rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Tạo Tài Khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

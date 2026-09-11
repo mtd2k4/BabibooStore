@@ -1,0 +1,229 @@
+﻿@model List<WebsiteBabyShop.Models.ProductReview>
+@{
+    ViewData["Title"] = "Quản Lý Đánh Giá & Xếp Hạng Sản Phẩm";
+    int totalReviews = ViewBag.TotalReviews ?? 0;
+    double avgRating = ViewBag.AverageRating ?? 5.0;
+    int fiveStarCount = ViewBag.FiveStarCount ?? 0;
+    int pendingCount = ViewBag.PendingCount ?? 0;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="bi bi-star-half text-warning me-2"></i>Đánh Giá & Nhận Xét Sản Phẩm</h4>
+        <span class="text-muted small">Kiểm duyệt và phản hồi đánh giá của ba mẹ về chất liệu, kích cỡ đồ cho bé</span>
+    </div>
+</div>
+
+<!-- Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-star-fill text-warning"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Điểm Đánh Giá TB</span>
+                <h4 class="fw-bold m-0 text-dark">@avgRating <span class="fs-6 text-muted">/ 5.0</span></h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-chat-heart-fill"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Tổng Số Đánh Giá</span>
+                <h4 class="fw-bold m-0 text-dark">@totalReviews</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-hand-thumbs-up-fill"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Đánh Giá Tuyệt Đối (5⭐)</span>
+                <h4 class="fw-bold m-0 text-success">@fiveStarCount</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-secondary-subtle text-secondary d-flex align-items-center justify-content-center" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                <i class="bi bi-eye-slash-fill"></i>
+            </div>
+            <div>
+                <span class="text-muted small">Đang Ẩn / Chờ Duyệt</span>
+                <h4 class="fw-bold m-0 text-dark">@pendingCount</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 rounded-4 shadow-sm mb-4 p-3">
+    <form method="get" class="row g-2 align-items-center">
+        <div class="col-12 col-md-4">
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" class="form-control border-start-0" placeholder="Tìm theo tên khách, SĐT hoặc nội dung nhận xét..." value="@ViewBag.Search" />
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <select name="rating" class="form-select">
+                <option value="">-- Tất cả số sao --</option>
+                <option value="5" selected="@(ViewBag.Rating == 5)">5 sao ⭐⭐⭐⭐⭐</option>
+                <option value="4" selected="@(ViewBag.Rating == 4)">4 sao ⭐⭐⭐⭐</option>
+                <option value="3" selected="@(ViewBag.Rating == 3)">3 sao ⭐⭐⭐</option>
+                <option value="2" selected="@(ViewBag.Rating == 2)">2 sao ⭐⭐</option>
+                <option value="1" selected="@(ViewBag.Rating == 1)">1 sao ⭐</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <select name="isApproved" class="form-select">
+                <option value="">-- Trạng thái duyệt --</option>
+                <option value="true" selected="@(ViewBag.IsApproved == true)">Đang hiển thị</option>
+                <option value="false" selected="@(ViewBag.IsApproved == false)">Đang ẩn</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <select name="productId" asp-items="ViewBag.Products" class="form-select">
+                <option value="">-- Tất cả sản phẩm --</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2">
+            <button type="submit" class="btn btn-dark w-100 rounded-pill"><i class="bi bi-filter me-1"></i> Lọc dữ liệu</button>
+        </div>
+    </form>
+</div>
+
+<!-- Reviews Table -->
+<div class="card border-0 rounded-4 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th class="ps-3">Khách Hàng</th>
+                        <th>Sản Phẩm Đánh Giá</th>
+                        <th>Số Sao</th>
+                        <th style="width: 35%;">Nội Dung Nhận Xét</th>
+                        <th>Thông Tin Bé</th>
+                        <th>Ngày Gửi</th>
+                        <th>Duyệt Hiển Thị</th>
+                        <th class="text-end pe-3">Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        foreach (var r in Model)
+                        {
+                            <tr>
+                                <td class="ps-3">
+                                    <div class="fw-bold text-dark">@r.CustomerName</div>
+                                    @if (!string.IsNullOrEmpty(r.CustomerPhone))
+                                    {
+                                        <div class="small text-muted"><i class="bi bi-telephone me-1"></i>@r.CustomerPhone</div>
+                                    }
+                                    @if (r.IsVerifiedPurchase)
+                                    {
+                                        <span class="badge bg-success-subtle text-success small border border-success-subtle rounded-pill">
+                                            <i class="bi bi-patch-check-fill me-1"></i>Đã mua hàng
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (!string.IsNullOrEmpty(r.Product?.MainImageUrl))
+                                        {
+                                            <img src="@r.Product.MainImageUrl" alt="@r.Product.Name" class="rounded-3" style="width: 44px; height: 44px; object-fit: cover;" />
+                                        }
+                                        <div>
+                                            <a asp-area="" asp-controller="Product" asp-action="Details" asp-route-id="@r.ProductId" target="_blank" class="fw-bold text-dark text-decoration-none small d-inline-block text-truncate" style="max-width: 180px;">
+                                                @(r.Product?.Name ?? $"Sản phẩm #{r.ProductId}")
+                                            </a>
+                                            @if (r.Product?.CurrentPrice != null)
+                                            {
+                                                <div class="small text-danger fw-bold">@r.Product.CurrentPrice.ToString("N0") đ</div>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-warning text-nowrap">
+                                        @for (int i = 1; i <= 5; i++)
+                                        {
+                                            if (i <= r.Rating)
+                                            {
+                                                <i class="bi bi-star-fill"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="bi bi-star text-muted opacity-25"></i>
+                                            }
+                                        }
+                                    </div>
+                                    <span class="small fw-bold text-dark">(@r.Rating / 5)</span>
+                                </td>
+                                <td>
+                                    <div class="text-dark small" style="line-height: 1.5;">@r.Comment</div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(r.BabyInfo))
+                                    {
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-feather me-1 text-primary"></i>@r.BabyInfo
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="small text-muted">@r.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                </td>
+                                <td>
+                                    <form asp-action="ToggleApprove" asp-route-id="@r.Id" method="post" class="d-inline">
+                                        @if (r.IsApproved)
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-success rounded-pill px-3 py-1" title="Bấm để ẩn đánh giá này khỏi trang sản phẩm">
+                                                <i class="bi bi-check-circle-fill me-1"></i>Hiển thị
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="submit" class="btn btn-sm btn-outline-secondary rounded-pill px-3 py-1" title="Bấm để duyệt hiển thị">
+                                                <i class="bi bi-eye-slash me-1"></i>Đang ẩn
+                                            </button>
+                                        }
+                                    </form>
+                                </td>
+                                <td class="text-end pe-3">
+                                    <form asp-action="Delete" asp-route-id="@r.Id" method="post" onsubmit="return confirm('Bạn có chắc chắn muốn xóa đánh giá này?');" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-circle" title="Xóa đánh giá">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="bi bi-star fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                                Không có đánh giá nào phù hợp với bộ lọc tìm kiếm.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <partial name="_AdminPagination" />
+    </div>
+</div>

@@ -1,0 +1,477 @@
+﻿@model List<WebsiteBabyShop.Models.Order>
+@{
+    ViewData["Title"] = "Tổng Quan Báo Cáo & Thống Kê";
+
+    decimal totalRevenue = ViewBag.TotalRevenue ?? 0;
+    decimal todayRevenue = ViewBag.TodayRevenue ?? 0;
+    decimal thisMonthRevenue = ViewBag.ThisMonthRevenue ?? 0;
+    double revenueGrowth = ViewBag.RevenueGrowth ?? 0;
+
+    int totalOrders = ViewBag.TotalOrders ?? 0;
+    int pendingOrders = ViewBag.PendingOrders ?? 0;
+    int processingOrders = ViewBag.ProcessingOrders ?? 0;
+    int shippingOrders = ViewBag.ShippingOrders ?? 0;
+    int completedOrders = ViewBag.CompletedOrders ?? 0;
+    int cancelledOrders = ViewBag.CancelledOrders ?? 0;
+
+    int totalProducts = ViewBag.TotalProducts ?? 0;
+    int totalUsers = ViewBag.TotalUsers ?? 0;
+    decimal totalStockCost = ViewBag.TotalStockCost ?? 0;
+    int lowStockCount = ViewBag.LowStockCount ?? 0;
+
+    var topSelling = ViewBag.TopSelling as List<WebsiteBabyShop.Models.TopSellingProductItem> ?? new List<WebsiteBabyShop.Models.TopSellingProductItem>();
+    var lowStockVariants = ViewBag.LowStockVariants as List<WebsiteBabyShop.Models.ProductVariant> ?? new List<WebsiteBabyShop.Models.ProductVariant>();
+}
+
+<!-- Welcome Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark">
+            <i class="bi bi-speedometer2 text-primary me-2"></i>Bảng Thống Kê Tổng Quan
+        </h4>
+        <span class="text-muted small">Cập nhật chỉ số doanh thu, đơn hàng, khách hàng và trạng thái kho hàng thời gian thực</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" class="btn btn-outline-primary rounded-pill btn-sm">
+            <i class="bi bi-box-arrow-in-down me-1"></i> Nhập Kho Nhanh
+        </a>
+        <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="btn btn-primary-baby rounded-pill btn-sm shadow-sm">
+            <i class="bi bi-plus-circle-fill me-1"></i> Thêm Sản Phẩm Mới
+        </a>
+    </div>
+</div>
+
+<!-- 1. Top KPI Summary Cards -->
+<div class="row g-3 mb-4">
+    <!-- Card 1: Tổng Doanh Thu -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-success-subtle text-success d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                <i class="bi bi-cash-stack"></i>
+            </div>
+            <div class="flex-grow-1">
+                <span class="text-muted small">Tổng Doanh Thu Toàn Sàn</span>
+                <h4 class="fw-bold m-0 text-dark">@totalRevenue.ToString("N0") đ</h4>
+                <span class="small text-success fw-semibold">
+                    <i class="bi bi-calendar-check me-1"></i>Hôm nay: @todayRevenue.ToString("N0") đ
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 2: Doanh Thu Tháng Này -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                <i class="bi bi-graph-up-arrow"></i>
+            </div>
+            <div class="flex-grow-1">
+                <span class="text-muted small">Doanh Thu Tháng @DateTime.Now.Month</span>
+                <h4 class="fw-bold m-0 text-primary">@thisMonthRevenue.ToString("N0") đ</h4>
+                <span class="small @(revenueGrowth >= 0 ? "text-success" : "text-danger") fw-semibold">
+                    <i class="bi @(revenueGrowth >= 0 ? "bi-arrow-up-right" : "bi-arrow-down-right") me-1"></i>@(revenueGrowth >= 0 ? "+" : "")@revenueGrowth% so tháng trước
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Tổng Đơn Hàng -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-warning-subtle text-warning-emphasis d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                <i class="bi bi-bag-check-fill"></i>
+            </div>
+            <div class="flex-grow-1">
+                <span class="text-muted small">Tổng Đơn Hàng</span>
+                <h4 class="fw-bold m-0 text-dark">@totalOrders đơn</h4>
+                <span class="small text-danger fw-semibold">
+                    <i class="bi bi-clock-history me-1"></i>@pendingOrders đơn chờ xác nhận
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 4: Khách Hàng Thành Viên -->
+    <div class="col-12 col-sm-6 col-xl-3">
+        <div class="admin-card-stat">
+            <div class="rounded-circle bg-danger-subtle text-danger d-flex align-items-center justify-content-center" style="width: 56px; height: 56px; font-size: 1.6rem;">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="flex-grow-1">
+                <span class="text-muted small">Thành Viên / Khách Hàng</span>
+                <h4 class="fw-bold m-0 text-dark">@totalUsers người</h4>
+                <span class="small text-muted">
+                    <i class="bi bi-box-seam me-1"></i>@totalProducts mẫu quần áo
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. Charts Section -->
+<div class="row g-4 mb-4">
+    <!-- Chart 1: Doanh Thu 7 Ngày (Line Chart) -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 rounded-4 shadow-sm p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold m-0 text-dark"><i class="bi bi-bar-chart-line-fill text-primary me-2"></i>Xu Hướng Doanh Thu 7 Ngày Gần Nhất</h5>
+                    <span class="text-muted small">Biểu đồ doanh thu thực nhận (VNĐ)</span>
+                </div>
+                <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                    7 Ngày qua
+                </span>
+            </div>
+            <div style="position: relative; height: 280px; width: 100%;">
+                <canvas id="revenueLineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart 2: Phân Bổ Trạng Thái Đơn Hàng (Doughnut Chart) -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 rounded-4 shadow-sm p-4 h-100">
+            <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-pie-chart-fill text-warning-emphasis me-2"></i>Trạng Thái Đơn Hàng</h5>
+            <div style="position: relative; height: 200px; width: 100%;" class="mb-3">
+                <canvas id="orderStatusDoughnutChart"></canvas>
+            </div>
+            <div class="row g-2 small pt-2 border-top">
+                <div class="col-6">
+                    <span class="badge bg-warning text-dark me-1">●</span> Chờ duyệt: <strong>@pendingOrders</strong>
+                </div>
+                <div class="col-6">
+                    <span class="badge bg-info text-dark me-1">●</span> Chuẩn bị: <strong>@processingOrders</strong>
+                </div>
+                <div class="col-6">
+                    <span class="badge bg-primary me-1">●</span> Đang giao: <strong>@shippingOrders</strong>
+                </div>
+                <div class="col-6">
+                    <span class="badge bg-success me-1">●</span> Thành công: <strong>@completedOrders</strong>
+                </div>
+                <div class="col-12 text-center mt-1">
+                    <span class="badge bg-danger me-1">●</span> Đã hủy: <strong>@cancelledOrders</strong>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Top Products & Low Stock Alert -->
+<div class="row g-4 mb-4">
+    <!-- Top 5 Bán Chạy -->
+    <div class="col-12 col-lg-7">
+        <div class="card border-0 rounded-4 shadow-sm p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="fw-bold m-0 text-dark"><i class="bi bi-trophy-fill text-warning me-2"></i>Top Sản Phẩm Bán Chạy Nhất</h5>
+                <a asp-area="Admin" asp-controller="Products" asp-action="Index" class="small text-primary text-decoration-none fw-semibold">Xem tất cả &rarr;</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small">
+                            <th>Sản Phẩm</th>
+                            <th class="text-center">Số Lượng Đã Bán</th>
+                            <th class="text-end">Doanh Thu Mang Lại</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (topSelling.Any())
+                        {
+                            int rank = 1;
+                            foreach (var item in topSelling)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span class="badge @(rank == 1 ? "bg-warning text-dark" : rank == 2 ? "bg-secondary text-white" : rank == 3 ? "bg-bronze text-dark border" : "bg-light text-muted border") rounded-circle" style="width: 24px; height: 24px; display:inline-flex; align-items:center; justify-content:center;">
+                                                @rank
+                                            </span>
+                                            @if (!string.IsNullOrEmpty(item.ProductImage))
+                                            {
+                                                <img src="@item.ProductImage" alt="@item.ProductName" class="rounded-3" style="width: 40px; height: 40px; object-fit: cover;" />
+                                            }
+                                            <a asp-area="" asp-controller="Product" asp-action="Details" asp-route-id="@item.ProductId" target="_blank" class="fw-bold text-dark text-decoration-none small text-truncate d-inline-block" style="max-width: 220px;">
+                                                @item.ProductName
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-1">
+                                            @item.TotalQuantity chiếc
+                                        </span>
+                                    </td>
+                                    <td class="text-end fw-bold text-danger">
+                                        @item.TotalRevenue.ToString("N0") đ
+                                    </td>
+                                </tr>
+                                rank++;
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted small">
+                                    Chưa có dữ liệu đơn hàng hoàn thành.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cảnh Báo Tồn Kho Thấp (Low Stock Alert) -->
+    <div class="col-12 col-lg-5">
+        <div class="card border-0 rounded-4 shadow-sm p-4 h-100">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold m-0 text-dark">
+                        <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Cảnh Báo Tồn Kho Thấp
+                    </h5>
+                    <span class="small text-danger">Có <strong>@lowStockCount</strong> mặt hàng sắp hết (≤ 5 chiếc)</span>
+                </div>
+                <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" class="btn btn-sm btn-outline-danger rounded-pill">
+                    <i class="bi bi-box-arrow-in-down me-1"></i> Nhập kho ngay
+                </a>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr class="small">
+                            <th>Sản Phẩm & Phân Loại</th>
+                            <th class="text-center">Tồn Kho</th>
+                            <th class="text-center">Tình Trạng</th>
+                            <th class="text-end">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (lowStockVariants.Any())
+                        {
+                            foreach (var v in lowStockVariants)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark small text-truncate" style="max-width: 170px;" title="@v.Product?.Name">
+                                            @v.Product?.Name
+                                        </div>
+                                        <span class="badge bg-light text-dark border small">@v.Size - @v.Color</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <strong class="@(v.StockQuantity == 0 ? "text-danger fs-6" : "text-warning-emphasis")">
+                                            @v.StockQuantity
+                                        </strong>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (v.StockQuantity == 0)
+                                        {
+                                            <span class="badge bg-danger rounded-pill">Hết hàng</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark rounded-pill">Sắp hết</span>
+                                        }
+                                    </td>
+                                    <td class="text-end">
+                                        <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" 
+                                           asp-route-productId="@v.ProductId" asp-route-variantId="@v.Id"
+                                           class="btn btn-sm btn-outline-success rounded-pill px-2 py-0 small" title="Tạo phiếu nhập kho ngay cho biến thể này">
+                                            <i class="bi bi-box-arrow-in-down"></i> Nhập
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted small">
+                                    <i class="bi bi-check2-circle text-success fs-4 d-block mb-1"></i>
+                                    Tất cả các sản phẩm đều đang có lượng tồn kho an toàn (> 5 chiếc).
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Đơn Hàng Mới Nhất -->
+<div class="card border-0 rounded-4 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center border-0">
+        <h5 class="fw-bold m-0 text-dark"><i class="bi bi-clock-history text-danger me-2"></i>Đơn Hàng Mới Nhận Gần Đây</h5>
+        <a asp-area="Admin" asp-controller="Orders" asp-action="Index" class="btn btn-outline-primary rounded-pill btn-sm">
+            Xem tất cả đơn hàng &rarr;
+        </a>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-3">Mã Đơn</th>
+                            <th>Khách Hàng</th>
+                            <th>Số Điện Thoại</th>
+                            <th>Tổng Tiền</th>
+                            <th>Thanh Toán</th>
+                            <th>Trạng Thái</th>
+                            <th>Thời Gian</th>
+                            <th class="text-end pe-3">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var order in Model)
+                        {
+                            <tr>
+                                <td class="ps-3"><strong class="text-danger font-monospace">@order.OrderCode</strong></td>
+                                <td class="fw-bold">@order.CustomerName</td>
+                                <td>@order.CustomerPhone</td>
+                                <td class="fw-bold text-danger">@order.TotalAmount.ToString("N0") đ</td>
+                                <td><span class="badge bg-light text-dark border">@order.PaymentMethod</span></td>
+                                <td>
+                                    @if (order.OrderStatus == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1">Chờ xác nhận</span>
+                                    }
+                                    else if (order.OrderStatus == "Processing")
+                                    {
+                                        <span class="badge bg-info text-dark rounded-pill px-3 py-1">Đang chuẩn bị</span>
+                                    }
+                                    else if (order.OrderStatus == "Shipping")
+                                    {
+                                        <span class="badge bg-primary rounded-pill px-3 py-1">Đang giao</span>
+                                    }
+                                    else if (order.OrderStatus == "Completed")
+                                    {
+                                        <span class="badge bg-success rounded-pill px-3 py-1">Hoàn thành</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger rounded-pill px-3 py-1">@order.OrderStatus</span>
+                                    }
+                                </td>
+                                <td class="small text-muted">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td class="text-end pe-3">
+                                    <a asp-area="Admin" asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                        Xử lý
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                Chưa có đơn hàng nào trong hệ thống.
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Thư viện Chart.js cho biểu đồ chuyên nghiệp -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 1. Biểu đồ Doanh thu 7 ngày
+            const revenueLabels = @Html.Raw(ViewBag.Last7DaysLabelsJson ?? "[]");
+            const revenueData = @Html.Raw(ViewBag.Last7DaysRevenueJson ?? "[]");
+
+            const ctxLine = document.getElementById('revenueLineChart').getContext('2d');
+
+            // Tạo gradient cam Terracotta tuyệt đẹp
+            const gradient = ctxLine.createLinearGradient(0, 0, 0, 250);
+            gradient.addColorStop(0, 'rgba(197, 123, 87, 0.35)');
+            gradient.addColorStop(1, 'rgba(197, 123, 87, 0.0)');
+
+            new Chart(ctxLine, {
+                type: 'line',
+                data: {
+                    labels: revenueLabels,
+                    datasets: [{
+                        label: 'Doanh thu (VNĐ)',
+                        data: revenueData,
+                        borderColor: '#C57B57',
+                        borderWidth: 3,
+                        backgroundColor: gradient,
+                        fill: true,
+                        tension: 0.35,
+                        pointBackgroundColor: '#C57B57',
+                        pointBorderColor: '#fff',
+                        pointBorderWidth: 2,
+                        pointRadius: 5,
+                        pointHoverRadius: 7
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + Number(context.parsed.y).toLocaleString('vi-VN') + ' đ';
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000).toFixed(1) + 'Tr';
+                                    if (value >= 1000) return (value / 1000).toFixed(0) + 'K';
+                                    return value;
+                                }
+                            },
+                            grid: { color: 'rgba(0,0,0,0.05)' }
+                        },
+                        x: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 2. Biểu đồ Trạng thái Đơn hàng
+            const ctxDoughnut = document.getElementById('orderStatusDoughnutChart').getContext('2d');
+            new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Chờ xác nhận', 'Đang chuẩn bị', 'Đang giao', 'Hoàn thành', 'Đã hủy'],
+                    datasets: [{
+                        data: [@pendingOrders, @processingOrders, @shippingOrders, @completedOrders, @cancelledOrders],
+                        backgroundColor: [
+                            '#ffc107', // Warning
+                            '#0dcaf0', // Info
+                            '#0d6efd', // Primary
+                            '#198754', // Success
+                            '#dc3545'  // Danger
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '68%'
+                }
+            });
+        });
+    </script>
+}

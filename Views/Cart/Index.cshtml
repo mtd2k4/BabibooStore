@@ -1,0 +1,294 @@
+﻿@model List<WebsiteBabyShop.Models.CartItem>
+@{
+    ViewData["Title"] = "Giỏ Hàng Của Bé - BabyShop";
+    decimal subTotal = ViewBag.SubTotal ?? 0;
+    decimal shippingFee = ViewBag.ShippingFee ?? 0;
+    decimal totalAmount = ViewBag.TotalAmount ?? 0;
+
+    decimal freeShipThreshold = 300000;
+    decimal needMore = freeShipThreshold - subTotal;
+    int progressPercent = Math.Min(100, (int)((subTotal / freeShipThreshold) * 100));
+}
+
+<div class="container py-3 py-md-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Giỏ Hàng</li>
+        </ol>
+    </nav>
+
+    <h2 class="fw-bold mb-4"><i class="bi bi-bag-check text-primary me-2"></i>Giỏ Hàng Của Mẹ & Bé</h2>
+
+    @if (Model.Any())
+    {
+        <!-- Freeship Notification Bar -->
+        <div class="baby-freeship-bar">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    @if (needMore <= 0)
+                    {
+                        <span class="fw-bold text-success"><i class="bi bi-check-circle-fill me-1"></i> Chúc mừng mẹ! Đơn hàng đã đạt điều kiện MIỄN PHÍ GIAO HÀNG TOÀN QUỐC!</span>
+                    }
+                    else
+                    {
+                        <span>Mẹ ơi, mua thêm <strong class="text-primary">@needMore.ToString("N0") đ</strong> để được <strong>MIỄN PHÍ VẬN CHUYỂN</strong> nhé!</span>
+                    }
+                </div>
+                <span class="badge bg-light text-muted border px-2 py-1 small">Mốc 300K</span>
+            </div>
+            <div class="baby-freeship-progress">
+                <div class="baby-freeship-progress-inner" style="width: @progressPercent%;"></div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Items Table -->
+            <div class="col-12 col-lg-8">
+                <div class="bg-white rounded-4 shadow-sm border p-3 p-md-4">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Sản phẩm</th>
+                                    <th>Đơn giá</th>
+                                    <th>Số lượng</th>
+                                    <th>Thành tiền</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-3">
+                                                <img src="@(string.IsNullOrEmpty(item.ProductImage) ? "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=150&q=80" : item.ProductImage)" 
+                                                     alt="@item.ProductName" class="rounded-3" style="width: 70px; height: 70px; object-fit: cover;" />
+                                                <div>
+                                                    <h6 class="fw-bold mb-1">
+                                                        <a asp-controller="Product" asp-action="Details" asp-route-id="@item.ProductId" class="text-dark text-decoration-none">
+                                                            @item.ProductName
+                                                        </a>
+                                                    </h6>
+                                                    @if (item.IsAddonDeal)
+                                                    {
+                                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill small mb-1">
+                                                            <i class="bi bi-gift-fill me-1"></i>Deal Mua Kèm Sốc
+                                                        </span>
+                                                    }
+                                                    <div class="small text-muted mt-1">
+                                                        @if (!string.IsNullOrEmpty(item.Size))
+                                                        {
+                                                            <span class="badge bg-light text-muted border me-1">Size: @item.Size</span>
+                                                        }
+                                                        @if (!string.IsNullOrEmpty(item.Color))
+                                                        {
+                                                            <span class="badge bg-light text-muted border me-1">Màu: @item.Color</span>
+                                                        }
+                                                        <span class="badge bg-light text-secondary border">
+                                                            <i class="bi bi-box-seam me-1"></i>Kho: @item.AvailableStock
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-dark">@item.Price.ToString("N0") đ</div>
+                                            @if (item.IsAddonDeal && item.OriginalPrice.HasValue && item.OriginalPrice.Value > item.Price)
+                                            {
+                                                <small class="text-muted text-decoration-line-through d-block" style="font-size: 0.75rem;">@item.OriginalPrice.Value.ToString("N0") đ</small>
+                                            }
+                                        </td>
+                                        <td>
+                                            @{
+                                                bool isMaxStock = item.Quantity >= item.AvailableStock;
+                                                string variantDesc = "";
+                                                if (!string.IsNullOrEmpty(item.Size) && !string.IsNullOrEmpty(item.Color))
+                                                {
+                                                    variantDesc = $"Size: {item.Size}, Màu: {item.Color}";
+                                                }
+                                                else if (!string.IsNullOrEmpty(item.Size))
+                                                {
+                                                    variantDesc = $"Size: {item.Size}";
+                                                }
+                                                else if (!string.IsNullOrEmpty(item.Color))
+                                                {
+                                                    variantDesc = $"Màu: {item.Color}";
+                                                }
+                                            }
+                                            <form asp-action="UpdateQuantity" method="post" class="d-flex flex-column align-items-center">
+                                                <div class="d-flex align-items-center gap-1">
+                                                    <input type="hidden" name="productId" value="@item.ProductId" />
+                                                    <input type="hidden" name="size" value="@item.Size" />
+                                                    <input type="hidden" name="color" value="@item.Color" />
+                                                    <button type="submit" name="quantity" value="@(item.Quantity - 1)" class="btn btn-sm btn-outline-secondary rounded-circle px-2 py-0" title="Giảm 1">-</button>
+                                                    <span class="fw-bold px-2">@item.Quantity</span>
+                                                    <button type="button" 
+                                                            class="btn btn-sm btn-outline-secondary rounded-circle px-2 py-0 @(isMaxStock ? "border-warning text-warning" : "")" 
+                                                            data-current-qty="@item.Quantity" 
+                                                            data-max-stock="@item.AvailableStock" 
+                                                            data-product-name="@item.ProductName" 
+                                                            data-variant-desc="@variantDesc"
+                                                            onclick="handleCartIncrease(this)" 
+                                                            title="@(isMaxStock ? "Đã đạt số lượng tối đa trong kho (bấm để xem chi tiết)" : "Tăng 1")">+</button>
+                                                </div>
+                                                @if (isMaxStock)
+                                                {
+                                                    <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle rounded-pill mt-1" style="font-size: 0.68rem;">
+                                                        Tối đa kho (@item.AvailableStock)
+                                                    </span>
+                                                }
+                                            </form>
+                                        </td>
+                                        <td class="fw-bold text-dark">@item.TotalPrice.ToString("N0") đ</td>
+                                        <td>
+                                            <form asp-action="RemoveItem" method="post">
+                                                <input type="hidden" name="productId" value="@item.ProductId" />
+                                                <input type="hidden" name="size" value="@item.Size" />
+                                                <input type="hidden" name="color" value="@item.Color" />
+                                                <button type="submit" class="btn btn-link text-muted p-0" title="Xóa món này">
+                                                    <i class="bi bi-trash3"></i>
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+                        <a asp-controller="Product" asp-action="Index" class="btn btn-baby-outline btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i> Tiếp tục chọn đồ cho bé
+                        </a>
+                        <form asp-action="ClearCart" method="post">
+                            <button type="submit" class="btn btn-link text-muted small p-0 text-decoration-none">
+                                <i class="bi bi-trash me-1"></i> Xóa toàn bộ giỏ hàng
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Summary -->
+            <div class="col-12 col-lg-4">
+                <div class="bg-white rounded-4 shadow-sm border p-4 sticky-top" style="top: 100px;">
+                    <h5 class="fw-bold mb-3 text-dark"><i class="bi bi-receipt me-2 text-primary"></i>Tóm Tắt Đơn Hàng</h5>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Tổng tiền hàng:</span>
+                        <span class="fw-bold">@subTotal.ToString("N0") đ</span>
+                    </div>
+
+                    <div class="d-flex justify-content-between mb-2">
+                        <span class="text-muted">Phí giao hàng:</span>
+                        @if (shippingFee == 0)
+                        {
+                            <span class="text-success fw-bold">MIỄN PHÍ</span>
+                        }
+                        else
+                        {
+                            <span class="fw-bold">@shippingFee.ToString("N0") đ</span>
+                        }
+                    </div>
+
+                    <div class="p-2 px-3 rounded-3 bg-light border my-3 small text-muted">
+                        <i class="bi bi-ticket-perforated text-danger me-1"></i>
+                        <span>Mã giảm giá voucher & chiết khấu thành viên sẽ được áp dụng tại bước <strong>Thanh toán</strong>.</span>
+                    </div>
+
+                    <hr class="opacity-10 my-3" />
+
+                    <div class="d-flex justify-content-between mb-4">
+                        <span class="fs-5 fw-bold">Tạm tính:</span>
+                        <span class="fs-4 fw-bold text-dark">@totalAmount.ToString("N0") đ</span>
+                    </div>
+
+                    <a asp-action="Checkout" class="btn btn-baby-primary w-100 justify-content-center py-3 fs-6">
+                        <i class="bi bi-credit-card-2-front me-2"></i> TIẾN HÀNH ĐẶT HÀNG
+                    </a>
+
+                    @if (!(User.Identity?.IsAuthenticated ?? false))
+                    {
+                        <div class="text-center small text-muted mt-2">
+                            <i class="bi bi-shield-lock me-1 text-primary"></i>Hệ thống sẽ yêu cầu đăng nhập tài khoản trước khi thanh toán
+                        </div>
+                    }
+
+                    <!-- Security & Perks -->
+                    <div class="mt-4 pt-3 border-top small text-muted">
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-shield-check text-success fs-5"></i>
+                            <span>Bảo mật thông tin thanh toán 100%</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2 mb-2">
+                            <i class="bi bi-arrow-repeat text-primary fs-5"></i>
+                            <span>Hỗ trợ đổi size tận nhà trong 7 ngày</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-telephone text-muted fs-5"></i>
+                            <span>Hotline hỗ trợ: <strong>1900 633 520</strong></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 bg-white rounded-4 shadow-sm border p-5">
+            <div class="baby-brand-icon mx-auto mb-3" style="width: 70px; height: 70px; font-size: 2rem;">
+                <i class="bi bi-bag"></i>
+            </div>
+            <h4 class="fw-bold">Giỏ hàng của mẹ đang trống</h4>
+            <p class="text-muted">Hãy lướt xem các bộ sưu tập xinh xắn của BabyShop để chọn đồ cho bé yêu nhé!</p>
+            <a asp-controller="Product" asp-action="Index" class="btn btn-baby-primary mt-2">
+                <i class="bi bi-cart-plus me-1"></i> Khám Phá Sản Phẩm Ngay
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function handleCartIncrease(btn) {
+            const currentQty = parseInt(btn.dataset.currentQty) || 1;
+            const maxStock = parseInt(btn.dataset.maxStock) || 99;
+            const prodName = btn.dataset.productName || 'Sản phẩm';
+            const variantDesc = btn.dataset.variantDesc ? ` (${btn.dataset.variantDesc})` : '';
+
+            if (currentQty >= maxStock) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Đã Đạt Số Lượng Tối Đa Trong Kho!',
+                    html: `
+                        <div class="text-start fs-6">
+                            <p class="mb-2">Sản phẩm <strong>${prodName}</strong>${variantDesc} hiện chỉ còn tối đa <strong>${maxStock}</strong> sản phẩm trong kho.</p>
+                        </div>
+                    `,
+                    confirmButtonText: 'Đã hiểu',
+                    confirmButtonColor: '#ff6b81',
+                    customClass: {
+                        popup: 'baby-swal-popup',
+                        title: 'baby-swal-title',
+                        confirmButton: 'btn btn-baby-primary rounded-pill px-4'
+                    },
+                    buttonsStyling: false
+                });
+                return;
+            }
+
+            const form = btn.closest('form');
+            if (form) {
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'quantity';
+                hiddenInput.value = currentQty + 1;
+                form.appendChild(hiddenInput);
+                form.submit();
+            }
+        }
+    </script>
+}

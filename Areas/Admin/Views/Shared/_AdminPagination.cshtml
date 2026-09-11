@@ -1,0 +1,101 @@
+﻿@functions {
+    string GetPageUrl(int targetPage)
+    {
+        var queryDict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in Context.Request.Query)
+        {
+            queryDict[item.Key] = item.Value.ToString();
+        }
+        queryDict["page"] = targetPage.ToString();
+        var qs = string.Join("&", queryDict.Select(kv => $"{System.Net.WebUtility.UrlEncode(kv.Key)}={System.Net.WebUtility.UrlEncode(kv.Value)}"));
+        return $"{Context.Request.Path}?{qs}";
+    }
+}
+
+@{
+    int currentPage = ViewBag.CurrentPage != null ? (int)ViewBag.CurrentPage : 1;
+    int totalPages = ViewBag.TotalPages != null ? (int)ViewBag.TotalPages : 1;
+    int totalItems = ViewBag.TotalItems != null ? (int)ViewBag.TotalItems : 0;
+    int pageSize = ViewBag.PageSize != null ? (int)ViewBag.PageSize : 10;
+
+    int startItem = totalItems == 0 ? 0 : ((currentPage - 1) * pageSize) + 1;
+    int endItem = Math.Min(currentPage * pageSize, totalItems);
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 p-3 bg-white border-top rounded-bottom-4">
+    <div class="text-muted small">
+        Hiển thị <strong class="text-dark">@startItem - @endItem</strong> trong tổng số <strong class="text-dark">@totalItems</strong> bản ghi
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav aria-label="Admin navigation">
+            <ul class="pagination pagination-sm m-0 gap-1 align-items-center">
+                <!-- Nút trang đầu -->
+                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-2 border" href="@(currentPage > 1 ? GetPageUrl(1) : "#")" title="Trang đầu">
+                        <i class="bi bi-chevron-double-left"></i>
+                    </a>
+                </li>
+
+                <!-- Nút trang trước -->
+                <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-2 border" href="@(currentPage > 1 ? GetPageUrl(currentPage - 1) : "#")" title="Trang trước">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+
+                @{
+                    int startPage = Math.Max(1, currentPage - 2);
+                    int endPage = Math.Min(totalPages, currentPage + 2);
+
+                    if (startPage > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link rounded-circle text-center border" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" href="@GetPageUrl(1)">1</a>
+                        </li>
+                        if (startPage > 2)
+                        {
+                            <li class="page-item disabled"><span class="page-link border-0 text-muted px-1">...</span></li>
+                        }
+                    }
+
+                    for (int i = startPage; i <= endPage; i++)
+                    {
+                        var isCurrent = (i == currentPage);
+                        <li class="page-item @(isCurrent ? "active" : "")">
+                            <a class="page-link rounded-circle text-center border @(isCurrent ? "fw-bold shadow-sm" : "")" 
+                               style="width: 32px; height: 32px; padding: 0; line-height: 30px;" 
+                               href="@GetPageUrl(i)">@i</a>
+                        </li>
+                    }
+
+                    if (endPage < totalPages)
+                    {
+                        if (endPage < totalPages - 1)
+                        {
+                            <li class="page-item disabled"><span class="page-link border-0 text-muted px-1">...</span></li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link rounded-circle text-center border" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" href="@GetPageUrl(totalPages)">@totalPages</a>
+                        </li>
+                    }
+                }
+
+                <!-- Nút trang sau -->
+                <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-2 border" href="@(currentPage < totalPages ? GetPageUrl(currentPage + 1) : "#")" title="Trang kế tiếp">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+
+                <!-- Nút trang cuối -->
+                <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                    <a class="page-link rounded-pill px-2 border" href="@(currentPage < totalPages ? GetPageUrl(totalPages) : "#")" title="Trang cuối">
+                        <i class="bi bi-chevron-double-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>

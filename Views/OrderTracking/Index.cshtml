@@ -1,0 +1,424 @@
+﻿@model WebsiteBabyShop.Models.Order
+@{
+    ViewData["Title"] = "Tra Cứu Tiến Độ Đơn Hàng - BabyShop Studio Kids";
+    var orderCodeVal = ViewBag.OrderCode as string ?? "";
+    var phoneVal = ViewBag.Phone as string ?? "";
+    var errorMsg = ViewBag.ErrorMessage as string;
+
+    // Xác định bước hiện tại trong quy trình giao vận
+    int currentStep = 1;
+    if (Model != null)
+    {
+        switch (Model.OrderStatus)
+        {
+            case "Pending":
+                currentStep = 1;
+                break;
+            case "Processing":
+                currentStep = 2;
+                break;
+            case "Shipping":
+                currentStep = 3;
+                break;
+            case "Completed":
+                currentStep = 4;
+                break;
+            case "Cancelled":
+                currentStep = -1;
+                break;
+            default:
+                currentStep = 1;
+                break;
+        }
+    }
+}
+
+<div class="baby-policy-hero py-4 py-md-5">
+    <div class="container text-center">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb justify-content-center small mb-3">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted">Trang Chủ</a></li>
+                <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Tra Cứu Đơn Hàng</li>
+            </ol>
+        </nav>
+        <span class="baby-badge-pill mb-2">
+            <i class="bi bi-truck text-warning me-1"></i> Tracking Order
+        </span>
+        <h1 class="display-6 fw-bold text-dark mb-2">Tra Cứu Tiến Độ Đơn Hàng</h1>
+        <p class="text-muted lead fs-6 mx-auto mb-0" style="max-width: 650px;">
+            Nhập Mã đơn hàng và Số điện thoại nhận hàng để theo dõi hành trình kiện hàng xinh đang trên đường tới tay bé yêu!
+        </p>
+    </div>
+</div>
+
+<div class="container py-4 py-md-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <!-- Search Card -->
+            <div class="baby-policy-card mb-4">
+                <form asp-controller="OrderTracking" asp-action="Index" method="get" class="p-2 p-md-3">
+                    <div class="row g-3 align-items-end">
+                        <div class="col-12 col-md-5">
+                            <label class="fw-bold small text-dark mb-2">
+                                <i class="bi bi-receipt me-1 text-primary"></i> 1. Mã Đơn Hàng:
+                            </label>
+                            <input type="text" name="orderCode" id="trackingOrderCode" class="form-control form-control-lg rounded-3 fs-6" 
+                                   placeholder="VD: BS-20260910-1024" value="@orderCodeVal" required />
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="fw-bold small text-dark mb-2">
+                                <i class="bi bi-telephone me-1 text-primary"></i> 2. Số Điện Thoại:
+                            </label>
+                            <input type="tel" name="phone" id="trackingPhone" class="form-control form-control-lg rounded-3 fs-6" 
+                                   placeholder="VD: 0987654321" value="@phoneVal" required />
+                        </div>
+                        <div class="col-12 col-md-3">
+                            <button type="submit" class="btn btn-baby-primary w-100 py-3 justify-content-center fs-6">
+                                <i class="bi bi-search me-1"></i> Tra Cứu
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quick Sample Lookup Hints -->
+                    <div class="mt-3 pt-3 border-top d-flex flex-wrap align-items-center gap-2 small text-muted">
+                        <span><i class="bi bi-lightbulb me-1 text-warning"></i> Gợi ý thử nhanh:</span>
+                        <a href="javascript:void(0)" onclick="fillTracking('BS-20260910-1024', '0987654321')" 
+                           class="badge bg-light text-secondary border text-decoration-none py-2 px-3 rounded-pill">
+                            🚚 Đơn đang giao: <strong>BS-20260910-1024</strong>
+                        </a>
+                        <a href="javascript:void(0)" onclick="fillTracking('BS-20260909-8868', '0912345678')" 
+                           class="badge bg-light text-secondary border text-decoration-none py-2 px-3 rounded-pill">
+                            ✅ Đơn đã giao: <strong>BS-20260909-8868</strong>
+                        </a>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Error Notification -->
+            @if (!string.IsNullOrEmpty(errorMsg))
+            {
+                <div class="alert alert-danger rounded-4 border-0 shadow-sm p-4 mb-4 text-start">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="bi bi-exclamation-triangle-fill fs-3 text-danger"></i>
+                        <div>
+                            <h5 class="fw-bold mb-1">Không Tìm Thấy Kết Quả</h5>
+                            <p class="mb-2">@errorMsg</p>
+                            <span class="small text-muted d-block mb-3">Nếu cần hỗ trợ gấp, mẹ hãy gọi ngay Hotline: <strong class="text-dark">1900 633 520</strong> (8:00 - 22:00) hoặc nhắn tin trực tiếp cho nhân viên tư vấn.</span>
+                            <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3" onclick="sendCSKHMessage('Em chào shop ạ! Em đang tra cứu đơn hàng mã @orderCodeVal nhưng hệ thống chưa tìm thấy, nhờ shop kiểm tra giúp em với SĐT @phoneVal ạ.', '', '@phoneVal')">
+                                <i class="bi bi-headset me-1"></i> Nhắn Tin Trực Tiếp Với CSKH
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Order Results -->
+            @if (Model != null)
+            {
+                <div class="baby-policy-card mb-4" id="orderPrintArea">
+                    <!-- Print-only Receipt Header (Chỉ xuất hiện khi in đơn) -->
+                    <div class="d-none d-print-block mb-4 pb-3 border-bottom">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h2 class="fw-bold mb-1" style="color: #C57B57;">BabyShop Studio Kids</h2>
+                                <div class="small text-muted">Thời trang & Phụ kiện cao cấp cho mẹ và bé</div>
+                                <div class="small text-muted">Hotline CSKH: 1900 633 520 | Website: babyshop.vn</div>
+                                <div class="small text-muted">Địa chỉ: 123 Phố Huế, Hai Bà Trưng, Hà Nội</div>
+                            </div>
+                            <div class="text-end">
+                                <h3 class="fw-bold text-uppercase mb-1" style="color: #2D3748;">PHIẾU GIAO HÀNG</h3>
+                                <div class="fw-bold fs-5 text-primary mb-1">Mã đơn: #@Model.OrderCode</div>
+                                <div class="small text-muted">Ngày đặt: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</div>
+                                <div class="small text-muted">Ngày in: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Web Order Header (Ẩn khi in để dùng phiếu in chuyên nghiệp) -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-2 d-print-none">
+                        <div>
+                            <span class="text-muted small">Chi tiết đơn hàng:</span>
+                            <h3 class="fw-bold text-dark mb-0">#@Model.OrderCode</h3>
+                            <span class="small text-muted">
+                                <i class="bi bi-calendar3 me-1"></i> Ngày đặt: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                            </span>
+                        </div>
+
+                        <div>
+                            @switch (Model.OrderStatus)
+                            {
+                                case "Pending":
+                                    <span class="badge bg-warning-subtle text-warning-emphasis fs-6 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-clock-history me-1"></i> Chờ Xác Nhận
+                                    </span>
+                                    break;
+                                case "Processing":
+                                    <span class="badge bg-info-subtle text-info-emphasis fs-6 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-box-seam me-1"></i> Đang Đóng Gói
+                                    </span>
+                                    break;
+                                case "Shipping":
+                                    <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-truck me-1"></i> Đang Giao Hàng
+                                    </span>
+                                    break;
+                                case "Completed":
+                                    <span class="badge bg-success-subtle text-success fs-6 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-check-circle-fill me-1"></i> Giao Thành Công
+                                    </span>
+                                    break;
+                                case "Cancelled":
+                                    <span class="badge bg-danger-subtle text-danger fs-6 px-3 py-2 rounded-pill">
+                                        <i class="bi bi-x-circle me-1"></i> Đơn Hàng Đã Hủy
+                                    </span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+
+                    <!-- 4-Step Interactive Timeline (Ẩn khi in giấy) -->
+                    @if (currentStep == -1)
+                    {
+                        <div class="alert alert-secondary rounded-4 p-3 mb-4 d-print-none">
+                            <i class="bi bi-info-circle me-2"></i> Đơn hàng này đã bị hủy theo yêu cầu của khách hàng hoặc do không liên lạc được khi giao hàng.
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="baby-order-timeline mb-5 d-print-none">
+                            <div class="baby-timeline-step @(currentStep >= 1 ? "is-completed" : "") @(currentStep == 1 ? "is-current" : "")">
+                                <div class="baby-step-icon">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </div>
+                                <div class="baby-step-title">Đặt Hàng</div>
+                                <div class="baby-step-time">@Model.CreatedAt.ToString("dd/MM HH:mm")</div>
+                            </div>
+
+                            <div class="baby-timeline-step @(currentStep >= 2 ? "is-completed" : "") @(currentStep == 2 ? "is-current" : "")">
+                                <div class="baby-step-icon">
+                                    <i class="bi bi-box-seam"></i>
+                                </div>
+                                <div class="baby-step-title">Đóng Gói</div>
+                                <div class="baby-step-time">@(currentStep >= 2 ? Model.CreatedAt.AddHours(2).ToString("dd/MM HH:mm") : "Dự kiến")</div>
+                            </div>
+
+                            <div class="baby-timeline-step @(currentStep >= 3 ? "is-completed" : "") @(currentStep == 3 ? "is-current" : "")">
+                                <div class="baby-step-icon">
+                                    <i class="bi bi-truck"></i>
+                                </div>
+                                <div class="baby-step-title">Đang Giao</div>
+                                <div class="baby-step-time">@(currentStep >= 3 ? Model.CreatedAt.AddHours(12).ToString("dd/MM HH:mm") : "Dự kiến 1-2 ngày")</div>
+                            </div>
+
+                            <div class="baby-timeline-step @(currentStep >= 4 ? "is-completed" : "") @(currentStep == 4 ? "is-current" : "")">
+                                <div class="baby-step-icon">
+                                    <i class="bi bi-heart-pulse-fill"></i>
+                                </div>
+                                <div class="baby-step-title">Đã Nhận Hàng</div>
+                                <div class="baby-step-time">@(currentStep >= 4 ? Model.CreatedAt.AddDays(1).ToString("dd/MM HH:mm") : "Hoàn tất")</div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Two Columns Information -->
+                    <div class="row g-4">
+                        <!-- Left: Customer & Delivery Info -->
+                        <div class="col-12 col-md-5">
+                            <div class="p-3 rounded-4 bg-light h-100">
+                                <h6 class="fw-bold mb-3 text-dark">
+                                    <i class="bi bi-geo-alt text-danger me-1"></i> Thông Tin Nhận Hàng
+                                </h6>
+                                <div class="mb-2">
+                                    <span class="text-muted small">Người nhận:</span>
+                                    <div class="fw-bold">@Model.CustomerName</div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted small">Số điện thoại:</span>
+                                    <div class="fw-semibold">@Model.CustomerPhone</div>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted small">Địa chỉ giao hàng:</span>
+                                    <div>@Model.ShippingAddress</div>
+                                </div>
+                                @if (!string.IsNullOrEmpty(Model.Note))
+                                {
+                                    <div class="mb-2">
+                                        <span class="text-muted small">Ghi chú của mẹ:</span>
+                                        <div class="fst-italic text-secondary small">"@Model.Note"</div>
+                                    </div>
+                                }
+                                <div class="mt-3 pt-3 border-top">
+                                    <span class="text-muted small">Phương thức thanh toán:</span>
+                                    <div class="fw-semibold">
+                                        @(Model.PaymentMethod == "COD" ? "Thanh toán khi nhận hàng (COD)" : "Chuyển khoản VietQR")
+                                    </div>
+                                    <span class="badge @(Model.IsPaid ? "bg-success" : "bg-secondary") mt-1">
+                                        @(Model.IsPaid ? "Đã thanh toán" : "Thu tiền khi giao hàng")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Right: Items & Totals -->
+                        <div class="col-12 col-md-7">
+                            <h6 class="fw-bold mb-3 text-dark">
+                                <i class="bi bi-bag-check text-primary me-1"></i> Kiện Hàng (@Model.OrderDetails.Sum(d => d.Quantity) sản phẩm)
+                            </h6>
+                            <div class="table-responsive">
+                                <table class="table table-borderless align-middle mb-0">
+                                    <tbody>
+                                        @foreach (var item in Model.OrderDetails)
+                                        {
+                                            <tr class="border-bottom">
+                                                <td style="width: 60px;">
+                                                    <img src="@(string.IsNullOrEmpty(item.ProductImage) ? "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=150&q=80" : item.ProductImage)" 
+                                                         alt="@item.ProductName" class="rounded-3 object-fit-cover" style="width: 54px; height: 68px;" />
+                                                </td>
+                                                <td>
+                                                    <div class="fw-semibold small mb-1">@item.ProductName</div>
+                                                    <div class="small text-muted">
+                                                        Phân loại: <span class="badge bg-light text-dark border">@item.Size</span> 
+                                                        @if (!string.IsNullOrEmpty(item.Color))
+                                                        {
+                                                            <span class="badge bg-light text-dark border">@item.Color</span>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td class="text-end">
+                                                    <div class="fw-bold small">@item.UnitPrice.ToString("N0") đ</div>
+                                                    <div class="small text-muted">x @item.Quantity</div>
+                                                </td>
+                                                <td class="text-end fw-bold text-dark" style="width: 100px;">
+                                                    @item.TotalPrice.ToString("N0") đ
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Financial Breakdown -->
+                            <div class="p-3 mt-3 rounded-4 bg-light">
+                                <div class="d-flex justify-content-between mb-2 small">
+                                    <span class="text-muted">Tạm tính tiền hàng:</span>
+                                    <span class="fw-semibold">@Model.SubTotal.ToString("N0") đ</span>
+                                </div>
+                                @if (Model.DiscountAmount > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 small">
+                                        <span class="text-success"><i class="bi bi-tag-fill me-1"></i>Giảm giá voucher (@Model.CouponCode):</span>
+                                        <span class="fw-semibold text-danger">-@Model.DiscountAmount.ToString("N0") đ</span>
+                                    </div>
+                                }
+                                @if (Model.MemberDiscount > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 small">
+                                        <span class="text-primary"><i class="bi bi-award-fill me-1"></i>Chiết khấu thành viên:</span>
+                                        <span class="fw-semibold text-danger">-@Model.MemberDiscount.ToString("N0") đ</span>
+                                    </div>
+                                }
+                                @if (Model.PointDiscount > 0)
+                                {
+                                    <div class="d-flex justify-content-between mb-2 small">
+                                        <span class="text-warning-emphasis"><i class="bi bi-star-fill text-warning me-1"></i>Điểm thưởng Baby Club (@Model.PointsUsed pts):</span>
+                                        <span class="fw-semibold text-danger">-@Model.PointDiscount.ToString("N0") đ</span>
+                                    </div>
+                                }
+                                <div class="d-flex justify-content-between mb-2 small">
+                                    <span class="text-muted">Phí vận chuyển:</span>
+                                    <span class="fw-semibold @(Model.ShippingFee == 0 ? "text-success" : "")">
+                                        @(Model.ShippingFee == 0 ? "Miễn phí (Freeship)" : Model.ShippingFee.ToString("N0") + " đ")
+                                    </span>
+                                </div>
+                                <hr class="my-2" />
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <span class="fw-bold text-dark">Tổng thanh toán:</span>
+                                    <strong class="text-danger fs-5">@Model.TotalAmount.ToString("N0") đ</strong>
+                                </div>
+
+                                @if (Model.UserId.HasValue)
+                                {
+                                    var estPoints = (int)Math.Floor(Model.TotalAmount / 1000m);
+                                    <div class="mt-2 pt-2 border-top d-flex justify-content-between align-items-center flex-wrap gap-1">
+                                        <span class="small text-muted"><i class="bi bi-star-fill text-warning me-1"></i>Điểm tích lũy Baby Club:</span>
+                                        @if (Model.OrderStatus == "Completed")
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle fw-bold">+@estPoints.ToString("N0") điểm (Đã cộng thành công)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">+@estPoints.ToString("N0") điểm (Cộng khi giao thành công)</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Print-only Signatures & Receipt Footer (Chỉ xuất hiện khi in giấy) -->
+                    <div class="d-none d-print-block mt-4 pt-4 border-top">
+                        <div class="row text-center mb-4">
+                            <div class="col-6">
+                                <div class="fw-bold small text-uppercase mb-1">NGƯỜI NHẬN HÀNG</div>
+                                <div class="text-muted small fst-italic mb-5">(Ký và ghi rõ họ tên)</div>
+                                <div class="fw-semibold">@Model.CustomerName</div>
+                            </div>
+                            <div class="col-6">
+                                <div class="fw-bold small text-uppercase mb-1">NHÂN VIÊN GIAO HÀNG</div>
+                                <div class="text-muted small fst-italic mb-5">(Ký, ghi rõ họ tên & số tiền thu)</div>
+                                <div class="fw-semibold">BabyShop Express</div>
+                            </div>
+                        </div>
+                        <div class="text-center pt-3 text-muted small fst-italic border-top">
+                            ❤ Cảm ơn ba mẹ đã tin chọn BabyShop! Quý khách được đồng kiểm tra hàng khi nhận và hỗ trợ đổi size miễn phí trong 7 ngày.
+                        </div>
+                    </div>
+
+                    <!-- Action Bar (Ẩn khi in phiếu đơn) -->
+                    <div class="mt-4 pt-3 border-top d-flex flex-wrap justify-content-between align-items-center gap-3 d-print-none">
+                        <div class="small text-muted">
+                            <i class="bi bi-shield-check text-success me-1"></i> Đồng kiểm khi nhận hàng • Đổi size miễn phí trong 7 ngày
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-secondary rounded-pill btn-sm px-3" onclick="printOrderReceipt()">
+                                <i class="bi bi-printer me-1"></i> In Đơn
+                            </button>
+                            <button type="button" class="btn btn-baby-primary btn-sm px-3" onclick="requestOrderSupport('@Model.OrderCode', '@Model.CustomerName', '@Model.CustomerPhone', '@Model.OrderStatus')">
+                                <i class="bi bi-chat-dots me-1"></i> Cần Hỗ Trợ Đơn Này
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function fillTracking(code, phone) {
+        document.getElementById("trackingOrderCode").value = code;
+        document.getElementById("trackingPhone").value = phone;
+        document.getElementById("trackingOrderCode").form.submit();
+    }
+
+    function printOrderReceipt() {
+        window.print();
+    }
+
+    function requestOrderSupport(orderCode, customerName, customerPhone, orderStatus) {
+        let statusText = 'Đang xử lý';
+        if (orderStatus === 'Shipping') statusText = 'Đang Giao Hàng';
+        else if (orderStatus === 'Processing') statusText = 'Đang Đóng Gói';
+        else if (orderStatus === 'Pending') statusText = 'Chờ Xác Nhận';
+        else if (orderStatus === 'Completed') statusText = 'Giao Thành Công';
+        else if (orderStatus === 'Cancelled') statusText = 'Đã Hủy';
+
+        const msg = `Em chào shop ạ! Em cần hỗ trợ kiểm tra tiến độ đơn hàng #${orderCode} (Người nhận: ${customerName} - SĐT: ${customerPhone} - Trạng thái: ${statusText}) ạ.`;
+        
+        // Tự động bật cửa sổ chat và gửi ngay sang bộ phận CSKH
+        sendCSKHMessage(msg, customerName, customerPhone);
+    }
+</script>
+}

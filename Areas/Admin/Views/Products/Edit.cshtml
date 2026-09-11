@@ -1,0 +1,866 @@
+﻿@model WebsiteBabyShop.Models.Product
+@{
+    ViewData["Title"] = "Chỉnh Sửa Sản Phẩm";
+
+    var standardSizes = new Dictionary<string, List<(string Value, string Label)>>
+    {
+        ["👶 Đồ Sơ Sinh (Theo tháng tuổi)"] = new()
+        {
+            ("0 - 3 tháng (3 - 5kg)", "0 - 3 tháng (3 - 5kg)"),
+            ("3 - 6 tháng (5 - 7kg)", "3 - 6 tháng (5 - 7kg)"),
+            ("6 - 9 tháng (7 - 9kg)", "6 - 9 tháng (7 - 9kg)"),
+            ("9 - 12 tháng (9 - 11kg)", "9 - 12 tháng (9 - 11kg)"),
+            ("12 - 18 tháng (11 - 13kg)", "12 - 18 tháng (11 - 13kg)")
+        },
+        ["👕 Quần Áo Bé (Size số)"] = new()
+        {
+            ("Size 90 (1 - 2 tuổi, 9 - 11kg)", "Size 90 (1 - 2 tuổi, 9 - 11kg)"),
+            ("Size 100 (2 - 3 tuổi, 12 - 14kg)", "Size 100 (2 - 3 tuổi, 12 - 14kg)"),
+            ("Size 110 (3 - 4 tuổi, 15 - 17kg)", "Size 110 (3 - 4 tuổi, 15 - 17kg)"),
+            ("Size 120 (4 - 5 tuổi, 17 - 19kg)", "Size 120 (4 - 5 tuổi, 17 - 19kg)"),
+            ("Size 130 (5 - 6 tuổi, 20 - 23kg)", "Size 130 (5 - 6 tuổi, 20 - 23kg)"),
+            ("Size 140 (6 - 8 tuổi, 24 - 28kg)", "Size 140 (6 - 8 tuổi, 24 - 28kg)")
+        },
+        ["🎂 Quần Áo Bé (Theo tuổi)"] = new()
+        {
+            ("1 - 2 tuổi (9 - 11kg)", "1 - 2 tuổi (9 - 11kg)"),
+            ("2 - 3 tuổi (12 - 14kg)", "2 - 3 tuổi (12 - 14kg)"),
+            ("3 - 4 tuổi (15 - 17kg)", "3 - 4 tuổi (15 - 17kg)"),
+            ("4 - 5 tuổi (18 - 20kg)", "4 - 5 tuổi (18 - 20kg)"),
+            ("5 - 6 tuổi (20 - 23kg)", "5 - 6 tuổi (20 - 23kg)")
+        },
+        ["✨ Size Chữ & Phổ Thông"] = new()
+        {
+            ("Free Size", "Free Size (Co giãn đa năng)"),
+            ("Size XS", "Size XS (Sơ sinh)"),
+            ("Size S", "Size S (1 - 2 tuổi)"),
+            ("Size M", "Size M (2 - 4 tuổi)"),
+            ("Size L", "Size L (4 - 6 tuổi)"),
+            ("Size XL", "Size XL (6 - 8 tuổi)")
+        },
+        ["👟 Giày & Dép Tập Đi"] = new()
+        {
+            ("Size 11 (Chân 10.5cm, 6 - 9M)", "Size 11 (Chân 10.5cm, 6 - 9M)"),
+            ("Size 12 (Chân 11.5cm, 9 - 12M)", "Size 12 (Chân 11.5cm, 9 - 12M)"),
+            ("Size 13 (Chân 12.5cm, 12 - 18M)", "Size 13 (Chân 12.5cm, 12 - 18M)"),
+            ("Size 14 (Chân 13.5cm, 1.5 - 2T)", "Size 14 (Chân 13.5cm, 1.5 - 2T)"),
+            ("Size 15 (Chân 14.5cm, 2 - 3T)", "Size 15 (Chân 14.5cm, 2 - 3T)")
+        },
+        ["🍼 Tã & Bỉm Em Bé"] = new()
+        {
+            ("Size NB (< 5kg)", "Size NB (Newborn < 5kg)"),
+            ("Size S (4 - 8kg)", "Size S (4 - 8kg)"),
+            ("Size M (6 - 11kg)", "Size M (6 - 11kg)"),
+            ("Size L (9 - 14kg)", "Size L (9 - 14kg)"),
+            ("Size XL (12 - 17kg)", "Size XL (12 - 17kg)"),
+            ("Size XXL (15 - 25kg)", "Size XXL (15 - 25kg)")
+        }
+    };
+
+    var allStandardValues = standardSizes.Values.SelectMany(list => list.Select(it => it.Value)).ToHashSet();
+}
+
+<div class="card border-0 rounded-4 shadow-sm p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h4 class="fw-bold m-0"><i class="bi bi-pencil-square text-primary me-2"></i>Chỉnh Sửa: @Model.Name</h4>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Quay Lại
+        </a>
+    </div>
+
+    <form asp-action="Edit" method="post">
+        @Html.AntiForgeryToken()
+        <input type="hidden" asp-for="Id" />
+        <input type="hidden" asp-for="Sku" />
+        <input type="hidden" asp-for="Slug" />
+        <input type="hidden" asp-for="CreatedAt" />
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small"></div>
+
+        <div class="row g-3">
+            <div class="col-12 col-md-8">
+                <label asp-for="Name" class="form-label fw-bold small"></label>
+                <input asp-for="Name" class="form-control rounded-3" required />
+                <span asp-validation-for="Name" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12 col-md-4">
+                <label asp-for="CategoryId" class="form-label fw-bold small"></label>
+                <select asp-for="CategoryId" asp-items="ViewBag.CategoryId" class="form-select rounded-3" required></select>
+                <span asp-validation-for="CategoryId" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label asp-for="Gender" class="form-label fw-bold small"></label>
+                <select asp-for="Gender" class="form-select rounded-3">
+                    <option value="Bé gái">Bé gái</option>
+                    <option value="Bé trai">Bé trai</option>
+                    <option value="Sơ sinh">Sơ sinh (0 - 24M)</option>
+                    <option value="Unisex">Unisex</option>
+                </select>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label asp-for="AgeRange" class="form-label fw-bold small"></label>
+                <input asp-for="AgeRange" class="form-control rounded-3" />
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label asp-for="Price" class="form-label fw-bold small"></label>
+                <input asp-for="Price" type="number" class="form-control rounded-3" required />
+                <span asp-validation-for="Price" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12 col-md-3">
+                <label asp-for="DiscountPrice" class="form-label fw-bold small"></label>
+                <input asp-for="DiscountPrice" type="number" class="form-control rounded-3" />
+                <span asp-validation-for="DiscountPrice" class="text-danger small"></span>
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label asp-for="Material" class="form-label fw-bold small"></label>
+                <input asp-for="Material" class="form-control rounded-3" />
+            </div>
+
+            <div class="col-12 col-md-6">
+                <label asp-for="MainImageUrl" class="form-label fw-bold small"></label>
+                <input asp-for="MainImageUrl" class="form-control rounded-3" />
+            </div>
+
+            <!-- Banner giới thiệu kích cỡ cố định chuẩn hóa -->
+            <div class="col-12">
+                <div class="alert alert-light border rounded-3 d-flex align-items-center justify-content-between p-3 mb-0 shadow-sm">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center" style="width: 44px; height: 44px;">
+                            <i class="bi bi-rulers fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark small">Kích Cỡ Đã Được Chuẩn Hóa Bằng Option Cố Định</div>
+                            <div class="text-muted small">Mỗi biến thể sử dụng dropdown kích cỡ có sẵn theo phân nhóm. Bạn cũng có thể bấm <strong>"Tạo nhanh tổ hợp"</strong> để chọn hàng loạt size và màu bằng nút bấm.</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 text-nowrap" onclick="openQuickGeneratorModal()">
+                        <i class="bi bi-magic me-1"></i> Tạo nhanh tổ hợp Option
+                    </button>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="ShortDescription" class="form-label fw-bold small"></label>
+                <textarea asp-for="ShortDescription" class="form-control rounded-3" rows="2"></textarea>
+            </div>
+
+            <div class="col-12">
+                <label asp-for="Description" class="form-label fw-bold small"></label>
+                <textarea asp-for="Description" class="form-control rounded-3" rows="4"></textarea>
+            </div>
+
+            <!-- QUẢN LÝ BIẾN THỂ SẢN PHẨM (MÀU SẮC, SIZE OPTION, TỒN KHO & ẢNH RIÊNG) -->
+            <div class="col-12">
+                <div class="card border rounded-4 p-4 shadow-sm" style="background: #fafbfc;">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark m-0">
+                                <i class="bi bi-palette-fill text-danger me-2"></i>Quản Lý Biến Thể (Màu Sắc, Kích Cỡ Chuẩn & Ảnh Tương Ứng)
+                            </h5>
+                            <span class="small text-muted">
+                                Kích cỡ sử dụng danh sách option chuẩn cố định, không cần gõ phím. Đổi kích cỡ hoặc màu sắc linh hoạt và trực quan.
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" asp-route-productId="@Model.Id" 
+                               class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm" target="_blank" title="Tạo phiếu nhập kho cho toàn bộ sản phẩm này">
+                                <i class="bi bi-box-arrow-in-down me-1"></i> Nhập kho cho mẫu này
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openQuickGeneratorModal()">
+                                <i class="bi bi-magic me-1"></i> Tạo nhanh tổ hợp
+                            </button>
+                            <button type="button" class="btn btn-sm btn-dark rounded-pill px-3" onclick="addVariantRow()">
+                                <i class="bi bi-plus-lg me-1"></i> Thêm biến thể
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive bg-white rounded-3 border">
+                        <table class="table table-hover align-middle mb-0" id="variantsTable">
+                            <thead class="table-light">
+                                <tr class="small text-muted">
+                                    <th style="width: 250px;">Màu Sắc & Mã Màu</th>
+                                    <th style="width: 230px;">Kích Thước (Size Chuẩn)</th>
+                                    <th style="width: 120px;" class="text-center">Tồn Kho</th>
+                                    <th>Ảnh Riêng Của Màu Này (URL)</th>
+                                    <th style="width: 130px;">Mã SKU</th>
+                                    <th style="width: 50px;" class="text-end pe-3">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="variantRowsContainer">
+                                @{
+                                    var variantList = Model.Variants?.ToList() ?? new List<WebsiteBabyShop.Models.ProductVariant>();
+                                }
+                                @if (variantList.Any())
+                                {
+                                    for (int i = 0; i < variantList.Count; i++)
+                                    {
+                                        var v = variantList[i];
+                                        var hex = string.IsNullOrEmpty(v.ColorHex) ? "#C57B57" : v.ColorHex;
+                                        var vImg = string.IsNullOrEmpty(v.ImageUrl) ? Model.MainImageUrl : v.ImageUrl;
+                                        <tr class="variant-row">
+                                            <td>
+                                                <input type="hidden" name="variants[@i].Id" value="@v.Id" />
+                                                <input type="hidden" name="variants[@i].ProductId" value="@v.ProductId" />
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <input type="color" class="form-control form-control-color border rounded-circle flex-shrink-0" style="width: 38px; height: 38px; cursor: pointer; padding: 2px;" value="@hex" onchange="syncColorHex(this)" title="Chọn màu trực quan" />
+                                                    <input type="text" name="variants[@i].ColorHex" class="form-control form-control-sm font-monospace text-uppercase color-hex-input" style="width: 85px;" value="@hex" placeholder="#HEX" oninput="syncColorPicker(this)" />
+                                                    <input type="text" name="variants[@i].Color" class="form-control form-control-sm fw-bold" value="@v.Color" placeholder="Tên màu..." required />
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <select name="variants[@i].Size" class="form-select form-select-sm fw-semibold variant-size-select" required>
+                                                    @if (!allStandardValues.Contains(v.Size) && !string.IsNullOrEmpty(v.Size))
+                                                    {
+                                                        <optgroup label="📌 Size hiện tại của sản phẩm">
+                                                            <option value="@v.Size" selected>@v.Size (Hiện tại)</option>
+                                                        </optgroup>
+                                                    }
+                                                    @foreach (var group in standardSizes)
+                                                    {
+                                                        <optgroup label="@group.Key">
+                                                            @foreach (var item in group.Value)
+                                                            {
+                                                                var isSelected = (v.Size == item.Value);
+                                                                <option value="@item.Value" selected="@(isSelected ? "selected" : null)">@item.Label</option>
+                                                            }
+                                                        </optgroup>
+                                                    }
+                                                </select>
+                                            </td>
+                                            <td class="text-center">
+                                                <input type="hidden" name="variants[@i].StockQuantity" value="@v.StockQuantity" />
+                                                <div class="d-flex flex-column align-items-center gap-1">
+                                                    @if (v.StockQuantity > 0)
+                                                    {
+                                                        <span class="badge bg-success-subtle text-success-emphasis rounded-pill px-2 py-1 fw-bold">
+                                                            <i class="bi bi-boxes me-1"></i>@v.StockQuantity chiếc
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2 py-1 small">
+                                                            <i class="bi bi-exclamation-circle me-1"></i>Hết hàng (0)
+                                                        </span>
+                                                    }
+                                                    <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" 
+                                                       asp-route-productId="@Model.Id" asp-route-variantId="@v.Id" 
+                                                       class="btn btn-sm btn-outline-success rounded-pill px-2 py-0" style="font-size: 0.72rem;" target="_blank" title="Tạo phiếu nhập kho cho biến thể này">
+                                                        <i class="bi bi-box-arrow-in-down"></i> Nhập
+                                                    </a>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <img src="@vImg" class="rounded border variant-thumb flex-shrink-0" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.src='/images/placeholder.png'" />
+                                                    <input type="text" name="variants[@i].ImageUrl" class="form-control form-control-sm" value="@vImg" placeholder="https://... ảnh cho màu này" oninput="previewVariantImage(this)" />
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <input type="text" name="variants[@i].Sku" class="form-control form-control-sm font-monospace small" value="@v.Sku" placeholder="Tự động" />
+                                            </td>
+                                            <td class="text-end pe-3">
+                                                <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" onclick="removeVariantRow(this)" title="Xóa dòng này">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr class="variant-row">
+                                        <td>
+                                            <input type="hidden" name="variants[0].Id" value="0" />
+                                            <input type="hidden" name="variants[0].ProductId" value="@Model.Id" />
+                                            <div class="d-flex align-items-center gap-2">
+                                                <input type="color" class="form-control form-control-color border rounded-circle flex-shrink-0" style="width: 38px; height: 38px; cursor: pointer; padding: 2px;" value="#C57B57" onchange="syncColorHex(this)" title="Chọn màu trực quan" />
+                                                <input type="text" name="variants[0].ColorHex" class="form-control form-control-sm font-monospace text-uppercase color-hex-input" style="width: 85px;" value="#C57B57" placeholder="#HEX" oninput="syncColorPicker(this)" />
+                                                <input type="text" name="variants[0].Color" class="form-control form-control-sm fw-bold" value="Tiêu chuẩn" placeholder="Tên màu..." required />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <select name="variants[0].Size" class="form-select form-select-sm fw-semibold variant-size-select" required>
+                                                @foreach (var group in standardSizes)
+                                                {
+                                                    <optgroup label="@group.Key">
+                                                        @foreach (var item in group.Value)
+                                                        {
+                                                            var isSelected = (item.Value == "Free Size");
+                                                            <option value="@item.Value" selected="@(isSelected ? "selected" : null)">@item.Label</option>
+                                                        }
+                                                    </optgroup>
+                                                }
+                                            </select>
+                                        </td>
+                                        <td class="text-center">
+                                            <input type="hidden" name="variants[0].StockQuantity" value="0" />
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 small">
+                                                <i class="bi bi-box-seam me-1"></i>0 (Chờ nhập kho)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <img src="@Model.MainImageUrl" class="rounded border variant-thumb flex-shrink-0" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.src='/images/placeholder.png'" />
+                                                <input type="text" name="variants[0].ImageUrl" class="form-control form-control-sm" value="@Model.MainImageUrl" placeholder="https://... ảnh cho màu này" oninput="previewVariantImage(this)" />
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input type="text" name="variants[0].Sku" class="form-control form-control-sm font-monospace small" value="@(Model.Sku + "-FS")" placeholder="Tự động" />
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" onclick="removeVariantRow(this)" title="Xóa dòng này">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12">
+                <div class="d-flex flex-wrap gap-4 pt-2">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsActive" id="isActiveCheck">
+                        <label class="form-check-label fw-bold small" for="isActiveCheck">Kích hoạt mở bán</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsFeatured" id="isFeaturedCheck">
+                        <label class="form-check-label fw-bold small" for="isFeaturedCheck">Sản phẩm nổi bật</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsNewArrival" id="isNewCheck">
+                        <label class="form-check-label fw-bold small" for="isNewCheck">Hàng mới về</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" asp-for="IsBestSeller" id="isBestCheck">
+                        <label class="form-check-label fw-bold small" for="isBestCheck">Sản phẩm bán chạy</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CẤU HÌNH MARKETING: FLASH SALE & MUA KÈM DEAL SỐC -->
+            <div class="col-12">
+                <div class="row g-3">
+                    <!-- Flash Sale Card -->
+                    <div class="col-12 col-md-6">
+                        <div class="card border rounded-4 p-3 h-100 bg-danger-subtle bg-opacity-10">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" asp-for="IsFlashSale" id="isFlashSaleCheck" onchange="toggleFlashSaleFields(this.checked)">
+                                <label class="form-check-label fw-bold text-danger" for="isFlashSaleCheck">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> Bật Flash Sale (Giờ Vàng Giảm Giá)
+                                </label>
+                            </div>
+                            <div id="flashSaleFields" class="row g-2 mt-1" style="display: @(Model?.IsFlashSale == true ? "flex" : "none");">
+                                <div class="col-6">
+                                    <label asp-for="FlashSalePrice" class="form-label small fw-semibold">Giá Flash Sale (VNĐ)</label>
+                                    <input asp-for="FlashSalePrice" type="number" class="form-control form-control-sm" placeholder="Ví dụ: 99000" />
+                                </div>
+                                <div class="col-6">
+                                    <label asp-for="FlashSaleQuantity" class="form-label small fw-semibold">Số lượng bán Sale</label>
+                                    <input asp-for="FlashSaleQuantity" type="number" class="form-control form-control-sm" placeholder="Ví dụ: 50" />
+                                </div>
+                                <div class="col-12">
+                                    <label asp-for="FlashSaleEndTime" class="form-label small fw-semibold">Thời điểm kết thúc Sale</label>
+                                    <input asp-for="FlashSaleEndTime" type="datetime-local" class="form-control form-control-sm" value="@(Model?.FlashSaleEndTime?.ToString("yyyy-MM-ddTHH:mm"))" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Add-on Deal Card -->
+                    <div class="col-12 col-md-6">
+                        <div class="card border rounded-4 p-3 h-100 bg-warning-subtle bg-opacity-10">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" asp-for="IsAddonDeal" id="isAddonCheck" onchange="toggleAddonFields(this.checked)">
+                                <label class="form-check-label fw-bold text-warning-emphasis" for="isAddonCheck">
+                                    <i class="bi bi-gift-fill me-1"></i> Thiết lập Mua Kèm Deal Sốc
+                                </label>
+                            </div>
+                            <div id="addonFields" class="row g-2 mt-1" style="display: @(Model?.IsAddonDeal == true ? "flex" : "none");">
+                                <div class="col-12">
+                                    <label asp-for="AddonPrice" class="form-label small fw-semibold">Giá Ưu Đãi Khi Mua Kèm (VNĐ)</label>
+                                    <input asp-for="AddonPrice" type="number" class="form-control form-control-sm" placeholder="Ví dụ: 19000 (Áp dụng khi mua cùng đồ khác)" />
+                                    <span class="text-muted small d-block mt-1">Sản phẩm này sẽ xuất hiện tại ô gợi ý "Mua kèm giảm sâu" ở trang chi tiết sản phẩm chính.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-12 pt-3">
+                <button type="submit" class="btn btn-primary-baby px-4 py-2">
+                    <i class="bi bi-save me-1"></i> Cập Nhật Sản Phẩm & Biến Thể
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Modal Tạo Nhanh Tổ Hợp Biến Thể (Option-Based, Không cần gõ phím) -->
+<div class="modal fade" id="quickGeneratorModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <div>
+                    <h5 class="fw-bold mb-1"><i class="bi bi-magic text-primary me-2"></i>Tạo Nhanh Tổ Hợp Biến Thể</h5>
+                    <div class="text-muted small">Chọn màu sắc và kích cỡ từ các <strong>Option cố định</strong> mà không cần nhập tay.</div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-3">
+                <!-- 1. MÀU SẮC -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <label class="form-label fw-bold small m-0 text-dark">
+                            <i class="bi bi-palette text-danger me-1"></i> 1. Chọn Màu Sắc (Click vào các ô màu):
+                        </label>
+                        <span class="badge bg-danger-subtle text-danger rounded-pill fw-semibold" id="selectedColorCount">0 màu</span>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2 mb-2" id="quickColorPillsContainer">
+                        <!-- Populated by JS -->
+                    </div>
+
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0 small text-muted"><i class="bi bi-plus-circle"></i> Thêm màu khác:</span>
+                        <input type="text" id="quickColorsCustom" class="form-control rounded-end-3" placeholder="Gõ thêm màu nếu muốn (cách nhau bởi dấu phẩy)..." oninput="updateQuickCounts()" />
+                    </div>
+                </div>
+
+                <!-- 2. KÍCH CỠ (SIZE CHUẨN CỐ ĐỊNH) -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                        <label class="form-label fw-bold small m-0 text-dark">
+                            <i class="bi bi-rulers text-primary me-1"></i> 2. Chọn Các Kích Cỡ (Option chuẩn cố định):
+                        </label>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill fw-semibold" id="selectedSizeCount">0 size</span>
+                    </div>
+
+                    <!-- Preset Quick Buttons -->
+                    <div class="d-flex flex-wrap gap-1 mb-2">
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="applySizePreset('baby')">
+                            👶 Sơ Sinh (0 - 12M)
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="applySizePreset('numbers')">
+                            👕 Size Số (90 - 130)
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="applySizePreset('ages')">
+                            🎂 Theo Tuổi (1 - 4T)
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="applySizePreset('letters')">
+                            ✨ Size Chữ (XS - XL)
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="applySizePreset('shoes')">
+                            👟 Giày (11 - 15)
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="applySizePreset('diapers')">
+                            🍼 Bỉm (NB - XL)
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-dark rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="selectAllSizes(true)">
+                            <i class="bi bi-check-all"></i> Chọn tất cả
+                        </button>
+                        <button type="button" class="btn btn-xs btn-outline-secondary rounded-pill px-2 py-1" style="font-size: 0.78rem;" onclick="selectAllSizes(false)">
+                            <i class="bi bi-x"></i> Bỏ chọn
+                        </button>
+                    </div>
+
+                    <!-- Container danh sách Checkbox Option phân nhóm -->
+                    <div class="p-3 border rounded-3 bg-light" style="max-height: 250px; overflow-y: auto;" id="quickSizeCheckboxContainer">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- 3. DỰ BÁO TỔ HỢP BIẾN THỂ -->
+                <div class="alert alert-light border rounded-3 d-flex align-items-center justify-content-between p-3 mb-0 shadow-sm">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="rounded-circle bg-primary-subtle text-primary p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                            <i class="bi bi-box-seam fs-5"></i>
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark small" id="previewCombinationCount">0 biến thể sẽ được thêm vào bảng</div>
+                            <div class="text-muted small">Tất cả biến thể mới thêm sẽ có tồn kho ban đầu = <strong>0</strong>. Bạn sẽ nhập số lượng hàng thực tế qua trang <strong>Nhập Kho (Stock Receipts)</strong>.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="applyQuickGenerator()">
+                    <i class="bi bi-magic me-1"></i> Thêm Vào Bảng Biến Thể
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const BABY_SIZE_GROUPS = [
+            {
+                group: '👶 Đồ Sơ Sinh (Theo tháng tuổi)',
+                items: [
+                    { val: '0 - 3 tháng (3 - 5kg)', label: '0 - 3 tháng (3 - 5kg)', preset: 'baby' },
+                    { val: '3 - 6 tháng (5 - 7kg)', label: '3 - 6 tháng (5 - 7kg)', preset: 'baby' },
+                    { val: '6 - 9 tháng (7 - 9kg)', label: '6 - 9 tháng (7 - 9kg)', preset: 'baby' },
+                    { val: '9 - 12 tháng (9 - 11kg)', label: '9 - 12 tháng (9 - 11kg)', preset: 'baby' },
+                    { val: '12 - 18 tháng (11 - 13kg)', label: '12 - 18 tháng (11 - 13kg)', preset: 'baby' }
+                ]
+            },
+            {
+                group: '👕 Quần Áo Bé (Size số)',
+                items: [
+                    { val: 'Size 90 (1 - 2 tuổi, 9 - 11kg)', label: 'Size 90 (1 - 2 tuổi, 9 - 11kg)', preset: 'numbers' },
+                    { val: 'Size 100 (2 - 3 tuổi, 12 - 14kg)', label: 'Size 100 (2 - 3 tuổi, 12 - 14kg)', preset: 'numbers' },
+                    { val: 'Size 110 (3 - 4 tuổi, 15 - 17kg)', label: 'Size 110 (3 - 4 tuổi, 15 - 17kg)', preset: 'numbers' },
+                    { val: 'Size 120 (4 - 5 tuổi, 17 - 19kg)', label: 'Size 120 (4 - 5 tuổi, 17 - 19kg)', preset: 'numbers' },
+                    { val: 'Size 130 (5 - 6 tuổi, 20 - 23kg)', label: 'Size 130 (5 - 6 tuổi, 20 - 23kg)', preset: 'numbers' },
+                    { val: 'Size 140 (6 - 8 tuổi, 24 - 28kg)', label: 'Size 140 (6 - 8 tuổi, 24 - 28kg)', preset: 'numbers' }
+                ]
+            },
+            {
+                group: '🎂 Quần Áo Bé (Theo tuổi)',
+                items: [
+                    { val: '1 - 2 tuổi (9 - 11kg)', label: '1 - 2 tuổi (9 - 11kg)', preset: 'ages' },
+                    { val: '2 - 3 tuổi (12 - 14kg)', label: '2 - 3 tuổi (12 - 14kg)', preset: 'ages' },
+                    { val: '3 - 4 tuổi (15 - 17kg)', label: '3 - 4 tuổi (15 - 17kg)', preset: 'ages' },
+                    { val: '4 - 5 tuổi (18 - 20kg)', label: '4 - 5 tuổi (18 - 20kg)', preset: 'ages' },
+                    { val: '5 - 6 tuổi (20 - 23kg)', label: '5 - 6 tuổi (20 - 23kg)', preset: 'ages' }
+                ]
+            },
+            {
+                group: '✨ Size Chữ & Phổ Thông',
+                items: [
+                    { val: 'Free Size', label: 'Free Size (Co giãn đa năng)', preset: 'letters' },
+                    { val: 'Size XS', label: 'Size XS (Sơ sinh)', preset: 'letters' },
+                    { val: 'Size S', label: 'Size S (1 - 2 tuổi)', preset: 'letters' },
+                    { val: 'Size M', label: 'Size M (2 - 4 tuổi)', preset: 'letters' },
+                    { val: 'Size L', label: 'Size L (4 - 6 tuổi)', preset: 'letters' },
+                    { val: 'Size XL', label: 'Size XL (6 - 8 tuổi)', preset: 'letters' }
+                ]
+            },
+            {
+                group: '👟 Giày & Dép Tập Đi',
+                items: [
+                    { val: 'Size 11 (Chân 10.5cm, 6 - 9M)', label: 'Size 11 (Chân 10.5cm, 6 - 9M)', preset: 'shoes' },
+                    { val: 'Size 12 (Chân 11.5cm, 9 - 12M)', label: 'Size 12 (Chân 11.5cm, 9 - 12M)', preset: 'shoes' },
+                    { val: 'Size 13 (Chân 12.5cm, 12 - 18M)', label: 'Size 13 (Chân 12.5cm, 12 - 18M)', preset: 'shoes' },
+                    { val: 'Size 14 (Chân 13.5cm, 1.5 - 2T)', label: 'Size 14 (Chân 13.5cm, 1.5 - 2T)', preset: 'shoes' },
+                    { val: 'Size 15 (Chân 14.5cm, 2 - 3T)', label: 'Size 15 (Chân 14.5cm, 2 - 3T)', preset: 'shoes' }
+                ]
+            },
+            {
+                group: '🍼 Tã & Bỉm Em Bé',
+                items: [
+                    { val: 'Size NB (< 5kg)', label: 'Size NB (Newborn < 5kg)', preset: 'diapers' },
+                    { val: 'Size S (4 - 8kg)', label: 'Size S (4 - 8kg)', preset: 'diapers' },
+                    { val: 'Size M (6 - 11kg)', label: 'Size M (6 - 11kg)', preset: 'diapers' },
+                    { val: 'Size L (9 - 14kg)', label: 'Size L (9 - 14kg)', preset: 'diapers' },
+                    { val: 'Size XL (12 - 17kg)', label: 'Size XL (12 - 17kg)', preset: 'diapers' },
+                    { val: 'Size XXL (15 - 25kg)', label: 'Size XXL (15 - 25kg)', preset: 'diapers' }
+                ]
+            }
+        ];
+
+        const PRESET_COLORS = [
+            { name: 'Hồng Pastel', hex: '#FFC0CB', checked: true },
+            { name: 'Trắng Kem', hex: '#FFFDD0', checked: true },
+            { name: 'Xanh Baby', hex: '#B0E0E6', checked: true },
+            { name: 'Vàng Chanh', hex: '#FFF9A6', checked: false },
+            { name: 'Be Sữa', hex: '#F5F5DC', checked: false },
+            { name: 'Xanh Denim', hex: '#4682B4', checked: false },
+            { name: 'Hồng Đào', hex: '#FFB6C1', checked: false },
+            { name: 'Nâu Bò', hex: '#8B4513', checked: false },
+            { name: 'Xanh Mint', hex: '#AEEEEE', checked: false },
+            { name: 'Tím Nhạt', hex: '#E6E6FA', checked: false }
+        ];
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        function buildSizeSelectHtml(name, selectedVal) {
+            var found = false;
+            var html = `<select name="${name}" class="form-select form-select-sm fw-semibold variant-size-select" required>`;
+            
+            BABY_SIZE_GROUPS.forEach(g => {
+                g.items.forEach(it => {
+                    if (it.val === selectedVal) found = true;
+                });
+            });
+
+            if (selectedVal && !found) {
+                html += `<optgroup label="📌 Size hiện tại"><option value="${escapeHtml(selectedVal)}" selected>${escapeHtml(selectedVal)} (Tùy chỉnh)</option></optgroup>`;
+            }
+
+            BABY_SIZE_GROUPS.forEach(g => {
+                html += `<optgroup label="${escapeHtml(g.group)}">`;
+                g.items.forEach(it => {
+                    var sel = (it.val === selectedVal) ? 'selected' : '';
+                    html += `<option value="${escapeHtml(it.val)}" ${sel}>${escapeHtml(it.label)}</option>`;
+                });
+                html += `</optgroup>`;
+            });
+
+            html += `</select>`;
+            return html;
+        }
+
+        function syncColorHex(colorPicker) {
+            var row = colorPicker.closest('tr');
+            var hexInput = row.querySelector('.color-hex-input');
+            if (hexInput) {
+                hexInput.value = colorPicker.value.toUpperCase();
+            }
+        }
+
+        function syncColorPicker(hexInput) {
+            var row = hexInput.closest('tr');
+            var colorPicker = row.querySelector('input[type="color"]');
+            var val = hexInput.value.trim();
+            if (/^#[0-9A-Fa-f]{6}$/.test(val) && colorPicker) {
+                colorPicker.value = val;
+            }
+        }
+
+        function previewVariantImage(input) {
+            var row = input.closest('tr');
+            var thumb = row.querySelector('.variant-thumb');
+            if (thumb && input.value.trim()) {
+                thumb.src = input.value.trim();
+            }
+        }
+
+        function removeVariantRow(btn) {
+            var tbody = document.getElementById('variantRowsContainer');
+            if (tbody.children.length <= 1) {
+                alert('Sản phẩm cần ít nhất 1 biến thể.');
+                return;
+            }
+            btn.closest('tr').remove();
+            renumberVariantRows();
+        }
+
+        function addVariantRow(color = 'Hồng Pastel', hex = '#FFC0CB', size = 'Size 90 (1 - 2 tuổi, 9 - 11kg)', img = '') {
+            var tbody = document.getElementById('variantRowsContainer');
+            var index = tbody.children.length;
+            var defaultImg = img || document.getElementById('MainImageUrl')?.value || 'https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=800&q=80';
+
+            var sizeSelectHtml = buildSizeSelectHtml(`variants[${index}].Size`, size);
+
+            var tr = document.createElement('tr');
+            tr.className = 'variant-row';
+            tr.innerHTML = `
+                <td>
+                    <input type="hidden" name="variants[${index}].Id" value="0" />
+                    <input type="hidden" name="variants[${index}].ProductId" value="@Model.Id" />
+                    <div class="d-flex align-items-center gap-2">
+                        <input type="color" class="form-control form-control-color border rounded-circle flex-shrink-0" style="width: 38px; height: 38px; cursor: pointer; padding: 2px;" value="${hex}" onchange="syncColorHex(this)" title="Chọn màu trực quan" />
+                        <input type="text" name="variants[${index}].ColorHex" class="form-control form-control-sm font-monospace text-uppercase color-hex-input" style="width: 85px;" value="${hex}" placeholder="#HEX" oninput="syncColorPicker(this)" />
+                        <input type="text" name="variants[${index}].Color" class="form-control form-control-sm fw-bold" value="${escapeHtml(color)}" placeholder="Tên màu..." required />
+                    </div>
+                </td>
+                <td>
+                    ${sizeSelectHtml}
+                </td>
+                <td class="text-center">
+                    <input type="hidden" name="variants[${index}].StockQuantity" value="0" />
+                    <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 small">
+                        <i class="bi bi-box-seam me-1"></i>0 (Chờ nhập kho)
+                    </span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <img src="${defaultImg}" class="rounded border variant-thumb flex-shrink-0" style="width: 36px; height: 36px; object-fit: cover;" onerror="this.src='/images/placeholder.png'" />
+                        <input type="text" name="variants[${index}].ImageUrl" class="form-control form-control-sm" value="${defaultImg}" placeholder="https://... ảnh cho màu này" oninput="previewVariantImage(this)" />
+                    </div>
+                </td>
+                <td>
+                    <input type="text" name="variants[${index}].Sku" class="form-control form-control-sm font-monospace small" placeholder="Tự động" />
+                </td>
+                <td class="text-end pe-3">
+                    <button type="button" class="btn btn-sm btn-outline-danger rounded-circle" onclick="removeVariantRow(this)" title="Xóa dòng này">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        }
+
+        function renumberVariantRows() {
+            var rows = document.querySelectorAll('#variantRowsContainer .variant-row');
+            rows.forEach(function(row, idx) {
+                row.querySelectorAll('input, select').forEach(function(el) {
+                    var name = el.getAttribute('name');
+                    if (name) {
+                        el.setAttribute('name', name.replace(/variants\[\d+\]/, 'variants[' + idx + ']'));
+                    }
+                });
+            });
+        }
+
+        // Khởi tạo giao diện Modal Quick Generator
+        function initQuickGeneratorModalUi() {
+            // Render color pills
+            var colorContainer = document.getElementById('quickColorPillsContainer');
+            if (colorContainer && colorContainer.children.length === 0) {
+                colorContainer.innerHTML = PRESET_COLORS.map((c, idx) => `
+                    <div>
+                        <input class="btn-check quick-color-chk" type="checkbox" id="chk_clr_edit_${idx}" value="${c.name}" data-hex="${c.hex}" onchange="updateQuickCounts()" ${c.checked ? 'checked' : ''}>
+                        <label class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-2 d-flex align-items-center gap-2 small shadow-sm" for="chk_clr_edit_${idx}">
+                            <span class="rounded-circle border" style="width: 14px; height: 14px; background: ${c.hex}; display: inline-block;"></span>
+                            <span class="fw-semibold">${c.name}</span>
+                        </label>
+                    </div>
+                `).join('');
+            }
+
+            // Render size checkboxes grouped
+            var sizeContainer = document.getElementById('quickSizeCheckboxContainer');
+            if (sizeContainer && sizeContainer.children.length === 0) {
+                var sizeHtml = '';
+                var chkIdx = 0;
+                BABY_SIZE_GROUPS.forEach(g => {
+                    sizeHtml += `
+                        <div class="mb-3">
+                            <div class="fw-bold text-dark small mb-1"><i class="bi bi-tag-fill me-1 text-primary"></i>${escapeHtml(g.group)}</div>
+                            <div class="d-flex flex-wrap gap-1">
+                    `;
+                    g.items.forEach(it => {
+                        var isDefaultChecked = (it.val.includes('Size 90') || it.val.includes('Size 100') || it.val.includes('Size 110'));
+                        sizeHtml += `
+                            <div>
+                                <input class="btn-check quick-size-chk" type="checkbox" id="chk_sz_edit_${chkIdx}" value="${escapeHtml(it.val)}" data-preset="${it.preset}" onchange="updateQuickCounts()" ${isDefaultChecked ? 'checked' : ''}>
+                                <label class="btn btn-sm btn-outline-secondary rounded-pill py-1 px-2 small shadow-sm" for="chk_sz_edit_${chkIdx}" style="font-size: 0.8rem;">
+                                    ${escapeHtml(it.label)}
+                                </label>
+                            </div>
+                        `;
+                        chkIdx++;
+                    });
+                    sizeHtml += `
+                            </div>
+                        </div>
+                    `;
+                });
+                sizeContainer.innerHTML = sizeHtml;
+            }
+
+            updateQuickCounts();
+        }
+
+        function applySizePreset(presetName) {
+            document.querySelectorAll('.quick-size-chk').forEach(chk => {
+                if (chk.getAttribute('data-preset') === presetName) {
+                    chk.checked = true;
+                } else {
+                    chk.checked = false;
+                }
+            });
+            updateQuickCounts();
+        }
+
+        function selectAllSizes(selectAll) {
+            document.querySelectorAll('.quick-size-chk').forEach(chk => {
+                chk.checked = selectAll;
+            });
+            updateQuickCounts();
+        }
+
+        function getSelectedColors() {
+            var colors = [];
+            document.querySelectorAll('.quick-color-chk:checked').forEach(chk => {
+                colors.push({ name: chk.value, hex: chk.getAttribute('data-hex') });
+            });
+
+            var customRaw = document.getElementById('quickColorsCustom')?.value || '';
+            if (customRaw.trim()) {
+                var extra = customRaw.split(',').map(s => s.trim()).filter(s => s);
+                extra.forEach(name => {
+                    colors.push({ name: name, hex: '#C57B57' });
+                });
+            }
+            return colors;
+        }
+
+        function getSelectedSizes() {
+            var sizes = [];
+            document.querySelectorAll('.quick-size-chk:checked').forEach(chk => {
+                sizes.push(chk.value);
+            });
+            return sizes;
+        }
+
+        function updateQuickCounts() {
+            var colors = getSelectedColors();
+            var sizes = getSelectedSizes();
+
+            var totalVariants = colors.length * sizes.length;
+
+            var colorBadge = document.getElementById('selectedColorCount');
+            if (colorBadge) colorBadge.innerText = `${colors.length} màu đã chọn`;
+
+            var sizeBadge = document.getElementById('selectedSizeCount');
+            if (sizeBadge) sizeBadge.innerText = `${sizes.length} size đã chọn`;
+
+            var previewEl = document.getElementById('previewCombinationCount');
+            if (previewEl) {
+                previewEl.innerText = `${totalVariants} biến thể sẽ được thêm (${colors.length} màu × ${sizes.length} size)`;
+            }
+        }
+
+        function openQuickGeneratorModal() {
+            initQuickGeneratorModalUi();
+            var myModal = new bootstrap.Modal(document.getElementById('quickGeneratorModal'));
+            myModal.show();
+        }
+
+        function applyQuickGenerator() {
+            var colors = getSelectedColors();
+            var sizes = getSelectedSizes();
+
+            if (!colors.length || !sizes.length) {
+                alert('Vui lòng chọn ít nhất 1 màu và 1 kích cỡ.');
+                return;
+            }
+
+            var tbody = document.getElementById('variantRowsContainer');
+            tbody.innerHTML = ''; // reset bảng
+
+            colors.forEach(function(clr) {
+                sizes.forEach(function(sz) {
+                    addVariantRow(clr.name, clr.hex, sz);
+                });
+            });
+
+            var modalEl = document.getElementById('quickGeneratorModal');
+            var modal = bootstrap.Modal.getInstance(modalEl);
+            if (modal) modal.hide();
+        }
+
+        function toggleFlashSaleFields(checked) {
+            var el = document.getElementById("flashSaleFields");
+            if (el) el.style.display = checked ? "flex" : "none";
+        }
+
+        function toggleAddonFields(checked) {
+            var el = document.getElementById("addonFields");
+            if (el) el.style.display = checked ? "flex" : "none";
+        }
+
+        // Initialize when DOM ready
+        document.addEventListener('DOMContentLoaded', function() {
+            initQuickGeneratorModalUi();
+        });
+    </script>
+}

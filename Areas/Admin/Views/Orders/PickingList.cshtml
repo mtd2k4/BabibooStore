@@ -1,0 +1,148 @@
+﻿@model List<WebsiteBabyShop.Areas.Admin.Controllers.PickingItemViewModel>
+@{
+    Layout = null;
+    int totalPcs = Model.Sum(x => x.TotalQuantity);
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Phiếu Soạn Hàng Tổng Hợp - BabyShop</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1e293b; background: #f8fafc; }
+        .picking-container { max-width: 900px; margin: 20px auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+        .table-picking th { background-color: #f1f5f9; color: #475569; font-weight: 700; text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.5px; }
+        .check-box-col { width: 45px; text-align: center; }
+        .item-chk { width: 22px; height: 22px; cursor: pointer; accent-color: #C57B57; }
+        @@media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none !important; }
+            .picking-container { max-width: 100%; margin: 0; padding: 0; box-shadow: none; }
+            table { page-break-inside: auto; }
+            tr { page-break-inside: avoid; page-break-after: auto; }
+        }
+        /* Contrast Safeguards */
+        .bg-primary-subtle { background-color: #dbeafe !important; color: #1e40af !important; }
+        .bg-secondary-subtle { background-color: #f1f5f9 !important; color: #475569 !important; }
+        .text-primary { color: #1e40af !important; }
+        .badge { font-weight: 600; }
+        .badge.bg-light, .badge.bg-white { color: #1e293b !important; background-color: #f8fafc !important; }
+    </style>
+</head>
+<body>
+    <div class="picking-container">
+        <!-- Action bar -->
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom no-print">
+            <a href="javascript:history.back()" class="btn btn-outline-secondary rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> Quay lại Đơn hàng
+            </a>
+            <button onclick="window.print()" class="btn btn-dark rounded-pill px-4 shadow-sm">
+                <i class="bi bi-printer-fill me-1"></i> In Phiếu Soạn Hàng (A4)
+            </button>
+        </div>
+
+        <!-- Header -->
+        <div class="row align-items-center mb-4 pb-3 border-bottom">
+            <div class="col-7">
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <div style="width: 38px; height: 38px; background: #C57B57; border-radius: 8px; display:flex; align-items:center; justify-content:center; color:white; font-size: 1.2rem;">
+                        <i class="bi bi-balloon-heart-fill"></i>
+                    </div>
+                    <h4 class="fw-bold m-0 text-dark">BabyShop - Thời Trang Mẹ & Bé</h4>
+                </div>
+                <div class="small text-muted">Kho Vận & Xử Lý Đơn Hàng | Hotline: 0988.889.999</div>
+            </div>
+            <div class="col-5 text-end">
+                <h5 class="fw-bold text-uppercase m-0 text-primary">PHIẾU SOẠN HÀNG</h5>
+                <div class="small text-muted mt-1">Ngày lập: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="badge bg-light text-dark border mt-1">Gom từ @ViewBag.SelectedOrderCount đơn hàng</div>
+            </div>
+        </div>
+
+        <!-- Order codes summary -->
+        @if (!string.IsNullOrEmpty(ViewBag.OrderCodes))
+        {
+            <div class="alert alert-light border small text-muted mb-3 py-2">
+                <i class="bi bi-info-circle me-1 text-primary"></i><strong>Các đơn hàng gồm:</strong> @ViewBag.OrderCodes
+            </div>
+        }
+
+        <!-- Item Table -->
+        <div class="table-responsive mb-4">
+            <table class="table table-bordered align-middle table-picking mb-0">
+                <thead>
+                    <tr>
+                        <th class="check-box-col">Xong</th>
+                        <th>STT</th>
+                        <th>Ảnh</th>
+                        <th>Tên Sản Phẩm Quần Áo / Phụ Kiện</th>
+                        <th class="text-center">Phân Loại (Màu - Size)</th>
+                        <th class="text-center">Số Lượng Cần Lấy</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Any())
+                    {
+                        int stt = 1;
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="check-box-col">
+                                    <input type="checkbox" class="item-chk" />
+                                </td>
+                                <td class="text-center fw-bold text-muted" style="width: 50px;">@stt</td>
+                                <td style="width: 60px;">
+                                    <img src="@(item.ProductImage ?? "https://images.unsplash.com/photo-1622290291468-a28f7a7dc6a8?auto=format&fit=crop&w=100&q=80")" 
+                                         alt="" class="rounded border" style="width: 48px; height: 48px; object-fit: cover;" />
+                                </td>
+                                <td>
+                                    <div class="fw-bold text-dark">@item.ProductName</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary-subtle text-dark border px-2 py-1">
+                                        @(string.IsNullOrEmpty(item.Color) ? "Tiêu chuẩn" : item.Color)
+                                    </span>
+                                    <span class="badge bg-primary-subtle text-primary border px-2 py-1 ms-1">
+                                        @(string.IsNullOrEmpty(item.Size) ? "Free Size" : item.Size)
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fs-5 fw-bold text-danger">@item.TotalQuantity</span>
+                                </td>
+                            </tr>
+                            stt++;
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-4 text-muted">Không có mặt hàng nào cần soạn.</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr class="table-light fw-bold">
+                        <td colspan="5" class="text-end pe-3">TỔNG SỐ LƯỢNG SẢN PHẨM CẦN LẤY TỪ KHO:</td>
+                        <td class="text-center fs-5 text-danger">@totalPcs chiếc</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Footer signatures -->
+        <div class="row pt-4 text-center">
+            <div class="col-6">
+                <div class="fw-bold small text-uppercase mb-5">Người Soạn Hàng (Thủ kho)</div>
+                <div class="text-muted small">(Ký & ghi rõ họ tên)</div>
+            </div>
+            <div class="col-6">
+                <div class="fw-bold small text-uppercase mb-5">Người Kiểm Hàng & Đóng Gói</div>
+                <div class="text-muted small">(Ký & ghi rõ họ tên)</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

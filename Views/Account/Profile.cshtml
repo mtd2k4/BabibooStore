@@ -1,0 +1,742 @@
+﻿@model WebsiteBabyShop.Models.ProfileViewModel
+@{
+    ViewData["Title"] = "Hồ Sơ Cá Nhân & Địa Chỉ Nhận Hàng - BabyShop";
+}
+
+<div class="container py-4 py-md-5">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Hồ Sơ Cá Nhân</li>
+        </ol>
+    </nav>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 p-3 mb-4 shadow-sm border-0 d-flex align-items-center" role="alert">
+            <i class="bi bi-check-circle-fill text-success fs-4 me-3"></i>
+            <div>
+                <strong class="d-block text-success fw-bold">Thành công!</strong>
+                <span>@TempData["SuccessMessage"]</span>
+            </div>
+            <button type="button" class="btn-close ms-auto" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Cột Trái: Tổng Quan Tài Khoản & Menu Điều Hướng -->
+        <div class="col-12 col-lg-4">
+            <div class="bg-white rounded-4 shadow-sm border p-4 mb-4">
+                <div class="text-center pb-3 border-bottom">
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center fw-bold fs-2 text-white shadow-sm" 
+                         style="width: 80px; height: 80px; background: linear-gradient(135deg, var(--baby-primary), var(--baby-terracotta));">
+                        @(string.IsNullOrEmpty(Model.FullName) ? "U" : Model.FullName.Substring(0, 1).ToUpper())
+                    </div>
+                    <h5 class="fw-bold mb-1 text-dark">@Model.FullName</h5>
+                    <p class="text-muted small mb-2">@@@Model.Username</p>
+                    <div class="d-flex justify-content-center gap-1 flex-wrap mb-2">
+                        <span class="badge px-3 py-1 rounded-pill" style="background-color: var(--baby-primary-light); color: var(--baby-primary); border: 1px solid var(--baby-border);">
+                            @(Model.Role == "Admin" ? "👑 Quản Trị Viên" : "⭐ Khách Hàng")
+                        </span>
+                        @{
+                            string tierClass = "bg-secondary text-white";
+                            if (Model.MemberTier.Contains("Kim Cương")) tierClass = "bg-primary text-white";
+                            else if (Model.MemberTier.Contains("Vàng")) tierClass = "bg-warning text-dark";
+                            else if (Model.MemberTier.Contains("Bạc")) tierClass = "bg-info text-dark";
+                            else tierClass = "bg-warning bg-opacity-75 text-dark";
+                        }
+                        <span class="badge @tierClass px-3 py-1 rounded-pill">
+                            <i class="bi bi-award-fill me-1"></i>@Model.MemberTier
+                        </span>
+                    </div>
+                    @if (Model.IsLifetimeTier || Model.MemberTier.Contains("Kim Cương"))
+                    {
+                        <div class="small text-center mt-1" style="font-size: 0.76rem;">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                <i class="bi bi-infinity me-1"></i>Hạn: <strong>Trọn đời (Vĩnh viễn)</strong>
+                            </span>
+                        </div>
+                    }
+                    else if (Model.TierExpiryDate.HasValue)
+                    {
+                        <div class="small text-muted text-center mt-1" style="font-size: 0.76rem;">
+                            <i class="bi bi-clock-history me-1 text-primary"></i>Hạn duy trì (12 tháng): <strong class="text-dark">@Model.TierExpiryDate.Value.ToString("dd/MM/yyyy")</strong>
+                        </div>
+                    }
+                </div>
+
+                <!-- Thống kê nhanh & Điểm Baby Club -->
+                <div class="p-3 bg-warning-subtle bg-opacity-25 rounded-3 border border-warning-subtle my-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-bold text-dark"><i class="bi bi-star-fill text-warning me-1"></i>Điểm Baby Club:</span>
+                        <span class="fw-bold text-danger fs-5">@Model.RewardPoints.ToString("N0") <span class="fs-6 fw-normal text-muted">pts</span></span>
+                    </div>
+                    <div class="text-muted small mb-2" style="font-size: 0.78rem;">
+                        Tương đương <strong>@((Model.RewardPoints * 100).ToString("N0")) đ</strong> giảm trừ trực tiếp khi thanh toán.
+                    </div>
+                    <div class="d-flex justify-content-between text-muted small" style="font-size: 0.75rem;">
+                        <span>Chi tiêu: @Model.TotalSpent.ToString("N0")đ</span>
+                        <span>Đơn hàng: @Model.TotalOrders</span>
+                    </div>
+                </div>
+
+                <!-- Thống kê nhanh -->
+                <div class="row g-2 text-center my-3 py-2 bg-light rounded-3">
+                    <div class="col-6 border-end">
+                        <div class="fw-bold text-dark fs-5">@Model.TotalOrders</div>
+                        <div class="text-muted small">Đơn đã đặt</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="fw-bold text-dark fs-5">@Model.CreatedAt.ToString("MM/yyyy")</div>
+                        <div class="text-muted small">Ngày tham gia</div>
+                    </div>
+                </div>
+
+                <!-- Menu điều hướng tài khoản -->
+                <div class="list-group list-group-flush small mt-2">
+                    <a asp-controller="Account" asp-action="Profile" class="list-group-item list-group-item-action d-flex align-items-center py-2 px-3 rounded-3 active" 
+                       style="background-color: var(--baby-primary-light); color: var(--baby-primary); border-color: transparent; font-weight: 600;">
+                        <i class="bi bi-person-gear fs-5 me-3"></i> Hồ sơ & Địa chỉ mặc định
+                    </a>
+                    <a asp-controller="Account" asp-action="MyVouchers" class="list-group-item list-group-item-action d-flex align-items-center py-2 px-3 rounded-3 text-dark">
+                        <i class="bi bi-ticket-perforated-fill fs-5 me-3 text-danger"></i> Kho Voucher của tôi
+                    </a>
+                    <a asp-controller="Account" asp-action="MyOrders" class="list-group-item list-group-item-action d-flex align-items-center py-2 px-3 rounded-3 text-dark">
+                        <i class="bi bi-bag-check fs-5 me-3 text-muted"></i> Đơn hàng của tôi
+                    </a>
+                    <a asp-controller="OrderTracking" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center py-2 px-3 rounded-3 text-dark">
+                        <i class="bi bi-truck fs-5 me-3 text-muted"></i> Tra cứu đơn hàng
+                    </a>
+                    <a asp-controller="Wishlist" asp-action="Index" class="list-group-item list-group-item-action d-flex align-items-center py-2 px-3 rounded-3 text-dark">
+                        <i class="bi bi-heart fs-5 me-3 text-muted"></i> Sản phẩm yêu thích
+                    </a>
+                    <form asp-controller="Account" asp-action="Logout" method="post" class="mt-2 pt-2 border-top">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="list-group-item list-group-item-action d-flex align-items-center py-2 px-3 rounded-3 text-danger border-0 bg-transparent w-100">
+                            <i class="bi bi-box-arrow-right fs-5 me-3"></i> Đăng xuất tài khoản
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột Phải: Biểu Mẫu Cập Nhật Hồ Sơ & Địa Chỉ Nhận Hàng -->
+        <div class="col-12 col-lg-8">
+            <div class="bg-white rounded-4 shadow-sm border p-4 p-md-5">
+                <div class="mb-4 pb-3 border-bottom">
+                    <h4 class="fw-bold text-dark mb-1">
+                        <i class="bi bi-person-lines-fill text-primary me-2"></i>Cập Nhật Hồ Sơ Cá Nhân
+                    </h4>
+                    <p class="text-muted small mb-0">Quản lý thông tin liên hệ và địa chỉ nhận hàng mặc định để đặt hàng nhanh chóng hơn</p>
+                </div>
+
+                <form asp-action="Profile" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="Username" />
+                    <input type="hidden" asp-for="Role" />
+                    <input type="hidden" asp-for="CreatedAt" />
+                    <input type="hidden" asp-for="TotalOrders" />
+
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small rounded-3" role="alert"></div>
+
+                    <!-- Phần 1: Thông tin cơ bản -->
+                    <h6 class="fw-bold text-dark mb-3">1. Thông Tin Tài Khoản & Liên Hệ</h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold small text-muted">Tên đăng nhập</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 text-muted"><i class="bi bi-lock-fill"></i></span>
+                                <input type="text" class="form-control bg-light border-start-0" value="@Model.Username" disabled readonly />
+                            </div>
+                            <div class="form-text small text-muted">Tên đăng nhập cố định để bảo mật tài khoản.</div>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label asp-for="FullName" class="form-label fw-bold small">
+                                Họ và tên <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="FullName" class="form-control rounded-3" placeholder="Ví dụ: Nguyễn Thị Hoa" required />
+                            <span asp-validation-for="FullName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label asp-for="Email" class="form-label fw-bold small">
+                                Email liên hệ <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="Email" type="email" class="form-control rounded-3" placeholder="email@domain.com" required />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label asp-for="PhoneNumber" class="form-label fw-bold small">
+                                Số điện thoại <span class="text-danger">*</span>
+                            </label>
+                            <input asp-for="PhoneNumber" class="form-control rounded-3" placeholder="Ví dụ: 0912345678" required />
+                            <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                        </div>
+                    </div>
+
+                    <!-- Phần 2: Địa chỉ nhận hàng mặc định -->
+                    <div class="p-3 p-md-4 rounded-4 mb-4 border" style="background-color: #faf8f5; border-color: var(--baby-border) !important;">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                            <label asp-for="Address" class="form-label fw-bold text-dark mb-0">
+                                <i class="bi bi-geo-alt-fill text-danger me-1"></i>2. Địa Chỉ Nhận Hàng Mặc Định
+                            </label>
+                            <span class="badge bg-white text-primary border shadow-sm px-2 py-1 small">
+                                <i class="bi bi-check-circle me-1"></i>Tự động điền khi mua hàng
+                            </span>
+                        </div>
+                        <p class="text-muted small mb-2">
+                            Địa chỉ này sẽ được hệ thống tự động điền tại bước Thanh Toán Đơn Hàng. Bạn có thể thay đổi bất cứ lúc nào.
+                        </p>
+                        <textarea asp-for="Address" class="form-control bg-white rounded-3" rows="3" 
+                                  placeholder="Nhập địa chỉ nhận hàng chi tiết: Số nhà, ngõ/ngách, tên đường, Phường/Xã, Quận/Huyện, Tỉnh/Thành phố..."></textarea>
+                        <span asp-validation-for="Address" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Phần 3: Thay đổi mật khẩu (Tùy chọn) -->
+                    <div class="border rounded-4 p-3 mb-4">
+                        <div class="d-flex justify-content-between align-items-center cursor-pointer" data-bs-toggle="collapse" data-bs-target="#changePasswordCollapse" aria-expanded="false" aria-controls="changePasswordCollapse">
+                            <div>
+                                <div class="fw-bold text-dark small"><i class="bi bi-shield-lock text-primary me-2"></i>Đổi Mật Khẩu (Tùy Chọn)</div>
+                                <div class="text-muted small">Bỏ trống nếu bạn không muốn thay đổi mật khẩu hiện tại</div>
+                            </div>
+                            <i class="bi bi-chevron-down text-muted"></i>
+                        </div>
+
+                        <div class="collapse mt-3 pt-3 border-top" id="changePasswordCollapse">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <label asp-for="CurrentPassword" class="form-label fw-bold small"></label>
+                                    <input asp-for="CurrentPassword" type="password" class="form-control rounded-3" placeholder="Nhập mật khẩu hiện tại của bạn" autocomplete="new-password" />
+                                    <span asp-validation-for="CurrentPassword" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label asp-for="NewPassword" class="form-label fw-bold small"></label>
+                                    <input asp-for="NewPassword" type="password" class="form-control rounded-3" placeholder="Mật khẩu mới (tối thiểu 6 ký tự)" />
+                                    <span asp-validation-for="NewPassword" class="text-danger small"></span>
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label asp-for="ConfirmNewPassword" class="form-label fw-bold small"></label>
+                                    <input asp-for="ConfirmNewPassword" type="password" class="form-control rounded-3" placeholder="Nhập lại mật khẩu mới" />
+                                    <span asp-validation-for="ConfirmNewPassword" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <div class="d-flex flex-wrap gap-3 align-items-center justify-content-between pt-2">
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-arrow-left me-1"></i> Quay lại
+                        </a>
+                        <button type="submit" class="btn btn-baby-primary rounded-pill px-4 py-2 fw-semibold">
+                            <i class="bi bi-floppy2-fill me-1"></i> LƯU THAY ĐỔI
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Baby Club Loyalty & Next Tier Preview & Points History Card -->
+            <div class="bg-white rounded-4 shadow-sm border p-4 p-md-5 mt-4">
+                @{
+                    string currentBadgeClass = "bg-warning bg-opacity-75 text-dark";
+                    if (Model.MemberTier.Contains("Kim Cương")) currentBadgeClass = "bg-primary text-white";
+                    else if (Model.MemberTier.Contains("Vàng")) currentBadgeClass = "bg-warning text-dark";
+                    else if (Model.MemberTier.Contains("Bạc")) currentBadgeClass = "bg-info text-dark";
+                }
+                <div class="d-flex justify-content-between align-items-start mb-4 pb-3 border-bottom flex-wrap gap-2">
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-balloon-heart-fill text-danger me-2"></i>Câu Lạc Bộ Baby Club
+                        </h4>
+                        <p class="text-muted small mb-0">Tích lũy điểm thưởng, duy trì thời hạn và thăng hạng thành viên với nhiều đặc quyền hấp dẫn</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge @currentBadgeClass px-3 py-2 rounded-pill fs-6 fw-bold shadow-sm">
+                            <i class="bi bi-award-fill me-1"></i>@Model.MemberTier
+                        </span>
+                        @if (Model.IsLifetimeTier || Model.MemberTier.Contains("Kim Cương"))
+                        {
+                            <div class="small text-end mt-1" style="font-size: 0.78rem;">
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                    <i class="bi bi-infinity me-1"></i>Thời hạn: <strong>Trọn đời (Vĩnh viễn)</strong>
+                                </span>
+                                <span class="d-block text-secondary" style="font-size: 0.72rem;">(Ưu đãi giảm 20% trọn đời không giới hạn)</span>
+                            </div>
+                        }
+                        else if (Model.TierExpiryDate.HasValue)
+                        {
+                            <div class="small text-muted mt-1" style="font-size: 0.78rem;">
+                                <i class="bi bi-clock-history me-1 text-primary"></i>Hạn duy trì (12 tháng): <strong class="text-dark">@Model.TierExpiryDate.Value.ToString("dd/MM/yyyy")</strong>
+                                <span class="d-block text-secondary" style="font-size: 0.72rem;">(Tự động gia hạn 12 tháng khi phát sinh đơn hàng)</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Thống kê điểm & Chi tiêu tích lũy -->
+                <div class="row g-3 mb-4">
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 border bg-light d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-muted small">Điểm tích lũy khả dụng</div>
+                                <div class="fs-4 fw-bold text-danger">@Model.RewardPoints.ToString("N0") <span class="fs-6 fw-normal text-muted">pts</span></div>
+                            </div>
+                            <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 rounded-pill small">
+                                = @((Model.RewardPoints * 100).ToString("N0")) đ tiền mặt
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6">
+                        <div class="p-3 rounded-3 border bg-light d-flex align-items-center justify-content-between">
+                            <div>
+                                <div class="text-muted small">Tổng chi tiêu tích lũy</div>
+                                <div class="fs-4 fw-bold text-dark">@Model.TotalSpent.ToString("N0") <span class="fs-6 fw-normal text-muted">đ</span></div>
+                            </div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill small">
+                                <i class="bi bi-shield-check me-1"></i>@Model.TotalOrders đơn hoàn tất
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Đặc quyền hiện tại của hạng thành viên -->
+                @if (Model.CurrentTierPerks != null && Model.CurrentTierPerks.Any())
+                {
+                    <div class="p-3 rounded-4 bg-light border mb-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                            <span class="fw-bold text-dark small">
+                                <i class="bi bi-stars text-warning me-1"></i>Đặc quyền hạng hiện tại (@Model.MemberTier):
+                            </span>
+                            <span class="badge bg-success text-white px-2 py-1 rounded-pill small fw-bold">
+                                <i class="bi bi-tag-fill me-1"></i>Chiết khấu: Giảm @Model.CurrentDiscountPercent% @(Model.IsLifetimeTier || Model.MemberTier.Contains("Kim Cương") ? "trọn đời" : "(12 tháng)")
+                            </span>
+                        </div>
+                        <div class="row g-2">
+                            @foreach (var perk in Model.CurrentTierPerks)
+                            {
+                                <div class="col-12 col-md-6">
+                                    <div class="p-2 px-3 rounded-3 bg-white border border-light-subtle small text-dark d-flex align-items-center h-100">
+                                        <i class="bi bi-check-circle-fill text-success me-2 flex-shrink-0"></i>
+                                        <span>@perk</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+
+                <!-- PREVIEW HẠNG KẾ TIẾP & PHẦN THƯỞNG CHÀO MỪNG -->
+                @if (!string.IsNullOrEmpty(Model.NextTierName) && Model.NextTierName != "Hạng cao nhất")
+                {
+                    <div class="card border-primary border-opacity-25 rounded-4 shadow-sm mb-4 overflow-hidden">
+                        <div class="card-header bg-primary bg-opacity-10 py-3 px-4 border-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fs-5">🚀</span>
+                                <div>
+                                    <h6 class="fw-bold text-primary mb-0">Xem Trước Hạng Kế Tiếp: @Model.NextTierName</h6>
+                                    <div class="text-muted small" style="font-size: 0.78rem;">Đạt mốc chi tiêu để mở khóa ngay toàn bộ ưu đãi và quà tặng</div>
+                                </div>
+                            </div>
+                            <span class="badge bg-danger text-white px-3 py-2 rounded-pill fw-bold shadow-sm">
+                                <i class="bi bi-lightning-charge-fill me-1"></i>Còn thiếu @Model.AmountNeededForNextTier.ToString("N0") đ
+                            </span>
+                        </div>
+                        <div class="card-body p-4">
+                            <!-- Tiến trình thăng hạng -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between small fw-semibold text-dark mb-1">
+                                    <span>Tiến trình thăng hạng: @Model.ProgressToNextTierPercent%</span>
+                                    <span>@Model.TotalSpent.ToString("N0") đ / @Model.NextTierSpendThreshold.ToString("N0") đ</span>
+                                </div>
+                                <div class="progress" style="height: 12px; border-radius: 8px; background-color: #e9ecef;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" role="progressbar" 
+                                         style="width: @Model.ProgressToNextTierPercent%;" 
+                                         aria-valuenow="@Model.ProgressToNextTierPercent" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Hộp quà phần thưởng chào mừng thăng hạng -->
+                            <div class="p-3 rounded-3 mb-3 border border-warning" style="background: linear-gradient(135deg, #fffdf5, #fff8e6);">
+                                <div class="d-flex align-items-start gap-3">
+                                    <div class="fs-2 text-warning">🎁</div>
+                                    <div>
+                                        <div class="fw-bold text-dark mb-1">
+                                            Phần thưởng chào mừng thăng hạng <span class="text-primary">@Model.NextTierName</span>:
+                                        </div>
+                                        <div class="fw-bold text-danger fs-6">
+                                            @Model.NextTierRewardBonus
+                                        </div>
+                                        <div class="text-muted small mt-1" style="font-size: 0.78rem;">
+                                            * Phần thưởng điểm và voucher sẽ được tự động cộng vào tài khoản ngay khi đơn hàng hoàn tất đưa bạn cán mốc.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Đặc quyền mới mở khóa -->
+                            <div>
+                                <div class="fw-bold text-dark small mb-2">
+                                    <i class="bi bi-unlock-fill text-success me-1"></i>Các đặc quyền mới sẽ mở khóa ở @Model.NextTierName:
+                                </div>
+                                <div class="row g-2">
+                                    @foreach (var perk in Model.NextTierPerks)
+                                    {
+                                        <div class="col-12 col-md-6">
+                                            <div class="p-2 px-3 rounded-3 bg-light border border-light-subtle small text-dark d-flex align-items-center h-100">
+                                                <i class="bi bi-check-circle-fill text-success me-2 flex-shrink-0"></i>
+                                                <span>@perk</span>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="card border-warning border-opacity-50 rounded-4 shadow-sm mb-4 overflow-hidden" style="background: linear-gradient(135deg, #fffcf0, #fff7db);">
+                        <div class="card-body p-4 d-flex align-items-center gap-3">
+                            <div class="fs-1 text-warning">👑</div>
+                            <div>
+                                <h5 class="fw-bold text-dark mb-1">Chúc Mừng Quý Khách Đã Đạt Hạng Thành Viên Cao Cấp Nhất!</h5>
+                                <div class="text-dark small mb-2">
+                                    Quý khách đang sở hữu hạng <strong>Thành viên hạng Kim Cương</strong> với đặc quyền chiết khấu giảm trực tiếp <strong>20% TRỌN ĐỜI</strong> trên mọi đơn hàng, tích điểm x2.0 và freeship hỏa tốc 2H toàn quốc.
+                                </div>
+                                <div class="text-success small fw-semibold">
+                                    <i class="bi bi-infinity me-1"></i>Thời hạn: <strong>Trọn đời (Vĩnh viễn)</strong> - Giữ vững đặc quyền không giới hạn thời gian.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- BẢNG TRA CỨU & LỘ TRÌNH 4 CẤP HẠNG THÀNH VIÊN -->
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h6 class="fw-bold text-dark mb-1">
+                                <i class="bi bi-layers-fill text-primary me-2"></i>Bảng So Sánh & Lộ Trình 4 Cấp Hạng Thành Viên
+                            </h6>
+                            <p class="text-muted small mb-0">Theo dõi tiến trình tích lũy và so sánh quyền lợi giữa các cấp bậc thành viên</p>
+                        </div>
+                        <span class="badge bg-light text-dark border px-3 py-2 rounded-pill small">
+                            <i class="bi bi-clock-history me-1 text-primary"></i>Hạng Đồng/Bạc/Vàng: 12 tháng • Kim Cương: Giảm 20% trọn đời
+                        </span>
+                    </div>
+
+                    @{
+                        bool isDongActive = Model.MemberTier.Contains("Đồng");
+                        bool isBacActive = Model.MemberTier.Contains("Bạc");
+                        bool isVangActive = Model.MemberTier.Contains("Vàng");
+                        bool isKimCuongActive = Model.MemberTier.Contains("Kim Cương");
+                    }
+
+                    <!-- 1. LỘ TRÌNH 4 CHẶNG THĂNG HẠNG (Visual Roadmap Stepper) -->
+                    <div class="p-3 p-md-4 rounded-4 border mb-4" style="background: linear-gradient(135deg, #f8fafc, #f1f5f9);">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <span class="fw-bold text-dark small">
+                                <i class="bi bi-geo-alt-fill text-danger me-1"></i>Lộ trình phát triển cấp bậc:
+                            </span>
+                            <span class="small text-muted">
+                                Chi tiêu tích lũy hiện tại: <strong class="text-primary fs-6">@Model.TotalSpent.ToString("N0") đ</strong>
+                            </span>
+                        </div>
+
+                        <div class="row g-2 text-center align-items-stretch">
+                            <!-- Chặng 1: Đồng -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 p-md-3 rounded-3 border h-100 position-relative transition-all @(isDongActive ? "bg-white border-2 border-warning shadow-sm" : "bg-light border-light-subtle opacity-75")">
+                                    @if (isDongActive)
+                                    {
+                                        <div class="badge bg-warning text-dark px-2 py-1 rounded-pill small fw-bold mb-2 shadow-sm">
+                                            <i class="bi bi-check2-circle me-1"></i>Hạng của bạn
+                                        </div>
+                                    }
+                                    <div class="fs-3 mb-1">🥉</div>
+                                    <div class="fw-bold text-dark small">Hạng Đồng</div>
+                                    <div class="badge bg-warning bg-opacity-25 text-dark border border-warning my-1 px-2 py-0.5 rounded-pill small">Giảm 3% (12 tháng)</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Dưới 2.000.000 đ</div>
+                                </div>
+                            </div>
+
+                            <!-- Chặng 2: Bạc -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 p-md-3 rounded-3 border h-100 position-relative transition-all @(isBacActive ? "bg-white border-2 border-info shadow-sm" : "bg-light border-light-subtle opacity-75")">
+                                    @if (isBacActive)
+                                    {
+                                        <div class="badge bg-info text-dark px-2 py-1 rounded-pill small fw-bold mb-2 shadow-sm">
+                                            <i class="bi bi-check2-circle me-1"></i>Hạng của bạn
+                                        </div>
+                                    }
+                                    <div class="fs-3 mb-1">🥈</div>
+                                    <div class="fw-bold text-dark small">Hạng Bạc</div>
+                                    <div class="badge bg-info bg-opacity-25 text-dark border border-info my-1 px-2 py-0.5 rounded-pill small">Giảm 8% (12 tháng)</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Từ 2.000.000 đ</div>
+                                </div>
+                            </div>
+
+                            <!-- Chặng 3: Vàng -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 p-md-3 rounded-3 border h-100 position-relative transition-all @(isVangActive ? "bg-white border-2 border-warning shadow-sm" : "bg-light border-light-subtle opacity-75")">
+                                    @if (isVangActive)
+                                    {
+                                        <div class="badge bg-warning text-dark px-2 py-1 rounded-pill small fw-bold mb-2 shadow-sm">
+                                            <i class="bi bi-check2-circle me-1"></i>Hạng của bạn
+                                        </div>
+                                    }
+                                    <div class="fs-3 mb-1">🥇</div>
+                                    <div class="fw-bold text-dark small">Hạng Vàng</div>
+                                    <div class="badge bg-warning bg-opacity-25 text-dark border border-warning my-1 px-2 py-0.5 rounded-pill small">Giảm 10% (12 tháng)</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Từ 5.000.000 đ</div>
+                                </div>
+                            </div>
+
+                            <!-- Chặng 4: Kim Cương -->
+                            <div class="col-6 col-md-3">
+                                <div class="p-2 p-md-3 rounded-3 border h-100 position-relative transition-all @(isKimCuongActive ? "bg-white border-2 border-primary shadow-sm" : "bg-light border-light-subtle opacity-75")">
+                                    @if (isKimCuongActive)
+                                    {
+                                        <div class="badge bg-primary text-white px-2 py-1 rounded-pill small fw-bold mb-2 shadow-sm">
+                                            <i class="bi bi-check2-circle me-1"></i>Hạng của bạn
+                                        </div>
+                                    }
+                                    <div class="fs-3 mb-1">💎</div>
+                                    <div class="fw-bold text-dark small">Hạng Kim Cương</div>
+                                    <div class="badge bg-primary bg-opacity-25 text-primary border border-primary my-1 px-2 py-0.5 rounded-pill small fw-bold">Giảm 20% trọn đời</div>
+                                    <div class="text-muted" style="font-size: 0.72rem;">Từ 10.000.000 đ</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. BẢNG SO SÁNH QUYỀN LỢI CHI TIẾT (Comparison Matrix Table) -->
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="small fw-semibold text-muted"><i class="bi bi-table me-1"></i>Bảng chi tiết quyền lợi từng hạng:</span>
+                        <small class="text-muted d-md-none"><i class="bi bi-arrows-expand me-1"></i>Vuốt ngang để xem</small>
+                    </div>
+
+                    <div class="table-responsive rounded-4 border shadow-sm overflow-hidden bg-white">
+                        <table class="table table-hover align-middle mb-0 text-center" style="min-width: 620px; font-size: 0.82rem;">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="text-start ps-3 py-3 text-dark fw-bold" style="width: 28%;">Quyền lợi & Đặc quyền</th>
+                                    <th class="py-3 text-dark @(isDongActive ? "bg-warning bg-opacity-15 border-start border-end border-warning fw-bold" : "")" style="width: 18%;">
+                                        <div class="fs-5">🥉</div>
+                                        <div>Hạng Đồng</div>
+                                        @if (isDongActive) { <span class="badge bg-warning text-dark" style="font-size: 0.68rem;">Bạn ở đây</span> }
+                                    </th>
+                                    <th class="py-3 text-dark @(isBacActive ? "bg-info bg-opacity-15 border-start border-end border-info fw-bold" : "")" style="width: 18%;">
+                                        <div class="fs-5">🥈</div>
+                                        <div>Hạng Bạc</div>
+                                        @if (isBacActive) { <span class="badge bg-info text-dark" style="font-size: 0.68rem;">Bạn ở đây</span> }
+                                    </th>
+                                    <th class="py-3 text-dark @(isVangActive ? "bg-warning bg-opacity-15 border-start border-end border-warning fw-bold" : "")" style="width: 18%;">
+                                        <div class="fs-5">🥇</div>
+                                        <div>Hạng Vàng</div>
+                                        @if (isVangActive) { <span class="badge bg-warning text-dark" style="font-size: 0.68rem;">Bạn ở đây</span> }
+                                    </th>
+                                    <th class="py-3 text-dark @(isKimCuongActive ? "bg-primary bg-opacity-15 border-start border-end border-primary fw-bold" : "")" style="width: 18%;">
+                                        <div class="fs-5">💎</div>
+                                        <div>Kim Cương</div>
+                                        @if (isKimCuongActive) { <span class="badge bg-primary text-white" style="font-size: 0.68rem;">Bạn ở đây</span> }
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Chi tiêu yêu cầu -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-wallet2 text-primary me-2"></i>Mức chi tiêu tích lũy
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 fw-bold border-start border-end border-warning" : "")">&lt; 2.000.000 đ</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 fw-bold border-start border-end border-info" : "")">&ge; 2.000.000 đ</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 fw-bold border-start border-end border-warning" : "")">&ge; 5.000.000 đ</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 fw-bold border-start border-end border-primary text-primary" : "")">&ge; 10.000.000 đ</td>
+                                </tr>
+
+                                <!-- Quà chào mừng lên hạng -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-gift-fill text-danger me-2"></i>Quà chào mừng thăng hạng
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "") text-muted">-</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 text-wrap d-inline-block text-center" style="max-width: 130px;">
+                                            +50 pts & Voucher 5%
+                                        </span>
+                                    </td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 text-wrap d-inline-block text-center" style="max-width: 130px;">
+                                            +100 pts & Voucher 10%
+                                        </span>
+                                    </td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary" : "")">
+                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-2 py-1 text-wrap d-inline-block text-center" style="max-width: 135px;">
+                                            +200 pts + Voucher 15% + Quà VIP
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <!-- Hệ số tích điểm -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-star-fill text-warning me-2"></i>Hệ số tích điểm Baby Club
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 fw-bold border-start border-end border-warning" : "")">x1.0 (100K = 100 pts)</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 fw-bold border-start border-end border-info" : "")"><strong class="text-info-emphasis">x1.2</strong> (100K = 120 pts)</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 fw-bold border-start border-end border-warning" : "")"><strong class="text-warning-emphasis">x1.5</strong> (100K = 150 pts)</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 fw-bold border-start border-end border-primary text-primary" : "")"><strong class="text-primary">x2.0 (100K = 200 pts)</strong></td>
+                                </tr>
+
+                                <!-- Chiết khấu trực tiếp -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-percent text-success me-2"></i>Chiết khấu giảm giá trực tiếp
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-bold">Giảm 3%</span>
+                                    </td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-bold">Giảm 8%</span>
+                                    </td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-bold">Giảm 10%</span>
+                                    </td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary" : "")">
+                                        <span class="badge bg-success text-white px-2 py-1 fw-bold fs-6 shadow-sm">
+                                            <i class="bi bi-gem me-1"></i>Giảm 20% trọn đời
+                                        </span>
+                                    </td>
+                                </tr>
+
+                                <!-- Miễn phí vận chuyển -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-truck text-primary me-2"></i>Chính sách miễn phí vận chuyển
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "") text-muted">Theo CTKM chung</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">Đơn từ 200.000 đ</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">Toàn quốc từ 100K</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary fw-bold text-success" : "")">
+                                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i>Freeship hỏa tốc 2H
+                                    </td>
+                                </tr>
+
+                                <!-- Quà sinh nhật bé -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-balloon-heart-fill text-danger me-2"></i>Quà tặng sinh nhật bé yêu
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "") text-muted">-</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">Quà sinh nhật bé</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">Quà cao cấp 300K</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary fw-bold" : "")">Baby Diamond Box</td>
+                                </tr>
+
+                                <!-- Thời gian đổi trả -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-arrow-repeat text-info me-2"></i>Thời hạn đổi trả sản phẩm
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">7 ngày tiêu chuẩn</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">7 ngày linh hoạt</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">Ưu tiên 15 ngày</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary fw-bold text-dark" : "")">Tối đa 30 ngày tận nơi</td>
+                                </tr>
+
+                                <!-- CSKH & Stylist -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-person-check-fill text-secondary me-2"></i>Dịch vụ chăm sóc & tư vấn
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "") text-muted">Hỗ trợ giờ hành chính</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">Ưu tiên hỗ trợ</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">Hotline riêng 24/7</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary fw-bold text-primary" : "")">Stylist riêng 1-1 cho bé</td>
+                                </tr>
+
+                                <!-- Thời hạn duy trì -->
+                                <tr>
+                                    <td class="text-start ps-3 fw-semibold text-dark">
+                                        <i class="bi bi-clock-history text-muted me-2"></i>Thời hạn duy trì cấp bậc
+                                    </td>
+                                    <td class="@(isDongActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">12 tháng</td>
+                                    <td class="@(isBacActive ? "bg-info bg-opacity-10 border-start border-end border-info" : "")">12 tháng (tự động gia hạn)</td>
+                                    <td class="@(isVangActive ? "bg-warning bg-opacity-10 border-start border-end border-warning" : "")">12 tháng (tự động gia hạn)</td>
+                                    <td class="@(isKimCuongActive ? "bg-primary bg-opacity-10 border-start border-end border-primary fw-bold text-primary" : "")">
+                                        <span class="badge bg-primary text-white px-2 py-1 fw-bold shadow-sm">
+                                            <i class="bi bi-infinity me-1"></i>Trọn đời (Vĩnh viễn)
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Lịch sử điểm thưởng -->
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-clock-history me-1"></i>Lịch Sử Tích / Dùng Điểm</h6>
+                @if (Model.PointTransactions != null && Model.PointTransactions.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle small mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Giao dịch / Nội dung</th>
+                                    <th class="text-end pe-3">Biến động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var pt in Model.PointTransactions)
+                                {
+                                    <tr>
+                                        <td class="text-muted">@pt.CreatedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            <div class="fw-semibold text-dark">@pt.Description</div>
+                                            @if (pt.OrderId.HasValue)
+                                            {
+                                                <span class="badge bg-light text-secondary border">Đơn hàng #@pt.OrderId</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            @if (pt.PointsChanged > 0)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2 py-1 fw-bold">
+                                                    +@pt.PointsChanged điểm
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-2 py-1 fw-bold">
+                                                    @pt.PointsChanged điểm
+                                                </span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted bg-light rounded-3">
+                        <i class="bi bi-stars fs-3 d-block mb-1 text-warning"></i>
+                        <span>Chưa có lịch sử tích điểm. Mua sắm và hoàn tất đơn hàng để nhận điểm thưởng Baby Club (đơn từ 100k nhận 100 điểm, 100 điểm = 10.000đ giảm giá khi đơn giao thành công)!</span>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

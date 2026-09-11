@@ -1,0 +1,185 @@
+﻿@model WebsiteBabyShop.Models.Coupon
+@{
+    ViewData["Title"] = "Thêm Mã Voucher Mới";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h4 class="fw-bold m-0 text-dark"><i class="bi bi-plus-circle text-primary me-2"></i>Thêm Mã Khuyến Mãi Mới</h4>
+        <span class="text-muted small">Cấu hình voucher giảm giá cho các đơn hàng mua sắm đồ xinh cho bé</span>
+    </div>
+    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill btn-sm">
+        <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+    </a>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 rounded-4 shadow-sm p-4">
+            <form asp-action="Create" method="post">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small" role="alert"></div>
+
+                <div class="row g-3">
+                    <!-- Mã Voucher -->
+                    <div class="col-md-6">
+                        <label asp-for="Code" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light"><i class="bi bi-ticket-perforated"></i></span>
+                            <input asp-for="Code" id="couponCodeInput" class="form-control font-monospace text-uppercase fw-bold" placeholder="VD: BABY50, SALE10..." required />
+                            <button type="button" class="btn btn-outline-secondary" onclick="generateRandomCouponCode()" title="Tự động sinh mã ngẫu nhiên">
+                                <i class="bi bi-shuffle"></i> Ngẫu nhiên
+                            </button>
+                        </div>
+                        <span asp-validation-for="Code" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Tên chương trình -->
+                    <div class="col-md-6">
+                        <label asp-for="Title" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="Title" class="form-control" placeholder="VD: Khuyến Mãi Mẹ & Bé 50K..." required />
+                        <span asp-validation-for="Title" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Mô tả -->
+                    <div class="col-12">
+                        <label asp-for="Description" class="form-label fw-bold small"></label>
+                        <textarea asp-for="Description" class="form-control" rows="2" placeholder="Ghi chú chi tiết về điều kiện áp dụng..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Loại giảm giá -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold small">Hình thức giảm giá</label> <span class="text-danger">*</span>
+                        <div class="d-flex gap-4 p-3 bg-light rounded-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="DiscountType" value="Percentage" id="typePercent" checked onchange="toggleDiscountFields()">
+                                <label class="form-check-label fw-semibold" for="typePercent">
+                                    <i class="bi bi-percent text-primary me-1"></i> Giảm theo phần trăm (%)
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" asp-for="DiscountType" value="FixedAmount" id="typeFixed" onchange="toggleDiscountFields()">
+                                <label class="form-check-label fw-semibold" for="typeFixed">
+                                    <i class="bi bi-cash-stack text-success me-1"></i> Giảm số tiền cố định (VNĐ)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Giá trị giảm -->
+                    <div class="col-md-6">
+                        <label asp-for="DiscountValue" class="form-label fw-bold small" id="discountValueLabel">Giá trị giảm (%)</label> <span class="text-danger">*</span>
+                        <div class="input-group">
+                            <input asp-for="DiscountValue" type="number" step="any" class="form-control fw-bold" placeholder="Nhập số % hoặc số tiền..." required />
+                            <span class="input-group-text bg-light fw-bold" id="discountUnitLabel">%</span>
+                        </div>
+                        <span asp-validation-for="DiscountValue" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Mức giảm tối đa -->
+                    <div class="col-md-6" id="maxDiscountGroup">
+                        <label asp-for="MaxDiscountAmount" class="form-label fw-bold small">Mức giảm tối đa (VNĐ)</label>
+                        <div class="input-group">
+                            <input asp-for="MaxDiscountAmount" type="number" step="1000" class="form-control" placeholder="Để trống nếu không giới hạn trần" />
+                            <span class="input-group-text bg-light">VNĐ</span>
+                        </div>
+                        <span class="text-muted small">Hữu ích cho voucher %, ví dụ: giảm 10% nhưng tối đa 50.000đ.</span>
+                    </div>
+
+                    <!-- Đơn hàng tối thiểu -->
+                    <div class="col-md-6">
+                        <label asp-for="MinOrderAmount" class="form-label fw-bold small">Giá trị đơn hàng tối thiểu (VNĐ)</label>
+                        <div class="input-group">
+                            <input asp-for="MinOrderAmount" type="number" step="1000" class="form-control" placeholder="0 = Áp dụng mọi đơn" />
+                            <span class="input-group-text bg-light">VNĐ</span>
+                        </div>
+                        <span class="text-muted small">Khách chỉ được áp dụng khi giỏ hàng đạt giá trị này.</span>
+                    </div>
+
+                    <!-- Giới hạn số lượt dùng -->
+                    <div class="col-md-6">
+                        <label asp-for="UsageLimit" class="form-label fw-bold small">Số lượt sử dụng tối đa</label>
+                        <input asp-for="UsageLimit" type="number" class="form-control" placeholder="1000" />
+                        <span class="text-muted small">Tổng số lần mã này được sử dụng trên toàn hệ thống.</span>
+                    </div>
+
+                    <!-- Ngày bắt đầu -->
+                    <div class="col-md-6">
+                        <label asp-for="StartDate" class="form-label fw-bold small">Ngày bắt đầu hiệu lực</label>
+                        <input asp-for="StartDate" type="datetime-local" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-ddTHH:mm")" />
+                    </div>
+
+                    <!-- Ngày hết hạn -->
+                    <div class="col-md-6">
+                        <label asp-for="ExpiryDate" class="form-label fw-bold small">Ngày hết hạn</label>
+                        <input asp-for="ExpiryDate" type="datetime-local" class="form-control" value="@DateTime.Now.AddMonths(1).ToString("yyyy-MM-ddTHH:mm")" />
+                        <span class="text-muted small">Để trống nếu muốn voucher có hiệu lực vĩnh viễn.</span>
+                    </div>
+
+                    <!-- Kích hoạt -->
+                    <div class="col-12 mt-3">
+                        <div class="form-check form-switch p-3 bg-light rounded-3">
+                            <input class="form-check-input ms-0 me-3" type="checkbox" asp-for="IsActive" id="isActiveSwitch" checked>
+                            <label class="form-check-label fw-bold" for="isActiveSwitch">
+                                Kích hoạt voucher này ngay sau khi tạo
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Chương trình Săn Mã Giờ Vàng -->
+                    <div class="col-12 mt-2">
+                        <div class="form-check form-switch p-3 rounded-3 border border-warning-subtle" style="background: #FFFDF8;">
+                            <input class="form-check-input ms-0 me-3" type="checkbox" asp-for="IsFlashHunt" id="isFlashHuntSwitch">
+                            <label class="form-check-label fw-bold text-dark" for="isFlashHuntSwitch">
+                                <i class="bi bi-fire text-danger me-1"></i>Săn Mã Giờ Vàng (Flash Hunt)
+                            </label>
+                            <div class="form-text text-muted small ms-0 mt-1">
+                                Mã sẽ tự động xuất hiện sẵn trong Kho Voucher của tất cả người dùng, hiển thị đồng hồ đếm ngược và chỉ mở cho phép sử dụng khi đến đúng mốc Ngày bắt đầu hiệu lực.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top">
+                    <a asp-action="Index" class="btn btn-light rounded-pill px-4">Hủy bỏ</a>
+                    <button type="submit" class="btn btn-primary-baby rounded-pill px-4 shadow-sm">
+                        <i class="bi bi-check2-circle me-1"></i> Lưu & Áp Dụng Voucher
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function generateRandomCouponCode() {
+            const prefixes = ['BABY', 'KIDS', 'SALE', 'LOVE', 'SUMMER', 'DEAL'];
+            const prefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+            const randomNum = Math.floor(1000 + Math.random() * 9000);
+            document.getElementById('couponCodeInput').value = prefix + randomNum;
+        }
+
+        function toggleDiscountFields() {
+            const isPercent = document.getElementById('typePercent').checked;
+            const valueLabel = document.getElementById('discountValueLabel');
+            const unitLabel = document.getElementById('discountUnitLabel');
+            const maxGroup = document.getElementById('maxDiscountGroup');
+
+            if (isPercent) {
+                valueLabel.innerText = 'Giá trị giảm (%)';
+                unitLabel.innerText = '%';
+                maxGroup.style.display = 'block';
+            } else {
+                valueLabel.innerText = 'Số tiền giảm (VNĐ)';
+                unitLabel.innerText = 'VNĐ';
+                maxGroup.style.display = 'none';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            toggleDiscountFields();
+        });
+    </script>
+}

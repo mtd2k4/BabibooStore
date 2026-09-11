@@ -1,0 +1,207 @@
+﻿@model WebsiteBabyShop.Models.User
+@{
+    ViewData["Title"] = "Hồ Sơ Khách Hàng: " + Model.FullName;
+    decimal totalSpent = ViewBag.TotalSpent ?? 0;
+    int totalOrders = ViewBag.TotalOrders ?? 0;
+    int completedOrders = ViewBag.CompletedOrders ?? 0;
+    string initial = !string.IsNullOrEmpty(Model.FullName) ? Model.FullName.Substring(0, 1).ToUpper() : "U";
+    bool isSelf = Model.Username.Equals(User.Identity?.Name, StringComparison.OrdinalIgnoreCase);
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+    <div>
+        <h4 class="fw-bold m-0 text-dark">Hồ Sơ Người Dùng: <span class="text-primary">@Model.FullName</span></h4>
+        <span class="small text-muted">Tài khoản thành viên gia đình BabyShop từ: @Model.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Quay lại danh sách
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Cột Trái: Thông Tin Cá Nhân & Quyền Hạn -->
+    <div class="col-12 col-lg-4">
+        <div class="card border-0 rounded-4 shadow-sm p-4 text-center mb-4">
+            <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm mx-auto mb-3" 
+                 style="width: 76px; height: 76px; background: @(Model.Role == "Admin" ? "#dc3545" : "var(--baby-primary, #C57B57)"); font-size: 2rem;">
+                @initial
+            </div>
+            <h5 class="fw-bold m-0 text-dark">@Model.FullName</h5>
+            <div class="text-muted small mb-2"><code>@@@Model.Username</code></div>
+
+            <div class="d-flex justify-content-center gap-2 mb-3">
+                @if (Model.Role == "Admin")
+                {
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-shield-check me-1"></i>Quản Trị Viên
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-person-heart me-1"></i>Khách Hàng
+                    </span>
+                }
+
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-check-circle-fill me-1"></i>Hoạt động
+                    </span>
+                }
+                else
+                {
+                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1">
+                        <i class="bi bi-lock-fill me-1"></i>Đang bị khóa
+                    </span>
+                }
+            </div>
+
+            <hr class="my-3" />
+
+            <div class="text-start">
+                <div class="mb-3">
+                    <label class="text-muted small">Email liên hệ:</label>
+                    <div class="fw-bold text-dark"><i class="bi bi-envelope me-2 text-secondary"></i>@Model.Email</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Số điện thoại:</label>
+                    <div class="fw-bold"><i class="bi bi-telephone me-2 text-secondary"></i>@(Model.PhoneNumber ?? "Chưa cập nhật")</div>
+                </div>
+                <div class="mb-3">
+                    <label class="text-muted small">Địa chỉ mặc định:</label>
+                    <div><i class="bi bi-geo-alt me-2 text-secondary"></i>@(Model.Address ?? "Chưa có địa chỉ lưu sẵn")</div>
+                </div>
+            </div>
+
+            @if (!isSelf)
+            {
+                <div class="d-flex gap-2 mt-2 pt-3 border-top">
+                    <!-- Toggle Role -->
+                    <form asp-action="ToggleRole" asp-route-id="@Model.Id" method="post" class="flex-grow-1" onsubmit="return confirm('Bạn có chắc muốn chuyển đổi vai trò?');">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm w-100 rounded-pill">
+                            <i class="bi bi-arrow-repeat me-1"></i> Đổi Quyền (@(Model.Role == "Admin" ? "Customer" : "Admin"))
+                        </button>
+                    </form>
+
+                    <!-- Toggle Lock -->
+                    <form asp-action="ToggleActive" asp-route-id="@Model.Id" method="post" class="flex-grow-1">
+                        <button type="submit" class="btn @(Model.IsActive ? "btn-outline-warning" : "btn-outline-success") btn-sm w-100 rounded-pill">
+                            <i class="bi @(Model.IsActive ? "bi-lock" : "bi-unlock") me-1"></i> @(Model.IsActive ? "Khóa Nick" : "Mở Khóa")
+                        </button>
+                    </form>
+                </div>
+            }
+        </div>
+
+        <!-- Thống Kê Mua Sắm Của Khách Hàng -->
+        <div class="card border-0 rounded-4 shadow-sm p-4">
+            <h6 class="fw-bold text-dark mb-3"><i class="bi bi-graph-up-arrow text-success me-2"></i>Thống Kê Chi Tiêu</h6>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small">Tổng chi tiêu tích lũy:</span>
+                <strong class="text-danger fs-5">@totalSpent.ToString("N0") đ</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="text-muted small">Tổng số đơn hàng:</span>
+                <strong class="text-dark">@totalOrders đơn</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-0">
+                <span class="text-muted small">Đơn đã nhận thành công:</span>
+                <span class="badge bg-success">@completedOrders đơn</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cột Phải: Lịch Sử Đơn Hàng Của Khách -->
+    <div class="col-12 col-lg-8">
+        <div class="card border-0 rounded-4 shadow-sm">
+            <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+                <h5 class="fw-bold m-0 text-dark"><i class="bi bi-receipt text-danger me-2"></i>Lịch Sử Mua Hàng (@Model.Orders.Count đơn)</h5>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.Orders.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mã Đơn</th>
+                                    <th>Ngày Đặt</th>
+                                    <th>Số Sản Phẩm</th>
+                                    <th>Tổng Tiền</th>
+                                    <th>Thanh Toán</th>
+                                    <th>Trạng Thái</th>
+                                    <th class="text-end pe-3">Chi Tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var order in Model.Orders.OrderByDescending(o => o.CreatedAt))
+                                {
+                                    <tr>
+                                        <td>
+                                            <strong class="text-danger">@order.OrderCode</strong>
+                                        </td>
+                                        <td>
+                                            <span class="small text-muted">@order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">
+                                                @order.OrderDetails.Sum(d => d.Quantity) món
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <strong class="text-danger">@order.TotalAmount.ToString("N0") đ</strong>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@order.PaymentMethod</span>
+                                            @if (order.IsPaid)
+                                            {
+                                                <span class="badge bg-success small">Đã trả</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            @if (order.OrderStatus == "Pending")
+                                            {
+                                                <span class="badge bg-warning text-dark">Chờ xác nhận</span>
+                                            }
+                                            else if (order.OrderStatus == "Processing")
+                                            {
+                                                <span class="badge bg-info text-dark">Đang chuẩn bị</span>
+                                            }
+                                            else if (order.OrderStatus == "Shipping")
+                                            {
+                                                <span class="badge bg-primary">Đang giao</span>
+                                            }
+                                            else if (order.OrderStatus == "Completed")
+                                            {
+                                                <span class="badge bg-success">Hoàn thành</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger">@order.OrderStatus</span>
+                                            }
+                                        </td>
+                                        <td class="text-end pe-3">
+                                            <a asp-area="Admin" asp-controller="Orders" asp-action="Details" asp-route-id="@order.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                Xử lý
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5 text-muted">
+                        <i class="bi bi-cart-x fs-1 d-block mb-2 text-secondary opacity-50"></i>
+                        Người dùng này chưa phát sinh đơn đặt hàng nào.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
