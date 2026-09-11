@@ -1,4 +1,4 @@
-﻿/* ===== BABYSHOP - CONTEMPORARY KIDS BOUTIQUE DESIGN SYSTEM ===== */
+/* ===== BABYSHOP - CONTEMPORARY KIDS BOUTIQUE DESIGN SYSTEM ===== */
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
@@ -81,6 +81,7 @@
    Ngăn chặn hoàn toàn việc .badge bị chữ trắng trên nền trắng/nền nhạt */
 .badge {
     font-weight: 600;
+    color: #1e293b !important;
 }
 .badge:not([class*="bg-"]):not([style*="color"]) {
     color: #1e293b !important;
@@ -97,31 +98,63 @@
 .badge.bg-warning,
 .badge.bg-warning-subtle {
     color: #78350f !important;
+    background-color: #fef3c7 !important;
 }
 .badge.bg-info,
 .badge.bg-info-subtle {
     color: #0c4a6e !important;
+    background-color: #e0f2fe !important;
 }
 .badge.bg-primary-subtle {
     background-color: #dbeafe !important;
     color: #1e40af !important;
+    border: 1px solid #bfdbfe !important;
 }
 .badge.bg-success-subtle {
     background-color: #dcfce7 !important;
     color: #15803d !important;
+    border: 1px solid #bbf7d0 !important;
 }
 .badge.bg-danger-subtle {
     background-color: #fee2e2 !important;
     color: #b91c1c !important;
+    border: 1px solid #fecaca !important;
 }
 .badge.bg-secondary-subtle {
     background-color: #f1f5f9 !important;
     color: #475569 !important;
+    border: 1px solid #cbd5e1 !important;
 }
 .badge.bg-purple-subtle {
     background-color: #f3e8ff !important;
     color: #6b21a8 !important;
+    border: 1px solid #e9d5ff !important;
 }
+
+/* Badges with dark solid backgrounds where white text is high contrast */
+.badge.bg-dark,
+.badge.bg-black {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+}
+.badge.bg-primary:not(.bg-primary-subtle) {
+    background-color: #C57B57 !important;
+    color: #ffffff !important;
+}
+.badge.bg-danger:not(.bg-danger-subtle) {
+    background-color: #ef4444 !important;
+    color: #ffffff !important;
+}
+.badge.bg-success:not(.bg-success-subtle) {
+    background-color: #10b981 !important;
+    color: #ffffff !important;
+}
+.badge.bg-secondary:not(.bg-secondary-subtle) {
+    background-color: #475569 !important;
+    color: #ffffff !important;
+}
+.badge.text-dark { color: #1e293b !important; }
+.badge.text-muted { color: #64748b !important; }
 
 /* Base resets & typography */
 * {

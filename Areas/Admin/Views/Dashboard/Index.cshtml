@@ -1,4 +1,4 @@
-﻿@model List<WebsiteBabyShop.Models.Order>
+@model List<WebsiteBabyShop.Models.Order>
 @{
     ViewData["Title"] = "Tổng Quan Báo Cáo & Thống Kê";
 
@@ -24,18 +24,18 @@
 }
 
 <!-- Welcome Header -->
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
     <div>
         <h4 class="fw-bold m-0 text-dark">
-            <i class="bi bi-speedometer2 text-primary me-2"></i>Bảng Thống Kê Tổng Quan
+            <i class="bi bi-speedometer2 text-primary me-2" style="color: var(--admin-primary) !important;"></i>Bảng Thống Kê Tổng Quan
         </h4>
         <span class="text-muted small">Cập nhật chỉ số doanh thu, đơn hàng, khách hàng và trạng thái kho hàng thời gian thực</span>
     </div>
-    <div class="d-flex gap-2">
-        <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" class="btn btn-outline-primary rounded-pill btn-sm">
+    <div class="d-flex flex-wrap gap-2">
+        <a asp-area="Admin" asp-controller="StockReceipts" asp-action="Create" class="btn btn-outline-secondary rounded-pill btn-sm px-3">
             <i class="bi bi-box-arrow-in-down me-1"></i> Nhập Kho Nhanh
         </a>
-        <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="btn btn-primary-baby rounded-pill btn-sm shadow-sm">
+        <a asp-area="Admin" asp-controller="Products" asp-action="Create" class="btn btn-admin-primary btn-sm rounded-pill px-3 shadow-sm">
             <i class="bi bi-plus-circle-fill me-1"></i> Thêm Sản Phẩm Mới
         </a>
     </div>

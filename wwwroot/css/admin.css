@@ -1,0 +1,1109 @@
+/**
+ * BabyShop Studio Kids - Enterprise Admin Design System
+ * Modern SaaS Dashboard (Desktop, Tablet & Mobile Responsive)
+ * Inspired by Linear, Vercel & Stripe Dashboard aesthetics
+ */
+
+:root {
+    /* Brand Palette */
+    --admin-primary: #C57B57;
+    --admin-primary-hover: #B26A48;
+    --admin-primary-light: #FBF4F0;
+    --admin-primary-border: #F0D9CD;
+    --admin-primary-rgb: 197, 123, 87;
+
+    /* Dark Sidebar & Surfaces */
+    --admin-sidebar-bg: #0B132B;
+    --admin-sidebar-surface: #111D3E;
+    --admin-sidebar-border: rgba(255, 255, 255, 0.08);
+    --admin-sidebar-text: #94A3B8;
+    --admin-sidebar-text-active: #FFFFFF;
+    --admin-sidebar-hover: rgba(255, 255, 255, 0.06);
+
+    /* Light Theme Main Canvas */
+    --admin-bg: #F8FAFC;
+    --admin-surface: #FFFFFF;
+    --admin-surface-subtle: #F1F5F9;
+    --admin-border: #E2E8F0;
+    --admin-border-subtle: #F1F5F9;
+    --admin-text-main: #0F172A;
+    --admin-text-muted: #64748B;
+    --admin-text-subtle: #94A3B8;
+
+    /* Semantic Status Colors */
+    --admin-success: #10B981;
+    --admin-success-light: #ECFDF5;
+    --admin-success-border: #A7F3D0;
+    --admin-warning: #F59E0B;
+    --admin-warning-light: #FFFBEB;
+    --admin-warning-border: #FDE68A;
+    --admin-danger: #EF4444;
+    --admin-danger-light: #FEF2F2;
+    --admin-danger-border: #FECACA;
+    --admin-info: #0EA5E9;
+    --admin-info-light: #F0F9FF;
+    --admin-info-border: #BAE6FD;
+    --admin-purple: #8B5CF6;
+    --admin-purple-light: #F5F3FF;
+    --admin-purple-border: #DDD6FE;
+
+    /* Elevation & Shadows */
+    --admin-shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+    --admin-shadow-sm: 0 2px 4px 0 rgba(0, 0, 0, 0.04);
+    --admin-shadow-md: 0 6px 16px -2px rgba(15, 23, 42, 0.06), 0 2px 6px -1px rgba(15, 23, 42, 0.03);
+    --admin-shadow-lg: 0 12px 30px -4px rgba(15, 23, 42, 0.08), 0 4px 12px -2px rgba(15, 23, 42, 0.04);
+    --admin-shadow-glow: 0 4px 20px 0 rgba(197, 123, 87, 0.25);
+
+    /* Dimensions & Layout Transitions */
+    --sidebar-width: 270px;
+    --sidebar-collapsed-width: 80px;
+    --navbar-height: 70px;
+    --transition-smooth: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ==========================================================================
+   Base & Global Typography
+   ========================================================================== */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background-color: var(--admin-bg);
+    color: var(--admin-text-main);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    overflow-x: hidden;
+}
+
+/* ==========================================================================
+   GLOBAL CONTRAST SAFEGUARDS & BOOTSTRAP 5.3 UTILITY ENGINE
+   Giải quyết triệt để lỗi chữ trắng trên nền trắng / nền nhạt trên toàn trang Admin
+   ========================================================================== */
+
+/* Toàn bộ văn bản trong Admin Canvas mặc định hiển thị màu đen/slate đậm sắc nét */
+.admin-main {
+    color: #0F172A;
+}
+
+.admin-main h1, .admin-main h2, .admin-main h3, 
+.admin-main h4, .admin-main h5, .admin-main h6,
+.admin-main .h1, .admin-main .h2, .admin-main .h3, 
+.admin-main .h4, .admin-main .h5, .admin-main .h6 {
+    color: #0F172A !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+}
+
+.admin-main p,
+.admin-main label,
+.admin-main .text-dark {
+    color: #0F172A !important;
+}
+
+.admin-main .text-muted {
+    color: #64748B !important;
+}
+
+.admin-main .text-secondary {
+    color: #475569 !important;
+}
+
+/* 1. Mọi badge mặc định dùng chữ đen/slate đậm, không bao giờ dùng chữ trắng trên nền nhạt */
+.badge {
+    font-weight: 600;
+    color: #0F172A !important;
+    border-radius: 8px;
+    letter-spacing: 0.2px;
+}
+
+/* Badge nền sáng / trắng / light */
+.badge.bg-light,
+.badge.bg-white,
+.badge.bg-light-subtle,
+.badge:not([class*="bg-"]):not([class*="btn-"]) {
+    color: #0F172A !important;
+    background-color: #F1F5F9 !important;
+    border: 1px solid #CBD5E1 !important;
+}
+
+/* 2. Bootstrap 5.3 Subtle Background Utilities & Badges */
+.bg-primary-subtle,
+.badge.bg-primary-subtle {
+    background-color: #DBEAFE !important;
+    color: #1E40AF !important;
+    border: 1px solid #BFDBFE !important;
+}
+
+.bg-secondary-subtle,
+.badge.bg-secondary-subtle {
+    background-color: #F1F5F9 !important;
+    color: #334155 !important;
+    border: 1px solid #CBD5E1 !important;
+}
+
+.bg-success-subtle,
+.badge.bg-success-subtle {
+    background-color: #DCFCE7 !important;
+    color: #15803D !important;
+    border: 1px solid #BBF7D0 !important;
+}
+
+.bg-danger-subtle,
+.badge.bg-danger-subtle {
+    background-color: #FEE2E2 !important;
+    color: #B91C1C !important;
+    border: 1px solid #FECACA !important;
+}
+
+.bg-warning-subtle,
+.badge.bg-warning-subtle,
+.badge.bg-warning {
+    background-color: #FEF3C7 !important;
+    color: #92400E !important;
+    border: 1px solid #FDE68A !important;
+}
+
+.bg-info-subtle,
+.badge.bg-info-subtle,
+.badge.bg-info {
+    background-color: #E0F2FE !important;
+    color: #0369A1 !important;
+    border: 1px solid #BAE6FD !important;
+}
+
+.bg-purple-subtle,
+.badge.bg-purple-subtle {
+    background-color: #F3E8FF !important;
+    color: #6B21A8 !important;
+    border: 1px solid #E9D5FF !important;
+}
+
+.bg-light-subtle {
+    background-color: #F8FAFC !important;
+    color: #0F172A !important;
+    border: 1px solid #E2E8F0 !important;
+}
+
+.bg-dark-subtle {
+    background-color: #E2E8F0 !important;
+    color: #0F172A !important;
+}
+
+/* Text Emphasis Classes */
+.text-primary-emphasis { color: #1E40AF !important; }
+.text-secondary-emphasis { color: #334155 !important; }
+.text-success-emphasis { color: #15803D !important; }
+.text-danger-emphasis { color: #B91C1C !important; }
+.text-warning-emphasis { color: #92400E !important; }
+.text-info-emphasis { color: #0369A1 !important; }
+.text-light-emphasis { color: #64748B !important; }
+.text-dark-emphasis { color: #0F172A !important; }
+.text-purple { color: #6B21A8 !important; }
+
+/* Border Subtle Classes */
+.border-primary-subtle { border-color: #BFDBFE !important; }
+.border-secondary-subtle { border-color: #CBD5E1 !important; }
+.border-success-subtle { border-color: #BBF7D0 !important; }
+.border-danger-subtle { border-color: #FECACA !important; }
+.border-warning-subtle { border-color: #FDE68A !important; }
+.border-info-subtle { border-color: #BAE6FD !important; }
+.border-light-subtle { border-color: #E2E8F0 !important; }
+.border-dark-subtle { border-color: #94A3B8 !important; }
+.border-purple-subtle { border-color: #E9D5FF !important; }
+
+/* 3. Các badge nền đậm / bão hòa nơi chữ trắng ĐƯỢC PHÉP và có độ tương phản xuất sắc */
+.badge.bg-dark,
+.badge.bg-black {
+    background-color: #0F172A !important;
+    color: #FFFFFF !important;
+    border: 1px solid #0F172A !important;
+}
+
+.badge.bg-primary:not(.bg-primary-subtle) {
+    background-color: var(--admin-primary, #C57B57) !important;
+    color: #FFFFFF !important;
+    border: none;
+}
+
+.badge.bg-danger:not(.bg-danger-subtle) {
+    background-color: #EF4444 !important;
+    color: #FFFFFF !important;
+    border: none;
+}
+
+.badge.bg-success:not(.bg-success-subtle) {
+    background-color: #10B981 !important;
+    color: #FFFFFF !important;
+    border: none;
+}
+
+.badge.bg-secondary:not(.bg-secondary-subtle) {
+    background-color: #475569 !important;
+    color: #FFFFFF !important;
+    border: none;
+}
+
+/* Đảm bảo text-dark hoặc text-danger hoặc text-* trên badge luôn giữ đúng màu */
+.badge.text-dark, .badge .text-dark { color: #0F172A !important; }
+.badge.text-muted, .badge .text-muted { color: #64748B !important; }
+.badge.text-secondary, .badge .text-secondary { color: #334155 !important; }
+.badge.text-danger, .badge .text-danger { color: #B91C1C !important; }
+.badge.text-success, .badge .text-success { color: #15803D !important; }
+.badge.text-primary, .badge .text-primary { color: #1E40AF !important; }
+.badge.text-warning, .badge .text-warning { color: #92400E !important; }
+.badge.text-info, .badge .text-info { color: #0369A1 !important; }
+
+/* 4. Bảo toàn vùng thanh bên Admin (Sidebar là nền tối nên cần chữ sáng) */
+.admin-sidebar .sidebar-brand { color: #FFFFFF !important; }
+.admin-sidebar .brand-title { color: #FFFFFF !important; }
+.admin-sidebar .brand-badge { color: #94A3B8 !important; }
+.admin-sidebar .nav-section-title { color: #64748B !important; }
+.admin-sidebar .nav-link { color: #94A3B8 !important; }
+.admin-sidebar .nav-link:hover,
+.admin-sidebar .nav-link.active { color: #FFFFFF !important; }
+
+/* 5. Bảo toàn các nút bấm Admin có nền đậm */
+.btn-dark,
+.btn-primary:not(.btn-outline-primary),
+.btn-danger:not(.btn-outline-danger),
+.btn-success:not(.btn-outline-success),
+.btn-admin-primary,
+.btn-primary-baby {
+    color: #FFFFFF !important;
+}
+
+/* Nút bấm sáng và viền */
+.admin-main .btn-light {
+    background-color: #F1F5F9 !important;
+    border: 1px solid #CBD5E1 !important;
+    color: #0F172A !important;
+}
+.admin-main .btn-light:hover {
+    background-color: #E2E8F0 !important;
+    border-color: #94A3B8 !important;
+    color: #0F172A !important;
+}
+.admin-main .btn-outline-secondary {
+    color: #334155 !important;
+    border-color: #CBD5E1 !important;
+}
+.admin-main .btn-outline-secondary:hover {
+    background-color: #334155 !important;
+    border-color: #334155 !important;
+    color: #FFFFFF !important;
+}
+.admin-main .btn-outline-primary {
+    color: var(--admin-primary, #C57B57) !important;
+    border-color: var(--admin-primary, #C57B57) !important;
+}
+.admin-main .btn-outline-primary:hover {
+    background-color: var(--admin-primary, #C57B57) !important;
+    border-color: var(--admin-primary, #C57B57) !important;
+    color: #FFFFFF !important;
+}
+
+/* Nút btn-primary-baby dùng nhiều trong Admin */
+.btn-primary-baby {
+    background: linear-gradient(135deg, #C57B57 0%, #B26A48 100%) !important;
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(197, 123, 87, 0.25);
+    transition: all 0.2s ease;
+}
+.btn-primary-baby:hover {
+    background: linear-gradient(135deg, #B26A48 0%, #9F5838 100%) !important;
+    color: #FFFFFF !important;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(197, 123, 87, 0.35);
+}
+
+/* 6. Form input, select, input-group rõ ràng, chữ đen sắc nét */
+.admin-main .form-control,
+.admin-main .form-select {
+    color: #0F172A !important;
+    background-color: #FFFFFF !important;
+    border-color: #CBD5E1 !important;
+}
+.admin-main .form-control:focus,
+.admin-main .form-select:focus {
+    color: #0F172A !important;
+    border-color: var(--admin-primary) !important;
+}
+.admin-main .input-group-text {
+    color: #334155 !important;
+    background-color: #F8FAFC !important;
+    border-color: #CBD5E1 !important;
+}
+.admin-main .form-control::placeholder {
+    color: #94A3B8 !important;
+}
+
+/* 7. Phân trang Admin */
+.admin-main .page-link {
+    color: #0F172A !important;
+    background-color: #FFFFFF !important;
+    border-color: #E2E8F0 !important;
+}
+.admin-main .page-item.active .page-link {
+    color: #FFFFFF !important;
+    background-color: var(--admin-primary, #C57B57) !important;
+    border-color: var(--admin-primary, #C57B57) !important;
+}
+
+/* Thin Custom Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+::-webkit-scrollbar-thumb {
+    background: #CBD5E1;
+    border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #94A3B8;
+}
+
+/* ==========================================================================
+   Layout Architecture (Sidebar, Navbar, Main Canvas)
+   ========================================================================== */
+.admin-wrapper {
+    display: flex;
+    min-height: 100vh;
+    width: 100%;
+    position: relative;
+    background-color: var(--admin-bg);
+}
+
+/* 1. Sidebar Styles */
+.admin-sidebar {
+    width: var(--sidebar-width);
+    background: var(--admin-sidebar-bg);
+    border-right: 1px solid var(--admin-sidebar-border);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 1040;
+    transition: var(--transition-smooth);
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Sidebar Brand Header */
+.sidebar-header {
+    height: var(--navbar-height);
+    padding: 0 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--admin-sidebar-border);
+    background: rgba(11, 19, 43, 0.7);
+    backdrop-filter: blur(10px);
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.sidebar-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-decoration: none;
+    color: #FFFFFF;
+}
+
+.brand-icon-box {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--admin-primary) 0%, #E29578 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #FFFFFF;
+    font-size: 1.25rem;
+    box-shadow: 0 4px 14px rgba(197, 123, 87, 0.35);
+    flex-shrink: 0;
+}
+
+.brand-info {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    white-space: nowrap;
+    transition: var(--transition-smooth);
+}
+
+.brand-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+    color: #FFFFFF;
+}
+
+.brand-badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #94A3B8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Sidebar Navigation Items */
+.sidebar-nav-container {
+    padding: 16px 12px;
+    flex-grow: 1;
+}
+
+.nav-section-title {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: #64748B;
+    letter-spacing: 1.1px;
+    padding: 14px 14px 6px 14px;
+    margin-top: 6px;
+    white-space: nowrap;
+    transition: var(--transition-smooth);
+}
+
+.admin-sidebar .nav-link {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    color: var(--admin-sidebar-text);
+    font-size: 0.88rem;
+    font-weight: 600;
+    border-radius: 10px;
+    margin-bottom: 4px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    position: relative;
+    white-space: nowrap;
+}
+
+.admin-sidebar .nav-link i {
+    font-size: 1.15rem;
+    width: 24px;
+    text-align: center;
+    flex-shrink: 0;
+    transition: transform 0.2s ease;
+}
+
+.admin-sidebar .nav-link:hover {
+    color: #FFFFFF;
+    background: var(--admin-sidebar-hover);
+}
+
+.admin-sidebar .nav-link:hover i {
+    transform: scale(1.1);
+    color: var(--admin-primary);
+}
+
+.admin-sidebar .nav-link.active {
+    color: #FFFFFF;
+    background: linear-gradient(135deg, rgba(197, 123, 87, 0.9) 0%, rgba(178, 106, 72, 0.95) 100%);
+    box-shadow: 0 4px 16px rgba(197, 123, 87, 0.35);
+}
+
+.admin-sidebar .nav-link.active i {
+    color: #FFFFFF;
+}
+
+.nav-item-text {
+    flex-grow: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: var(--transition-smooth);
+}
+
+.nav-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+/* Sidebar Footer & User Widget */
+.sidebar-footer {
+    padding: 16px 14px;
+    border-top: 1px solid var(--admin-sidebar-border);
+    background: rgba(11, 19, 43, 0.6);
+}
+
+/* 2. Collapsed Mini-Sidebar Mode (Desktop) */
+.admin-wrapper.sidebar-collapsed .admin-sidebar {
+    width: var(--sidebar-collapsed-width);
+}
+
+.admin-wrapper.sidebar-collapsed .brand-info,
+.admin-wrapper.sidebar-collapsed .nav-section-title,
+.admin-wrapper.sidebar-collapsed .nav-item-text,
+.admin-wrapper.sidebar-collapsed .nav-badge,
+.admin-wrapper.sidebar-collapsed .sidebar-footer-text {
+    opacity: 0;
+    width: 0;
+    display: none;
+}
+
+.admin-wrapper.sidebar-collapsed .admin-sidebar .nav-link {
+    justify-content: center;
+    padding: 12px;
+}
+
+.admin-wrapper.sidebar-collapsed .admin-main {
+    margin-left: var(--sidebar-collapsed-width);
+}
+
+/* 3. Main Content Wrapper */
+.admin-main {
+    flex-grow: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    margin-left: var(--sidebar-width);
+    transition: var(--transition-smooth);
+    background-color: var(--admin-bg);
+}
+
+/* 4. Top Glassmorphism Navbar */
+.admin-navbar {
+    height: var(--navbar-height);
+    background: rgba(255, 255, 255, 0.88);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--admin-border);
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1030;
+    transition: var(--transition-smooth);
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+}
+
+.btn-toggle-sidebar {
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    border: 1px solid var(--admin-border);
+    background: #FFFFFF;
+    color: var(--admin-text-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.15rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-toggle-sidebar:hover {
+    background: var(--admin-surface-subtle);
+    border-color: #CBD5E1;
+    color: var(--admin-primary);
+}
+
+.navbar-page-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.navbar-page-title {
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--admin-text-main);
+    margin: 0;
+    line-height: 1.25;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.navbar-breadcrumb {
+    font-size: 0.75rem;
+    color: var(--admin-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.navbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Quick Search Box */
+.navbar-search-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--admin-surface-subtle);
+    border: 1px solid var(--admin-border);
+    border-radius: 10px;
+    padding: 7px 14px;
+    color: var(--admin-text-muted);
+    font-size: 0.84rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.navbar-search-btn:hover {
+    background: #FFFFFF;
+    border-color: #CBD5E1;
+    color: var(--admin-text-main);
+}
+
+.navbar-search-shortcut {
+    font-size: 0.68rem;
+    background: #FFFFFF;
+    border: 1px solid var(--admin-border);
+    border-radius: 6px;
+    padding: 1px 6px;
+    font-weight: 700;
+    color: var(--admin-text-muted);
+}
+
+/* Action Icon Buttons */
+.navbar-action-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    border: 1px solid var(--admin-border);
+    background: #FFFFFF;
+    color: var(--admin-text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    font-size: 1.1rem;
+}
+
+.navbar-action-btn:hover {
+    background: var(--admin-surface-subtle);
+    color: var(--admin-primary);
+    border-color: #CBD5E1;
+}
+
+.navbar-badge-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 2px solid #FFFFFF;
+}
+
+/* User Avatar Dropdown */
+.admin-user-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 10px 4px 4px;
+    border-radius: 999px;
+    border: 1px solid var(--admin-border);
+    background: #FFFFFF;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.admin-user-btn:hover {
+    background: var(--admin-surface-subtle);
+    border-color: #CBD5E1;
+}
+
+.admin-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--admin-primary) 0%, #D97706 100%);
+    color: #FFFFFF;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.admin-user-meta {
+    text-align: left;
+    line-height: 1.2;
+}
+
+.admin-user-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--admin-text-main);
+}
+
+.admin-user-role {
+    font-size: 0.7rem;
+    color: var(--admin-text-muted);
+}
+
+/* 5. Content Canvas Body */
+.admin-content-body {
+    padding: 28px;
+    flex-grow: 1;
+}
+
+/* 6. Admin Footer */
+.admin-footer {
+    padding: 16px 28px;
+    background: #FFFFFF;
+    border-top: 1px solid var(--admin-border);
+    font-size: 0.8rem;
+    color: var(--admin-text-muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+/* Mobile Backdrop */
+.admin-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 1035;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.25s ease;
+}
+
+.admin-backdrop.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ==========================================================================
+   Modern Component Styles (Cards, Stat Widgets, Badges, Tables)
+   ========================================================================== */
+
+/* Modern Stat Card Widget */
+.admin-card-stat {
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: var(--admin-shadow-sm);
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.admin-card-stat:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--admin-shadow-md);
+    border-color: #CBD5E1;
+}
+
+.stat-icon-wrapper {
+    width: 54px;
+    height: 54px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    flex-shrink: 0;
+    transition: transform 0.25s ease;
+}
+
+.admin-card-stat:hover .stat-icon-wrapper {
+    transform: scale(1.08);
+}
+
+.stat-content {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.stat-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--admin-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--admin-text-main);
+    line-height: 1.2;
+    letter-spacing: -0.5px;
+    margin: 0 0 4px 0;
+}
+
+.stat-badge-trend {
+    font-size: 0.74rem;
+    font-weight: 700;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+}
+
+/* Generic Admin Surface Card */
+.admin-card {
+    background: var(--admin-surface);
+    border: 1px solid var(--admin-border);
+    border-radius: 18px;
+    box-shadow: var(--admin-shadow-sm);
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+
+.admin-card-header {
+    padding: 18px 24px;
+    background: #FFFFFF;
+    border-bottom: 1px solid var(--admin-border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.admin-card-title {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: var(--admin-text-main);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.admin-card-body {
+    padding: 24px;
+}
+
+/* Modern Data Tables (Áp dụng cho cả .table mặc định và .table-admin) */
+.admin-main .table,
+.table-admin {
+    width: 100%;
+    margin-bottom: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    color: #0F172A !important;
+}
+
+.admin-main .table thead th,
+.admin-main .table thead.table-light th,
+.table-admin thead th {
+    background: #F1F5F9 !important;
+    color: #334155 !important;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--admin-border) !important;
+    border-top: none;
+    white-space: nowrap;
+}
+
+.admin-main .table tbody td,
+.table-admin tbody td {
+    padding: 14px 18px;
+    font-size: 0.88rem;
+    color: #0F172A !important;
+    border-bottom: 1px solid var(--admin-border);
+    vertical-align: middle;
+    background: #FFFFFF;
+    transition: background 0.15s ease;
+}
+
+.admin-main .table tbody tr:hover td,
+.table-admin tbody tr:hover td {
+    background: #F8FAFC !important;
+}
+
+.admin-main .table tbody tr:last-child td,
+.table-admin tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* Soft Modern Badges */
+.badge-modern {
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Pulsing Status Dot */
+.status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.status-dot-pulse {
+    animation: statusPulse 2s infinite ease-in-out;
+}
+
+@keyframes statusPulse {
+    0% { transform: scale(0.95); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+/* Buttons System */
+.btn-admin-primary {
+    background: linear-gradient(135deg, var(--admin-primary) 0%, #B26A48 100%);
+    color: #FFFFFF !important;
+    border: none;
+    border-radius: 10px;
+    padding: 9px 18px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    box-shadow: 0 4px 12px rgba(197, 123, 87, 0.25);
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-admin-primary:hover {
+    background: linear-gradient(135deg, #BA704C 0%, #9F5838 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(197, 123, 87, 0.35);
+}
+
+/* ==========================================================================
+   Responsive Breakpoints & Media Queries
+   ========================================================================== */
+
+/* Tablet & Mobile (< 992px) */
+@media (max-width: 991.98px) {
+    .admin-sidebar {
+        transform: translateX(-100%);
+        box-shadow: none;
+    }
+
+    .admin-sidebar.mobile-open {
+        transform: translateX(0);
+        box-shadow: 0 0 50px rgba(0, 0, 0, 0.35);
+    }
+
+    .admin-main {
+        margin-left: 0 !important;
+    }
+
+    .admin-navbar {
+        padding: 0 16px;
+    }
+
+    .admin-content-body {
+        padding: 18px 16px;
+    }
+
+    .navbar-search-btn {
+        display: none; /* Collapses to search icon */
+    }
+
+    .admin-user-meta {
+        display: none;
+    }
+
+    .btn-desktop-toggle {
+        display: none !important;
+    }
+}
+
+/* Small Mobile (< 576px) */
+@media (max-width: 575.98px) {
+    .navbar-page-title {
+        font-size: 1rem;
+    }
+
+    .navbar-breadcrumb {
+        display: none;
+    }
+
+    .admin-card-stat {
+        padding: 16px;
+        gap: 14px;
+    }
+
+    .stat-icon-wrapper {
+        width: 44px;
+        height: 44px;
+        font-size: 1.3rem;
+    }
+
+    .stat-value {
+        font-size: 1.25rem;
+    }
+
+    .admin-card-body {
+        padding: 16px;
+    }
+}
+
+/* Desktop Large (>= 992px) */
+@media (min-width: 992px) {
+    .btn-mobile-toggle {
+        display: none !important;
+    }
+
+    .admin-backdrop {
+        display: none !important;
+    }
+}

@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace WebsiteBabyShop.Models
 {
@@ -26,6 +26,7 @@ namespace WebsiteBabyShop.Models
         public DbSet<UserCoupon> UserCoupons { get; set; }
         public DbSet<DailyCheckIn> DailyCheckIns { get; set; }
         public DbSet<LuckyWheelHistory> LuckyWheelHistories { get; set; }
+        public DbSet<ReturnRequest> ReturnRequests { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

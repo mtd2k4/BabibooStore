@@ -1,10 +1,23 @@
-﻿using System.Text.Encodings.Web;
+using System.Text.Encodings.Web;
 using System.Text.Unicode;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBabyShop.Models;
 using WebsiteBabyShop.Services;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Cấu hình Kestrel và FormOptions hỗ trợ upload video bóc hàng dung lượng tối đa 100MB (+20MB cho ảnh và form data)
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MaxRequestBodySize = 120 * 1024 * 1024; // 120MB
+});
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 120 * 1024 * 1024; // 120MB
+    options.ValueLengthLimit = 120 * 1024 * 1024;
+    options.MultipartHeadersLengthLimit = 120 * 1024 * 1024;
+});
 
 // Cấu hình xuất tiếng Việt UTF-8 chuẩn đẹp, không bị mã hóa thành &#x...;
 builder.Services.AddSingleton(HtmlEncoder.Create(allowedRanges: new[] { UnicodeRanges.All }));

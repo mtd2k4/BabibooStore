@@ -20,6 +20,9 @@
    - [7.5 Dịch vụ Gửi Email Xác nhận Đơn hàng (Email Service)](#75-dịch-vụ-gửi-email-xác-nhận-đơn-hàng-email-service)
    - [7.6 Trợ lý Tư vấn Bán hàng Trí tuệ Nhân tạo (Google Gemini AI)](#76-trợ-lý-tư-vấn-bán-hàng-trí-tuệ-nhân-tạo-google-gemini-ai)
    - [7.7 Hệ thống Nhật ký Kiểm toán (Audit Logs)](#77-hệ-thống-nhật-ký-kiểm-toán-audit-logs)
+   - [7.8 Quy trình Đổi / Trả Hàng 7 Ngày & Thẩm Định Video Bóc Hàng 100MB](#78-quy-trình-đổi--trả-hàng-7-ngày--thẩm-định-video-bóc-hàng-100mb)
+   - [7.9 Giao Diện Quản Trị Enterprise SaaS & Cơ Chế Kiểm Soát Tương Phản Chữ Đen](#79-giao-diện-quản-trị-enterprise-saas--cơ-chế-kiểm-soát-tương-phản-chữ-đen)
+   - [7.10 Chuẩn Hóa Hệ Thống Thông Báo Toast SweetAlert2 Toàn Diện](#710-chuẩn-hóa-hệ-thống-thông-báo-toast-sweetalert2-toàn-diện)
 8. [Danh Mục Controller & Endpoints](#8-danh-mục-controller--endpoints)
 9. [Hướng Dẫn Cài Đặt, Cấu Hình & Chuyển Sang Máy Khác](#9-hướng-dẫn-cài-đặt-cấu-hình--chuyển-sang-máy-khác)
 10. [Danh Sách Tài Khoản Mẫu](#10-danh-sách-tài-khoản-mẫu)
@@ -79,16 +82,20 @@ e:\NetNangCao\WebsiteBabyShop\
 │       │   ├── DashboardController.cs        # Thống kê doanh thu, đơn hàng, biểu đồ
 │       │   ├── OrdersController.cs           # Duyệt đơn, đổi trạng thái, in hóa đơn
 │       │   ├── ProductsController.cs         # Thêm/Sửa/Xóa sản phẩm, biến thể, Flash Sale
+│       │   ├── ReturnRequestsController.cs   # Quản trị thẩm định đổi trả, duyệt video bóc hàng 100MB
 │       │   ├── ReviewsController.cs          # Kiểm duyệt và phản hồi đánh giá
 │       │   ├── StockReceiptsController.cs    # Lập phiếu nhập kho theo biến thể Size/Màu
 │       │   └── UsersController.cs            # Quản lý tài khoản, hạng thẻ, điểm thưởng
 │       └── Views/                            # Toàn bộ view Razor quản trị
+│           ├── ReturnRequests/               # Danh sách và chi tiết thẩm định video bóc hàng
+│           └── Shared/_AdminLayout.cshtml    # Layout Enterprise SaaS Dashboard (Responsive)
 │
 ├── Controllers/                              # Controllers phía Khách hàng
 │   ├── AccountController.cs                  # Đăng nhập, Đăng ký, Đổi pass, Hồ sơ, Voucher, Đơn hàng
 │   ├── CartController.cs                     # Giỏ hàng, Áp dụng Voucher, Điểm thưởng, Checkout, OrderSuccess
 │   ├── ChatController.cs                     # Khung chat tư vấn AI Gemini & Live CSKH
 │   ├── HomeController.cs                     # Trang chủ, Tìm kiếm, Banner, Sản phẩm mới/bán chạy
+│   ├── OrderReturnController.cs              # Tiếp nhận yêu cầu đổi trả 7 ngày, upload video 100MB
 │   ├── OrderTrackingController.cs            # Tra cứu hành trình đơn hàng bằng Mã đơn & SĐT
 │   ├── PolicyController.cs                   # Các trang chính sách (Đổi trả, Vận chuyển, Bảo mật)
 │   ├── ProductController.cs                  # Danh sách sản phẩm, Bộ lọc đa tiêu chí, Chi tiết sản phẩm
@@ -113,6 +120,7 @@ e:\NetNangCao\WebsiteBabyShop\
 │   ├── ProductImage.cs                       # Entity thư viện ảnh phụ sản phẩm
 │   ├── ProductReview.cs                      # Entity đánh giá & xếp hạng sao
 │   ├── ProductVariant.cs                     # Entity biến thể (Size, Color, StockQuantity, Sku)
+│   ├── ReturnRequest.cs                      # Entity yêu cầu đổi trả, video 100MB, STK, phân loại lỗi
 │   ├── StockReceipt.cs                       # Entity phiếu nhập kho & chi tiết phiếu nhập
 │   └── User.cs                               # Entity tài khoản người dùng
 │
@@ -129,6 +137,7 @@ e:\NetNangCao\WebsiteBabyShop\
 │   ├── Account/                              # View Đăng nhập, Đăng ký, Profile, MyOrders, MyVouchers
 │   ├── Cart/                                 # View Giỏ hàng (Index), Thanh toán (Checkout), Thành công (OrderSuccess)
 │   ├── Home/                                 # View Trang chủ (Index), Tìm kiếm, Giới thiệu
+│   ├── OrderReturn/                          # View Gửi yêu cầu đổi trả, Theo dõi tiến độ, Đổi trả của tôi
 │   ├── Product/                              # View Danh sách sản phẩm (Index), Chi tiết sản phẩm (Details)
 │   ├── Rewards/                              # View Vòng quay may mắn & Điểm danh 7 ngày
 │   ├── OrderTracking/                        # View Tra cứu đơn hàng
@@ -136,14 +145,22 @@ e:\NetNangCao\WebsiteBabyShop\
 │   └── Shared/                               # _Layout.cshtml, _ValidationScriptsPartial, Header, Footer
 │
 ├── wwwroot/                                  # File tĩnh phân phối ra client
-│   ├── css/babyshop.css                      # Bộ CSS thương hiệu BabyShop
-│   ├── js/                                   # Javascript xử lý tương tác
+│   ├── css/
+│   │   ├── babyshop.css                      # Bộ CSS thương hiệu Contemporary Boutique Storefront
+│   │   └── admin.css                         # Hệ thống thiết kế Enterprise SaaS Admin (Contrast Safeguard)
+│   ├── js/
+│   │   ├── babyshop.js                       # Logic tương tác phía khách hàng
+│   │   └── admin.js                          # Drawer mobile, Mini-Sidebar, Quick Command (Ctrl+K), Polling
 │   ├── images/                               # Hình ảnh sản phẩm, banner, logo
-│   └── emails/                               # Thư mục lưu bản sao HTML các email xác nhận đơn hàng
+│   ├── emails/                               # Thư mục lưu bản sao HTML các email xác nhận đơn hàng
+│   └── uploads/
+│       └── returns/
+│           ├── videos/                       # Lưu trữ video bóc hàng unboxing (tối đa 100MB)
+│           └── images/                       # Lưu trữ ảnh chụp cận cảnh bằng chứng lỗi
 │
 ├── appsettings.json                          # Cấu hình CSDL, Google Gemini API, Gmail SMTP
 ├── Database_WebsiteBabyShop.sql              # Script SQL Server dự phòng nạp dữ liệu thủ công
-├── Program.cs                                # Điểm khởi đầu ứng dụng, cấu hình DI & Pipeline
+├── Program.cs                                # Điểm khởi đầu ứng dụng, cấu hình DI, Kestrel 120MB
 └── WebsiteBabyShop.sln                       # Solution Visual Studio 2022
 ```
 
@@ -151,20 +168,22 @@ e:\NetNangCao\WebsiteBabyShop\
 
 ## 4. MÔ HÌNH CƠ SỞ DỮ LIỆU (DATABASE SCHEMA)
 
-Cơ sở dữ liệu bao gồm **15 bảng** liên kết chặt chẽ:
+Cơ sở dữ liệu bao gồm **16 bảng** liên kết chặt chẽ:
 
 ```
-[Users] ──┬──< [Orders] ──< [OrderDetails] >── [ProductVariants] >── [Products] >── [Categories]
-          │                                                               │
-          ├──< [UserCoupons] >── [Coupons]                                ├──< [ProductReviews]
-          │                                                               └──< [ProductImages]
+[Users] ──┬──< [Orders] ──┬──< [OrderDetails] >── [ProductVariants] >── [Products] >── [Categories]
+          │               │                                                   │
+          │               └──< [ReturnRequests]                               ├──< [ProductReviews]
+          │                                                                   └──< [ProductImages]
+          ├──< [UserCoupons] >── [Coupons]
+          │
           ├──< [PointTransactions]
           ├──< [DailyCheckIns]
           ├──< [LuckyWheelHistories]
           └──< [ChatConversations] ──< [ChatMessages]
 
 [StockReceipts] ──< [StockReceiptDetails] >── [ProductVariants]
-[AuditLogs] (Độc lập, ghi nhận thao tác của Admin)
+[AuditLogs] (Độc lập, tự động ghi vết mọi thao tác CSDL của Admin)
 ```
 
 ### Chi tiết các thực thể chính:
@@ -200,6 +219,22 @@ Cơ sở dữ liệu bao gồm **15 bảng** liên kết chặt chẽ:
 
 #### 6. `AuditLogs` (Nhật ký Kiểm toán Hệ thống)
 - `Id`, `UserId`, `Action` (`Create`, `Update`, `Delete`), `EntityName` (`Product`, `Order`, `Coupon`, `User`...), `RecordId`, `OldValues` (JSON), `NewValues` (JSON), `IpAddress`, `Timestamp`.
+
+#### 7. `ReturnRequests` (Yêu cầu Đổi / Trả Hàng & Video Bóc Hàng)
+- `Id` (PK, int): Mã định danh yêu cầu.
+- `ReturnCode` (nvarchar(50)): Mã phiếu đổi trả (`RT-YYYYMMDD-XXXX`).
+- `OrderId` (FK, int): Liên kết đơn hàng gốc cần đổi trả.
+- `UserId` (FK, int null): Tài khoản khách hàng yêu cầu.
+- `CustomerName`, `CustomerPhone`: Thông tin liên hệ nhận đổi trả.
+- `RequestType` (nvarchar(20)): `Exchange` (Đổi size / mẫu) hoặc `ReturnRefund` (Trả hàng & Hoàn tiền).
+- `FaultSource` (nvarchar(30)): `ShopFault` (Lỗi từ Shop), `CarrierFault` (Lỗi do Vận chuyển), `CustomerRequest` (Khách muốn đổi).
+- `ReasonCategory`, `ReasonDetail`: Nhóm lý do và mô tả chi tiết của khách.
+- `ProofImages` (nvarchar(max)): Danh sách đường dẫn ảnh bằng chứng (cách nhau bởi dấu `;`).
+- `UnboxingVideoPath` / `UnboxingVideoUrl`: Đường dẫn lưu trữ video bóc hàng kiểm tra (tối đa 100MB).
+- `BankAccountNumber`, `BankName`, `BankAccountHolder`: Thông tin tài khoản nhận tiền hoàn (nếu chọn Trả hàng).
+- `Status` (nvarchar(30)): `Pending` (Chờ duyệt), `Approved` (Đã duyệt), `Processing` (Đang xử lý / thu hồi), `Completed` (Đã hoàn tất), `Rejected` (Đã từ chối).
+- `AdminNote`: Lời nhắn và lý do phê duyệt/từ chối từ Quản trị viên.
+- `CreatedAt`, `ProcessedAt`: Thời gian khởi tạo và thời điểm hoàn tất xử lý.
 
 ---
 
@@ -337,6 +372,20 @@ Truy cập đường dẫn: `/Admin` (Yêu cầu đăng nhập tài khoản có 
 - Hiển thị danh sách khách đang chờ hỗ trợ kèm chấm đỏ báo tin nhắn mới.
 - Nhân viên Admin có thể chat trực tiếp với khách để chốt đơn hoặc tư vấn đổi trả.
 
+### 10. Quản Lý Đổi / Trả Hàng 7 Ngày & Thẩm Định Video Bóc Hàng (`Admin/ReturnRequests`)
+- Bảng điều khiển thẩm định hồ sơ khiếu nại đổi trả đa chiều.
+- Phân nhóm nguồn gốc lỗi trực quan: **Lỗi từ Shop**, **Lỗi Đơn vị Vận chuyển**, hoặc **Khách đổi size**.
+- **Trình phát Video HTML5 tích hợp**: Cho phép Quản trị viên xem trực tiếp Video bóc hàng (dung lượng lên tới 100MB) của khách hàng ngay trên giao diện mà không cần tải về máy.
+- Modal xem phóng to ảnh bằng chứng (đường chỉ rách, tem bưu tá, vỏ hộp móp méo).
+- Quy trình phê duyệt chuẩn hóa: Duyệt đổi hàng, Bàn giao bưu tá thu hồi, Hoàn tất hoặc Từ chối kèm lý do gửi khách. Tự động ghi nhận nhật ký vào `AuditLogs`.
+
+### 11. Giao Diện Quản Trị Modern Enterprise SaaS & Cơ Chế Kiểm Soát Tương Phản
+- **Kiến trúc Responsive Đa Thiết Bị**:
+  - Desktop: Chế độ thanh bên đầy đủ (Full Sidebar 270px) hoặc thu gọn (Mini-Sidebar 80px) có lưu trạng thái vào `localStorage`.
+  - Tablet & Mobile: Ngăn kéo trượt (Offcanvas Drawer) kèm lớp phủ mờ (`.admin-backdrop`), đóng mở mượt mà bằng nút Hamburger hoặc phím `ESC`.
+- **Thao tác nhanh**: Hộp thoại tìm kiếm thông minh toàn trang **Quick Command Modal (`Ctrl + K`)**.
+- **Cơ chế Tương phản Cao (High-Contrast Dark Text Safeguards)**: Toàn bộ bảng biểu, thẻ badge, nút bấm và form điều khiển được cưỡng chế hiển thị chữ đen/slate đậm `#0F172A` trên nền sáng, triệt tiêu 100% tình trạng chữ trắng bị chìm/tàng hình trên nền sáng.
+
 ---
 
 ## 7. CÁC QUY TRÌNH NGHIỆP VỤ CỐT LÕI (CORE WORKFLOWS)
@@ -434,11 +483,50 @@ Truy cập đường dẫn: `/Admin` (Yêu cầu đăng nhập tài khoản có 
 
 ---
 
+### 7.8 Quy trình Đổi / Trả Hàng 7 Ngày & Thẩm Định Video Bóc Hàng 100MB
+Hệ thống hỗ trợ giải quyết đổi trả minh bạch, văn minh trong vòng 7 ngày kể từ khi đơn hàng giao thành công, bảo vệ quyền lợi tối đa cho mẹ và bé:
+- **Phân định rõ ràng 3 nguồn gốc lỗi**:
+  - **Lỗi do Shop (`ShopFault`)**: Giao sai mẫu, sai màu, nhầm size hoặc rách sờn, lỗi chỉ từ khâu may. Shop **chịu 100% chi phí vận chuyển 2 chiều** hoặc hoàn tiền 100% vào số tài khoản của khách.
+  - **Lỗi do Đơn vị vận chuyển (`CarrierFault`)**: Kiện hàng bị móp méo nặng, ướt rách, bể vỡ hộp đựng do thời tiết hoặc bưu tá giao ẩu. Shop **đổi ngay sản phẩm mới cho khách**, lưu giữ bằng chứng để khiếu nại bảo hiểm bồi thường với bên giao vận (GHN, ViettelPost,...).
+  - **Khách hàng đổi size / mẫu (`CustomerRequest`)**: Bé mặc chật/rộng hoặc muốn đổi màu khác. Áp dụng mức phí đồng giá **30.000đ** (Shop hỗ trợ 50% phí bưu tá đổi tận nhà).
+- **Hỗ trợ tải Video Bóc Hàng (Unboxing Video) dung lượng lớn tới 100MB**:
+  - Cấu hình Kestrel `MaxRequestBodySize = 120MB` và `FormOptions.MultipartBodyLengthLimit = 120MB`.
+  - Kiểm tra định dạng video (`.mp4`, `.mov`, `.webm`, `.avi`, `.mkv`) và dung lượng ngay tại Client và Server.
+  - Cho phép đính kèm song song nhiều ảnh chụp cận cảnh tem mác, lỗi chỉ hoặc ảnh kiện hàng.
+- **Quy trình Quản trị Thẩm định chuyên sâu ([ReturnRequestsController.cs](file:///e:/NetNangCao/WebsiteBabyShop/Areas/Admin/Controllers/ReturnRequestsController.cs))**:
+  - Tích hợp trình phát Video HTML5 trực tiếp trên giao diện Admin giúp nhân viên CSKH xem ngay video bóc hàng mà không cần tải về máy.
+  - Các thao tác chuẩn quy trình: *Phê Duyệt (Giao bưu tá đổi tận nhà) -> Đang Xử Lý / Thu Hồi -> Hoàn Tất Đổi/Trả -> Từ Chối (kèm lý do chi tiết gửi cho khách)*.
+  - Mọi thao tác phê duyệt đều được tự động lưu vào hệ thống `AuditLogs`.
+
+---
+
+### 7.9 Giao Diện Quản Trị Enterprise SaaS & Cơ Chế Kiểm Soát Tương Phản Chữ Đen
+Hệ thống quản trị Admin được tái thiết kế toàn diện theo phong cách **Enterprise SaaS Dashboard**, mang đến trải nghiệm thẩm mỹ cao, tốc độ mượt mà và khả năng tương thích tuyệt đối:
+- **Trải nghiệm Responsive Đa Nền Tảng ([admin.js](file:///e:/NetNangCao/WebsiteBabyShop/wwwroot/js/admin.js))**:
+  - **Trên điện thoại & máy tính bảng (< 992px)**: Sidebar tự động biến thành ngăn kéo trượt (Offcanvas Drawer) kèm lớp phủ mờ sang trọng (`.admin-backdrop`), hỗ trợ đóng mở qua nút bấm Hamburger hoặc phím `ESC`.
+  - **Trên máy tính để bàn (>= 992px)**: Cung cấp nút thu gọn sang chế độ **Mini-Sidebar (80px)**, tự động ghi nhớ tùy chọn vào `localStorage` của trình duyệt.
+  - **Hộp lệnh tìm kiếm nhanh Quick Command (`Ctrl + K`)**: Giúp quản trị viên tìm và nhảy đến trang quản lý sản phẩm, đơn hàng, đổi trả, voucher... chỉ bằng vài phím gõ.
+- **Cơ chế Kiểm Soát Tương Phản Chữ Đen Sắc Nét ([admin.css](file:///e:/NetNangCao/WebsiteBabyShop/wwwroot/css/admin.css))**:
+  - **Giải quyết triệt để lỗi chữ trắng trên nền sáng**: Do Bootstrap 5.1 mặc định đặt thuộc tính cứng `.badge { color: #fff }`, dẫn tới chữ bị "tàng hình" khi nằm trên các badge màu pastel hoặc nền trắng.
+  - Hệ thống áp dụng bộ quy tắc tương phản cao:
+    - Cưỡng chế toàn bộ `.badge`, các thẻ badge nền sáng (`.bg-light`, `.bg-white`, `.bg-light-subtle`) và badge pastel (`.bg-primary-subtle`, `.bg-success-subtle`, `.bg-warning-subtle`, `.bg-danger-subtle`, `.bg-info-subtle`) hiển thị màu chữ **đen/slate đậm `#0F172A`** hoặc các gam màu đậm tương ứng (`#1E40AF`, `#15803D`, `#92400E`, `#B91C1C`, `#0369A1`).
+    - Bảng dữ liệu `.table td` và `.table-admin td` luôn mang chữ màu đen `#0F172A !important;` trên nền trắng `#FFFFFF`, tiêu đề in hoa đậm `#334155`.
+    - Chữ trắng `#FFFFFF` được bảo vệ và duy trì nghiêm ngặt **CHỈ trên các bề mặt nền tối**: Sidebar (`.admin-sidebar`), các nút bấm nền đậm (`.btn-dark`, `.btn-primary`, `.btn-danger`, `.btn-admin-primary`), và badge nền đặc (`.badge.bg-dark`, `.badge.bg-danger`, `.badge.bg-success`).
+
+---
+
+### 7.10 Chuẩn Hóa Hệ Thống Thông Báo Toast SweetAlert2 Toàn Diện
+- Khắc phục triệt để tình trạng **lặp thông báo** (cùng một thông báo vừa xuất hiện ở banner trang vừa nổ popup góc phải).
+- Gỡ bỏ hoàn toàn các banner cảnh báo tĩnh dễ gây xô lệch giao diện người dùng.
+- Chuẩn hóa quy trình phản hồi qua **SweetAlert2 Toast (`BabyAlert.toast`)**: Tự động kích hoạt khi có `TempData["SuccessMessage"]` hoặc `TempData["ErrorMessage"]`, trượt êm từ góc trên bên phải màn hình, có thanh thời gian tự tắt sau 3.5 giây, mang lại cảm giác phần mềm cao cấp, hiện đại.
+
+---
+
 ## 8. DANH MỤC CONTROLLER & ENDPOINTS
 
 ### Phân hệ Khách hàng (Client Endpoints)
 | Controller | Action / Endpoint | Phương thức | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
+| :--- | :--- | :--- | :--- |
 | `Home` | `/` hoặc `/Home/Index` | GET | Trang chủ, banner, sản phẩm nổi bật, flash sale |
 | `Home` | `/Home/Search?q=...` | GET | Tìm kiếm sản phẩm theo từ khóa |
 | `Product` | `/Product/Index` | GET | Danh sách sản phẩm, lọc theo tuổi, giới tính, giá, màu |
@@ -457,18 +545,22 @@ Truy cập đường dẫn: `/Admin` (Yêu cầu đăng nhập tài khoản có 
 | `Account` | `/Account/Register` | GET/POST | Đăng ký tài khoản mới |
 | `Account` | `/Account/Logout` | POST | Đăng xuất và dọn sạch session cache |
 | `Account` | `/Account/Profile` | GET/POST | Xem và cập nhật thông tin cá nhân |
-| `Account` | `/Account/MyOrders` | GET | Lịch sử đơn hàng của tôi |
+| `Account` | `/Account/MyOrders` | GET | Lịch sử đơn hàng của tôi, nút gửi yêu cầu đổi trả |
 | `Account` | `/Account/MyVouchers` | GET | Kho voucher của tôi |
 | `Rewards` | `/Rewards` | GET | Giao diện Vòng quay may mắn & Điểm danh 7 ngày |
 | `Rewards` | `/Rewards/CheckIn` | POST | Thực hiện điểm danh nhận điểm thưởng |
 | `Rewards` | `/Rewards/SpinWheel` | POST | Quay vòng quay may mắn |
 | `OrderTracking` | `/OrderTracking` | GET/POST | Tra cứu tiến độ đơn hàng |
+| `OrderReturn` | `/OrderReturn/Create?orderId=...` | GET/POST | Tạo yêu cầu đổi/trả hàng, upload ảnh & video 100MB |
+| `OrderReturn` | `/OrderReturn/Details/{id}` | GET | Chi tiết tiến độ đổi trả & bằng chứng đã nộp |
+| `OrderReturn` | `/OrderReturn/Track?keyword=...` | GET | Tra cứu tiến độ đổi trả trực tuyến |
+| `OrderReturn` | `/OrderReturn/MyReturns` | GET | Danh sách các yêu cầu đổi trả của khách |
 | `Wishlist` | `/Wishlist` | GET | Quản lý danh sách sản phẩm yêu thích |
 | `Chat` | `/Chat/SendMessage` | POST | Gửi tin nhắn tới AI Gemini hoặc CSKH |
 
 ### Phân hệ Quản trị (Admin Endpoints - `/Admin`)
 | Controller | Action / Endpoint | Phương thức | Mô tả chức năng |
-| :--- | :--- | :---: | :--- |
+| :--- | :--- | :--- | :--- |
 | `Dashboard` | `/Admin` hoặc `/Admin/Dashboard` | GET | Bảng điều khiển thống kê kinh doanh |
 | `Products` | `/Admin/Products` | GET | Quản lý danh sách sản phẩm |
 | `Products` | `/Admin/Products/Create` | GET/POST | Thêm mới sản phẩm và các biến thể size/màu |
@@ -480,6 +572,11 @@ Truy cập đường dẫn: `/Admin` (Yêu cầu đăng nhập tài khoản có 
 | `Orders` | `/Admin/Orders/Details/{id}` | GET | Xem chi tiết đơn hàng |
 | `Orders` | `/Admin/Orders/UpdateStatus` | POST | Cập nhật trạng thái đơn (Pending, Processing...) |
 | `Orders` | `/Admin/Orders/PrintInvoice/{id}` | GET | Xem và in hóa đơn bán hàng |
+| `ReturnRequests` | `/Admin/ReturnRequests` | GET | Quản lý yêu cầu đổi trả, thống kê & lọc theo lỗi |
+| `ReturnRequests` | `/Admin/ReturnRequests/Details/{id}` | GET | Thẩm định video bóc hàng, ảnh lỗi & duyệt yêu cầu |
+| `ReturnRequests` | `/Admin/ReturnRequests/Approve/{id}` | POST | Phê duyệt yêu cầu đổi trả, bàn giao bưu tá |
+| `ReturnRequests` | `/Admin/ReturnRequests/Reject/{id}` | POST | Từ chối yêu cầu đổi trả kèm lý do chi tiết |
+| `ReturnRequests` | `/Admin/ReturnRequests/Complete/{id}` | POST | Hoàn tất quy trình đổi hàng hoặc hoàn tiền |
 | `Coupons` | `/Admin/Coupons` | GET | Quản lý danh sách mã giảm giá |
 | `Coupons` | `/Admin/Coupons/Create` | GET/POST | Tạo mã giảm giá mới |
 | `Users` | `/Admin/Users` | GET | Quản lý danh sách tài khoản người dùng |
@@ -580,7 +677,7 @@ Hệ thống đã chuẩn bị sẵn các tài khoản mẫu với các phân qu
 
 | Tài khoản | Mật khẩu | Vai trò (Role) | Hạng thành viên | Đặc điểm kiểm thử |
 | :--- | :--- | :---: | :---: | :--- |
-| **`admin`** | `Admin@123` | **Admin** | Quản trị viên | Toàn quyền quản trị hệ thống tại `/Admin` |
+| **`admin`** | `Admin@123456` | **Admin** | Quản trị viên | Toàn quyền quản trị hệ thống tại `/Admin` |
 | **`maitiendung`** | `Password123!` | Customer | **Kim Cương** | Hạng cao nhất: Giảm 20% mọi đơn hàng, Freeship trọn đời |
 | **`khachhang`** | `123456` | Customer | **Bạc** | Đã có sẵn địa chỉ (Hà Nội), giảm 8%, Freeship đơn từ 200k |
 | **`me_thao_1465`** | `Password@123` | Customer | **Đồng** | Khách hàng mới, trải nghiệm tích lũy điểm thưởng và chuỗi điểm danh |

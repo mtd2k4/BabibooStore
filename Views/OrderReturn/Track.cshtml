@@ -1,0 +1,97 @@
+@{
+    ViewData["Title"] = "Tra Cứu Tiến Độ Đổi / Trả Hàng - BabyShop Studio Kids";
+    var results = ViewBag.Results as List<WebsiteBabyShop.Models.ReturnRequest>;
+    var searchedCode = ViewBag.SearchedCode as string;
+    var searchedPhone = ViewBag.SearchedPhone as string;
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Policy" asp-action="Return" class="text-decoration-none text-muted">Chính Sách Đổi Trả</a></li>
+            <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Tra Cứu Đổi Trả</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-7">
+            <div class="text-center mb-4">
+                <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center bg-light text-primary" style="width: 70px; height: 70px; font-size: 2rem;">
+                    <i class="bi bi-arrow-repeat"></i>
+                </div>
+                <h3 class="fw-bold text-dark mb-2">Tra Cứu Tiến Độ Đổi / Trả Hàng</h3>
+                <p class="text-muted small">Nhập Mã phiếu đổi trả (RT-...) hoặc Số điện thoại đặt hàng để kiểm tra tiến độ xử lý và lịch shipper đến đổi hàng.</p>
+            </div>
+
+            <!-- Form Tra Cứu -->
+            <div class="bg-white rounded-4 border p-4 shadow-sm mb-4">
+                <form asp-action="Track" method="get">
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-bold text-dark">Mã phiếu đổi trả (RT-...)</label>
+                            <input type="text" name="returnCode" value="@searchedCode" class="form-control rounded-3" placeholder="Ví dụ: RT-20260911-1234" />
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label small fw-bold text-dark">Số điện thoại người nhận</label>
+                            <input type="tel" name="phone" value="@searchedPhone" class="form-control rounded-3" placeholder="Ví dụ: 0912345678" />
+                        </div>
+                        <div class="col-12 text-center mt-3">
+                            <button type="submit" class="btn btn-baby-primary rounded-pill px-5">
+                                <i class="bi bi-search me-1"></i> Tra Cứu Tiến Độ
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Kết quả Tra Cứu -->
+            @if (results != null)
+            {
+                if (results.Any())
+                {
+                    <h5 class="fw-bold text-dark mb-3">Kết quả tìm kiếm (@results.Count phiếu):</h5>
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var item in results)
+                        {
+                            <div class="bg-white rounded-4 border p-4 shadow-xs">
+                                <div class="d-flex justify-content-between align-items-center pb-2 border-bottom mb-3">
+                                    <div>
+                                        <strong class="text-danger fs-6">#@item.ReturnCode</strong>
+                                        <span class="text-muted small ms-2">Đơn: #@item.Order?.OrderCode</span>
+                                    </div>
+                                    <span class="badge @(item.Status == "Pending" ? "bg-warning-subtle text-warning-emphasis" : (item.Status == "Approved" ? "bg-primary-subtle text-primary" : (item.Status == "Completed" ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger"))) px-3 py-1 rounded-pill small">
+                                        @(item.Status == "Pending" ? "Đang chờ duyệt" : (item.Status == "Approved" ? "Đã duyệt - Shipper đang đổi" : (item.Status == "Completed" ? "Hoàn tất" : "Từ chối")))
+                                    </span>
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    Sản phẩm: <strong class="text-dark">@item.ProductName</strong> | Hình thức: <strong>@(item.RequestType == "Exchange" ? "Đổi Size" : "Hoàn tiền")</strong>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.AdminNote))
+                                {
+                                    <div class="alert alert-info py-2 px-3 rounded-3 small mb-2">
+                                        <i class="bi bi-info-circle-fill me-1"></i>Phản hồi: @item.AdminNote
+                                    </div>
+                                }
+                                <div class="text-end mt-2">
+                                    <a asp-controller="OrderReturn" asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                                        Xem Chi Tiết Bằng Chứng & Lịch Trình <i class="bi bi-arrow-right ms-1"></i>
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning rounded-4 text-center p-4">
+                        <i class="bi bi-exclamation-circle fs-3 text-warning mb-2 d-block"></i>
+                        <h6 class="fw-bold">Không tìm thấy phiếu đổi trả phù hợp</h6>
+                        <p class="small text-muted mb-0">Mẹ vui lòng kiểm tra lại chính xác Mã phiếu đổi trả (bắt đầu bằng RT-) hoặc Số điện thoại đặt hàng nhé!</p>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>

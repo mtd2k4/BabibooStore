@@ -1,4 +1,4 @@
-﻿@{
+@{
     ViewData["Title"] = "Chính Sách Đổi Trả Trong 7 Ngày - BabyShop Studio Kids";
 }
 
@@ -122,28 +122,51 @@
                                 <tr>
                                     <th>Trường Hợp Đổi Trả</th>
                                     <th>Phí Vận Chuyển</th>
-                                    <th>Ghi Chú</th>
+                                    <th>Bằng Chứng Cần Thiết & Quyền Lợi</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td><strong>Lỗi từ phía BabyShop</strong> (giao nhầm mẫu, sai size, rách sờn, lỗi chỉ)</td>
+                                    <td><strong class="text-danger"><i class="bi bi-shop me-1"></i>Lỗi từ phía BabyShop</strong><br><span class="text-muted">Giao nhầm mẫu, sai màu, sai size hoặc lỗi chỉ may, lỗi vải.</span></td>
                                     <td class="text-success fw-bold">MIỄN PHÍ 100%</td>
-                                    <td>BabyShop chịu toàn bộ chi phí bưu tá 2 chiều.</td>
+                                    <td>BabyShop chịu toàn bộ chi phí vận chuyển 2 chiều. Chụp ảnh rõ vị trí lỗi hoặc gửi video bóc hàng để được gửi đồ mới ngay.</td>
                                 </tr>
                                 <tr>
-                                    <td><strong>Đổi size do bé mặc chật/rộng hoặc muốn đổi màu</strong></td>
+                                    <td><strong class="text-warning-emphasis"><i class="bi bi-truck me-1"></i>Lỗi do Đơn vị vận chuyển</strong><br><span class="text-muted">Hộp hàng móp méo nặng, ướt rách bưu kiện, thiếu hàng.</span></td>
+                                    <td class="text-success fw-bold">MIỄN PHÍ 100%</td>
+                                    <td><strong>Cần Video bóc hàng (tối đa 100MB)</strong> còn nguyên tem bưu tá hoặc biên bản đồng kiểm. Shop lập tức đổi sản phẩm mới và đứng ra yêu cầu bồi thường với bên giao vận.</td>
+                                </tr>
+                                <tr>
+                                    <td><strong class="text-primary"><i class="bi bi-person-check me-1"></i>Khách muốn đổi size / màu</strong><br><span class="text-muted">Bé mặc chật/rộng hoặc muốn đổi kiểu dáng khác.</span></td>
                                     <td class="fw-bold">Đồng giá 30.000đ</td>
-                                    <td>BabyShop trợ giá 50% chi phí vận chuyển 2 chiều bưu tá.</td>
+                                    <td>BabyShop trợ giá 50% chi phí vận chuyển 2 chiều bưu tá. Đổi mới tận nhà tiện lợi trong vòng 7 ngày.</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- Callout Box -->
-                    <div class="p-4 rounded-4" style="background: #FAF7F2; border-left: 4px solid var(--baby-primary);">
-                        <h6 class="fw-bold mb-2 text-dark">Mẹ cần hỗ trợ đổi size ngay bây giờ?</h6>
-                        <p class="small text-muted mb-3">Đội ngũ chuyên viên tư vấn luôn online sẵn sàng kiểm tra số đo của bé và chuẩn bị đồ mới cho mẹ:</p>
+                    <!-- Callout Box: Cổng Gửi Yêu Cầu Trực Tuyến -->
+                    <div class="p-4 rounded-4 mb-4" style="background: linear-gradient(135deg, #FAF7F2 0%, #F5ECE3 100%); border-left: 5px solid var(--baby-primary);">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-3">
+                            <div>
+                                <h5 class="fw-bold mb-1 text-dark"><i class="bi bi-arrow-repeat text-primary me-2" style="color: var(--baby-primary) !important;"></i>Cổng Tiếp Nhận Đổi / Trả Hàng Online</h5>
+                                <p class="small text-muted mb-0">Mẹ có thể chủ động gửi form đổi hàng kèm ảnh chụp và video bóc hàng (hỗ trợ file dung lượng lớn đến 100MB) chỉ với 1 phút thao tác!</p>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2">
+                                <a asp-controller="OrderReturn" asp-action="Create" class="btn btn-baby-primary rounded-pill px-4 shadow-sm">
+                                    <i class="bi bi-plus-circle me-1"></i> Gửi Yêu Cầu Đổi / Trả
+                                </a>
+                                <a asp-controller="OrderReturn" asp-action="Track" class="btn btn-outline-dark rounded-pill px-3">
+                                    <i class="bi bi-search me-1"></i> Tra Cứu Tiến Độ
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Hỗ Trợ Nhanh -->
+                    <div class="p-4 rounded-4 bg-light border">
+                        <h6 class="fw-bold mb-2 text-dark">Mẹ vẫn còn thắc mắc cần trợ giúp trực tiếp?</h6>
+                        <p class="small text-muted mb-3">Đội ngũ chuyên viên tư vấn luôn online sẵn sàng kiểm tra số đo của bé và hỗ trợ chuẩn bị đơn đổi:</p>
                         <div class="d-flex flex-wrap gap-2">
                             <button type="button" class="btn btn-baby-primary btn-sm px-3" onclick="openBabyChat('Staff')">
                                 <i class="bi bi-chat-dots-fill me-1"></i> Chat Với Tư Vấn Viên

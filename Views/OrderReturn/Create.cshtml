@@ -1,0 +1,357 @@
+@model WebsiteBabyShop.Models.ReturnRequest
+@{
+    ViewData["Title"] = "Yêu Cầu Đổi / Trả Hàng - BabyShop Studio Kids";
+    var order = ViewBag.Order as WebsiteBabyShop.Models.Order;
+    var orderDetails = ViewBag.OrderDetails as List<WebsiteBabyShop.Models.OrderDetail> ?? new List<WebsiteBabyShop.Models.OrderDetail>();
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Account" asp-action="MyOrders" class="text-decoration-none text-muted">Đơn Hàng Của Tôi</a></li>
+            <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Yêu Cầu Đổi / Trả Hàng</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-10">
+
+            <!-- Banner Cam kết -->
+            <div class="p-4 rounded-4 text-white mb-4 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #ff758c 0%, #ff7eb3 100%);">
+                <div class="row align-items-center position-relative z-1">
+                    <div class="col-12 col-md-8">
+                        <span class="badge bg-white text-danger px-3 py-1 rounded-pill fw-bold text-uppercase mb-2 small">Chính Sách 7 Ngày Tận Nhà</span>
+                        <h3 class="fw-bold mb-2">Yêu Cầu Đổi Size & Trả Hàng Miễn Phí</h3>
+                        <p class="mb-0 opacity-90 small" style="line-height: 1.6;">
+                            BabyShop cam kết hỗ trợ mẹ đổi size tận nhà miễn phí 100% hoặc hoàn tiền nhanh chóng khi sản phẩm gặp sự cố từ Shop hoặc Đơn vị vận chuyển.
+                        </p>
+                    </div>
+                    <div class="col-12 col-md-4 text-md-end mt-3 mt-md-0">
+                        <div class="d-inline-flex align-items-center gap-2 bg-white bg-opacity-20 px-3 py-2 rounded-pill text-white small">
+                            <i class="bi bi-shield-check fs-5"></i>
+                            <span>Bảo vệ quyền lợi mẹ & bé</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Đơn Hàng Gốc -->
+            @if (order != null)
+            {
+                <div class="bg-white rounded-4 border p-3 p-md-4 mb-4 shadow-xs">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center pb-3 border-bottom mb-3 gap-2">
+                        <div>
+                            <span class="text-muted small">Đơn hàng đối soát:</span>
+                            <strong class="text-primary fs-6 ms-1">#@order.OrderCode</strong>
+                            <span class="text-muted small ms-2"><i class="bi bi-calendar"></i> @order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-pill small fw-semibold">
+                            <i class="bi bi-check-circle-fill me-1"></i> Đủ điều kiện đổi trả trong 7 ngày
+                        </span>
+                    </div>
+
+                    <div class="row g-2">
+                        <div class="col-12 col-md-6 small">
+                            <span class="text-muted">Người nhận:</span> <strong>@order.CustomerName</strong> (@order.CustomerPhone)
+                        </div>
+                        <div class="col-12 col-md-6 small">
+                            <span class="text-muted">Địa chỉ nhận hàng:</span> <span>@order.ShippingAddress</span>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Form Tạo Yêu Cầu -->
+            <div class="bg-white rounded-4 border p-4 p-md-5 shadow-sm">
+                <form asp-action="Create" method="post" enctype="multipart/form-data" id="returnForm">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="OrderId" />
+                    <input type="hidden" asp-for="UserId" />
+                    <input type="hidden" asp-for="CustomerName" />
+                    <input type="hidden" asp-for="CustomerPhone" />
+                    <input type="hidden" asp-for="CustomerEmail" />
+
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger rounded-4 py-2 px-3 mb-4 small">
+                            <div asp-validation-summary="All" class="text-danger mb-0"></div>
+                        </div>
+                    }
+
+                    <!-- 1. Chọn Hình Thức Yêu Cầu -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark fs-6 mb-2">
+                            <i class="bi bi-ui-checks text-primary me-2"></i>1. Bạn muốn thực hiện hình thức nào? <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-6">
+                                <label class="border rounded-4 p-3 d-flex align-items-center gap-3 cursor-pointer w-100 h-100 option-card" id="cardExchange">
+                                    <input type="radio" asp-for="RequestType" value="Exchange" class="form-check-input mt-0 fs-5" checked onchange="toggleRequestType(this.value)" />
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="bi bi-arrow-repeat text-success me-1"></i> Đổi Size / Đổi Màu Sắc</div>
+                                        <div class="text-muted small">Shipper mang size mới đến tận nhà đổi cho mẹ, nhận lại đồ cũ miễn phí.</div>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-6">
+                                <label class="border rounded-4 p-3 d-flex align-items-center gap-3 cursor-pointer w-100 h-100 option-card" id="cardRefund">
+                                    <input type="radio" asp-for="RequestType" value="Refund" class="form-check-input mt-0 fs-5" onchange="toggleRequestType(this.value)" />
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="bi bi-cash-stack text-danger me-1"></i> Trả Hàng & Hoàn Tiền</div>
+                                        <div class="text-muted small">Thu hồi sản phẩm lỗi và chuyển khoản hoàn lại tiền cho mẹ trong 24h.</div>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Chọn Nguồn Gốc Lỗi -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold text-dark fs-6 mb-2">
+                            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>2. Nguồn gốc sự cố phát sinh từ đâu? <span class="text-danger">*</span>
+                        </label>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="border rounded-4 p-3 cursor-pointer w-100 h-100 fault-card" id="cardShopFault">
+                                    <input type="radio" asp-for="FaultSource" value="ShopFault" class="form-check-input me-2" checked onchange="updateReasonCategories(this.value)" />
+                                    <span class="fw-bold text-dark d-block mb-1">🏪 Lỗi từ phía Shop</span>
+                                    <span class="text-muted small">Giao sai mẫu/màu/size, vải lỗi, bung chỉ, hỏng khóa, thiếu quà tặng.</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="border rounded-4 p-3 cursor-pointer w-100 h-100 fault-card" id="cardCarrierFault">
+                                    <input type="radio" asp-for="FaultSource" value="CarrierFault" class="form-check-input me-2" onchange="updateReasonCategories(this.value)" />
+                                    <span class="fw-bold text-danger d-block mb-1">🚚 Lỗi Đơn Vị Vận Chuyển</span>
+                                    <span class="text-muted small">Kiện hàng móp méo, rách bọc, ướt sũng, có dấu hiệu bị bóc mở từ trước.</span>
+                                </label>
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="border rounded-4 p-3 cursor-pointer w-100 h-100 fault-card" id="cardCustomerRequest">
+                                    <input type="radio" asp-for="FaultSource" value="CustomerRequest" class="form-check-input me-2" onchange="updateReasonCategories(this.value)" />
+                                    <span class="fw-bold text-primary d-block mb-1">👶 Nhu cầu Đổi Size cho bé</span>
+                                    <span class="text-muted small">Bé mặc chật hoặc rộng, màu không hợp, mẹ cần đổi kích cỡ phù hợp hơn.</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Sản Phẩm Cần Đổi Trả & Lý Do Chi Tiết -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold small text-dark">Sản phẩm cần đổi / trả <span class="text-danger">*</span></label>
+                            <select asp-for="ProductName" class="form-select rounded-3" id="selectProduct" required onchange="onProductSelect(this)">
+                                <option value="">-- Chọn sản phẩm trong đơn --</option>
+                                @foreach (var item in orderDetails)
+                                {
+                                    <option value="@item.ProductName" data-variant="Size: @(item.Size ?? "-") / Màu: @(item.Color ?? "-")">
+                                        @item.ProductName (Size: @(item.Size ?? "-") - Màu: @(item.Color ?? "-")) x@(item.Quantity)
+                                    </option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-12 col-md-6">
+                            <label class="form-label fw-bold small text-dark">Lý do cụ thể <span class="text-danger">*</span></label>
+                            <select asp-for="ReasonCategory" class="form-select rounded-3" id="selectReason" required>
+                                <option value="Bé mặc chật/rộng (Đổi size)">Bé mặc chật/rộng (Cần đổi size khác)</option>
+                                <option value="Giao sai mẫu/màu/size">Shop đóng gói giao sai mẫu mã / màu / size</option>
+                                <option value="Sản phẩm rách chỉ/lỗi vải/hỏng khóa">Sản phẩm bị lỗi chỉ may, lỗi vải, hỏng khóa</option>
+                                <option value="Vỏ hộp rách nát/ướt hỏng do vận chuyển">Bưu kiện rách bọc, móp méo, ướt sũng do shipper</option>
+                                <option value="Khác">Lý do khác</option>
+                            </select>
+                        </div>
+
+                        <!-- Phân loại hiện tại & Size muốn đổi -->
+                        <div class="col-12 col-md-6" id="divCurrentSize">
+                            <label class="form-label fw-bold small text-dark">Phân loại hiện tại đang giữ</label>
+                            <input type="text" asp-for="CurrentSizeColor" class="form-control rounded-3" id="inputCurrentVariant" placeholder="Ví dụ: Size 6-9M / Màu Vàng" />
+                        </div>
+
+                        <div class="col-12 col-md-6" id="divDesiredExchange">
+                            <label class="form-label fw-bold small text-success">Size / Màu bạn mong muốn đổi sang <span class="text-danger">*</span></label>
+                            <input type="text" asp-for="DesiredSizeColor" class="form-control rounded-3 border-success" placeholder="Ví dụ: Đổi sang Size 9-12M / Màu Xanh Mint" />
+                            <div class="form-text text-muted small">Shop sẽ chuẩn bị đúng size này để shipper mang đến tận nhà đổi cho mẹ.</div>
+                        </div>
+
+                        <!-- Chi tiết mô tả -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-dark">Mô tả chi tiết sự cố / Ghi chú cho Shop</label>
+                            <textarea asp-for="ReasonDetail" class="form-control rounded-3" rows="3" placeholder="Ví dụ: Vải bị rách 1 đường chỉ ở nách áo, hoặc Hộp hàng lúc shipper giao bị ướt sũng nước mưa..."></textarea>
+                        </div>
+                    </div>
+
+                    <!-- 4. TẢI LÊN BẰNG CHỨNG (ẢNH & VIDEO 100MB) -->
+                    <div class="p-4 rounded-4 mb-4 border bg-light">
+                        <h5 class="fw-bold text-dark mb-1">
+                            <i class="bi bi-camera-fill text-danger me-2"></i>Bằng Chứng Xác Thực (Hình Ảnh & Video Bóc Hàng)
+                        </h5>
+                        <p class="text-muted small mb-3">
+                            Để bảo vệ quyền lợi tối đa cho mẹ và làm cơ sở khiếu nại bồi hoàn với bên bưu cục nếu bị móp hỏng bưu kiện, vui lòng cung cấp ảnh chụp hoặc video:
+                        </p>
+
+                        <div class="row g-4">
+                            <!-- Upload Hình Ảnh -->
+                            <div class="col-12 col-md-6">
+                                <div class="bg-white p-3 rounded-4 border h-100">
+                                    <label class="form-label fw-bold small text-dark d-flex align-items-center justify-content-between">
+                                        <span><i class="bi bi-images me-1 text-primary"></i> 1. Ảnh Chụp Thực Tế (Tối đa 5 ảnh)</span>
+                                        <span class="text-muted fw-normal" style="font-size: 0.75rem;">.jpg, .png</span>
+                                    </label>
+                                    <input type="file" name="proofFiles" id="proofFiles" multiple accept="image/*" class="form-control rounded-3 mb-2" onchange="previewImages(this)" />
+                                    <div class="form-text text-muted small mb-2">
+                                        📸 Mẹ hãy chụp: <strong>Cận cảnh vết lỗi</strong> và <strong>Toàn cảnh vỏ bọc hộp hàng có mã vận đơn</strong>.
+                                    </div>
+                                    <div id="imagePreviewContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
+                                </div>
+                            </div>
+
+                            <!-- Upload Video Bóc Hàng 100MB -->
+                            <div class="col-12 col-md-6">
+                                <div class="bg-white p-3 rounded-4 border border-warning-subtle h-100" style="background: #fffdfa;">
+                                    <label class="form-label fw-bold small text-dark d-flex align-items-center justify-content-between">
+                                        <span><i class="bi bi-camera-reels-fill me-1 text-danger"></i> 2. Video Bóc Hàng (Unboxing Video)</span>
+                                        <span class="badge bg-warning text-dark small fw-bold">Tối đa 100MB</span>
+                                    </label>
+                                    <input type="file" name="unboxingVideo" id="unboxingVideo" accept="video/mp4,video/quicktime,video/webm,video/x-msvideo,video/x-matroska" class="form-control rounded-3 mb-2" onchange="validateVideoFile(this)" />
+                                    <div class="form-text text-muted small mb-2">
+                                        📹 Hỗ trợ file: <code>.mp4</code>, <code>.mov</code>, <code>.webm</code>. Dung lượng tối đa <strong>100MB</strong>.
+                                    </div>
+                                    <div id="videoFeedback" class="small mt-1"></div>
+
+                                    <div class="mt-3 pt-2 border-top">
+                                        <label class="form-label fw-semibold text-muted" style="font-size: 0.78rem;">Hoặc dán Link video Drive / Youtube (nếu có):</label>
+                                        <input type="url" asp-for="UnboxingVideoUrl" class="form-control form-control-sm rounded-3" placeholder="https://drive.google.com/file/d/..." />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Xác nhận đồng kiểm -->
+                            <div class="col-12">
+                                <div class="form-check p-3 rounded-3 bg-white border">
+                                    <input class="form-check-input ms-0 me-2" type="checkbox" asp-for="HadCarrierCoCheck" id="checkCoCheck" />
+                                    <label class="form-check-label fw-semibold text-dark small cursor-pointer" for="checkCoCheck">
+                                        Tôi đã cùng bưu tá kiểm tra đồng kiểm kiện hàng này khi nhận (hoặc có shipper chứng kiến lỗi vỏ hộp).
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5. Thông tin Tài Khoản Hoàn Tiền (Chỉ hiện khi chọn Refund) -->
+                    <div id="sectionRefundBank" class="p-4 rounded-4 mb-4 border border-danger-subtle bg-danger-subtle bg-opacity-10 d-none">
+                        <h6 class="fw-bold text-danger mb-3">
+                            <i class="bi bi-bank me-2"></i>Thông Tin Tài Khoản Ngân Hàng Nhận Hoàn Tiền
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold small text-dark">Ngân hàng thụ hưởng</label>
+                                <input type="text" asp-for="BankName" class="form-control rounded-3" placeholder="Ví dụ: MB Bank, Vietcombank, Techcombank..." />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold small text-dark">Số tài khoản</label>
+                                <input type="text" asp-for="BankAccountNo" class="form-control rounded-3 font-monospace" placeholder="Ví dụ: 0987654321" />
+                            </div>
+                            <div class="col-12 col-md-4">
+                                <label class="form-label fw-bold small text-dark">Tên chủ tài khoản (In hoa)</label>
+                                <input type="text" asp-for="BankAccountName" class="form-control rounded-3 text-uppercase" placeholder="NGUYEN VAN A" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Nút Gửi Yêu Cầu -->
+                    <div class="d-flex flex-wrap justify-content-between align-items-center pt-3 border-top gap-3">
+                        <a asp-controller="Account" asp-action="MyOrders" class="btn btn-outline-secondary rounded-pill px-4">
+                            <i class="bi bi-arrow-left me-1"></i> Quay lại Đơn Hàng
+                        </a>
+                        <button type="submit" class="btn btn-baby-primary px-5 py-2 fs-6 rounded-pill" id="btnSubmit">
+                            <i class="bi bi-send-fill me-2"></i> Gửi Yêu Cầu Đổi / Trả Hàng
+                        </button>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function toggleRequestType(type) {
+            var refundSec = document.getElementById('sectionRefundBank');
+            var desiredDiv = document.getElementById('divDesiredExchange');
+            if (type === 'Refund') {
+                refundSec.classList.remove('d-none');
+                desiredDiv.classList.add('d-none');
+            } else {
+                refundSec.classList.add('d-none');
+                desiredDiv.classList.remove('d-none');
+            }
+        }
+
+        function updateReasonCategories(source) {
+            var select = document.getElementById('selectReason');
+            if (source === 'CarrierFault') {
+                select.value = 'Vỏ hộp rách nát/ướt hỏng do vận chuyển';
+            } else if (source === 'CustomerRequest') {
+                select.value = 'Bé mặc chật/rộng (Đổi size)';
+            } else {
+                select.value = 'Giao sai mẫu/màu/size';
+            }
+        }
+
+        function onProductSelect(sel) {
+            var selectedOpt = sel.options[sel.selectedIndex];
+            var variant = selectedOpt.getAttribute('data-variant') || '';
+            document.getElementById('inputCurrentVariant').value = variant;
+        }
+
+        function validateVideoFile(input) {
+            var feedback = document.getElementById('videoFeedback');
+            feedback.innerHTML = '';
+            if (input.files && input.files[0]) {
+                var file = input.files[0];
+                var sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+
+                if (file.size > 100 * 1024 * 1024) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Video vượt quá 100MB!',
+                        text: 'File video của bạn có dung lượng ' + sizeInMB + 'MB, vượt quá giới hạn 100MB cho phép. Mẹ vui lòng chọn đoạn video ngắn hơn nhé!',
+                        confirmButtonColor: '#ff758c'
+                    });
+                    input.value = '';
+                    return;
+                }
+
+                feedback.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Đã chọn video: <strong>' + file.name + '</strong> (' + sizeInMB + ' MB)</span>';
+            }
+        }
+
+        function previewImages(input) {
+            var container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = '';
+            if (input.files) {
+                Array.from(input.files).slice(0, 5).forEach(function(file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        var img = document.createElement('img');
+                        img.src = e.target.result;
+                        img.className = 'rounded-3 border shadow-xs';
+                        img.style.width = '70px';
+                        img.style.height = '70px';
+                        img.style.objectFit = 'cover';
+                        container.appendChild(img);
+                    };
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+    </script>
+    <style>
+        .cursor-pointer { cursor: pointer; }
+        .option-card:hover, .fault-card:hover { border-color: var(--baby-primary) !important; background: #faf8f5; }
+    </style>
+}

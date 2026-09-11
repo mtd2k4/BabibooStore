@@ -1,0 +1,115 @@
+@model List<WebsiteBabyShop.Models.ReturnRequest>
+@{
+    ViewData["Title"] = "Lịch Sử Yêu Cầu Đổi / Trả Hàng - BabyShop Studio Kids";
+}
+
+<div class="container py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb small">
+            <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-muted"><i class="bi bi-house"></i> Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a asp-controller="Account" asp-action="MyOrders" class="text-decoration-none text-muted">Đơn Hàng Của Tôi</a></li>
+            <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">Lịch Sử Đổi / Trả Hàng</li>
+        </ol>
+    </nav>
+
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
+        <h3 class="fw-bold text-dark mb-0">
+            <i class="bi bi-arrow-repeat text-primary me-2"></i>Lịch Sử Yêu Cầu Đổi / Trả Hàng
+        </h3>
+        <a asp-controller="Account" asp-action="MyOrders" class="btn btn-outline-primary rounded-pill px-4 btn-sm">
+            <i class="bi bi-bag-check me-1"></i> Xem Đơn Hàng Của Tôi
+        </a>
+    </div>
+
+    @if (Model.Any())
+    {
+        <div class="d-flex flex-column gap-3">
+            @foreach (var item in Model)
+            {
+                <div class="bg-white rounded-4 border p-4 shadow-xs">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center pb-3 border-bottom mb-3 gap-2">
+                        <div>
+                            <span class="text-muted small">Mã phiếu:</span>
+                            <strong class="text-danger fs-6 ms-1">#@item.ReturnCode</strong>
+                            <span class="text-muted small ms-3"><i class="bi bi-clock"></i> @item.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                            <span class="text-muted small ms-3">Đơn hàng: <strong>#@item.Order?.OrderCode</strong></span>
+                        </div>
+                        <div>
+                            @if (item.Status == "Pending")
+                            {
+                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-1 rounded-pill small">
+                                    <i class="bi bi-hourglass-split me-1"></i> Đang chờ duyệt
+                                </span>
+                            }
+                            else if (item.Status == "Approved")
+                            {
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill small">
+                                    <i class="bi bi-truck me-1"></i> Đã duyệt - Shipper đang đổi
+                                </span>
+                            }
+                            else if (item.Status == "Completed")
+                            {
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Hoàn tất
+                                </span>
+                            }
+                            else if (item.Status == "Rejected")
+                            {
+                                <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-1 rounded-pill small">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Từ chối
+                                </span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-md-8">
+                            <div class="fw-bold text-dark fs-6 mb-1">
+                                <span class="badge @(item.RequestType == "Exchange" ? "bg-success" : "bg-danger") me-2">
+                                    @(item.RequestType == "Exchange" ? "Đổi Size/Màu" : "Trả Hàng Hoàn Tiền")
+                                </span>
+                                @item.ProductName
+                            </div>
+                            <div class="small text-muted mb-1">
+                                Nguồn gốc: <strong>@(item.FaultSource == "ShopFault" ? "Lỗi Shop" : (item.FaultSource == "CarrierFault" ? "Lỗi Vận Chuyển" : "Nhu cầu đổi size"))</strong> | 
+                                Lý do: <span>@item.ReasonCategory</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(item.DesiredSizeColor))
+                            {
+                                <div class="small text-success">
+                                    <i class="bi bi-arrow-right me-1"></i>Đổi sang: <strong>@item.DesiredSizeColor</strong>
+                                </div>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(item.AdminNote))
+                            {
+                                <div class="small text-primary mt-1">
+                                    <i class="bi bi-chat-dots me-1"></i>Phản hồi: <em>@item.AdminNote</em>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="col-12 col-md-4 text-md-end">
+                            <a asp-controller="OrderReturn" asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                                <i class="bi bi-eye me-1"></i> Xem Chi Tiết
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5 bg-white rounded-4 border p-5 shadow-xs">
+            <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center bg-light text-muted" style="width: 70px; height: 70px; font-size: 2rem;">
+                <i class="bi bi-arrow-repeat"></i>
+            </div>
+            <h5 class="fw-bold text-dark">Bạn chưa có yêu cầu đổi / trả hàng nào</h5>
+            <p class="text-muted small mb-3">Nếu sản phẩm đã nhận không vừa size hoặc gặp bất kỳ sự cố nào, mẹ có thể gửi yêu cầu đổi size tận nhà trong 7 ngày nhé!</p>
+            <a asp-controller="Account" asp-action="MyOrders" class="btn btn-baby-primary rounded-pill px-4">
+                <i class="bi bi-bag-check me-1"></i> Xem Đơn Hàng Để Yêu Cầu Đổi Trả
+            </a>
+        </div>
+    }
+</div>

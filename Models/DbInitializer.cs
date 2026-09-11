@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using WebsiteBabyShop.Helpers;
 
 namespace WebsiteBabyShop.Models
@@ -277,6 +277,9 @@ namespace WebsiteBabyShop.Models
 
             // Đảm bảo tạo bảng và dữ liệu cho Điểm danh hàng ngày & Vòng quay may mắn
             EnsureDailyCheckInAndLuckyWheel(context);
+
+            // Đảm bảo tạo bảng và dữ liệu mẫu cho Đổi / Trả Hàng (ReturnRequests)
+            EnsureReturnRequestsTableAndSeed(context);
 
             // Tự động làm sạch và chuẩn hóa toàn bộ dữ liệu tiếng Việt trong CSDL
             CleanCorruptedData(context);
@@ -1572,6 +1575,141 @@ namespace WebsiteBabyShop.Models
                 }
 
                 context.SaveChanges();
+            }
+            catch { }
+        }
+
+        private static void EnsureReturnRequestsTableAndSeed(BabyShopDbContext context)
+        {
+            try
+            {
+                context.Database.ExecuteSqlRaw(@"
+                    IF OBJECT_ID('dbo.ReturnRequests', 'U') IS NULL
+                    BEGIN
+                        CREATE TABLE [dbo].[ReturnRequests] (
+                            [Id] INT IDENTITY(1,1) NOT NULL,
+                            [ReturnCode] NVARCHAR(50) NOT NULL,
+                            [OrderId] INT NOT NULL,
+                            [UserId] INT NULL,
+                            [CustomerName] NVARCHAR(100) NOT NULL,
+                            [CustomerPhone] NVARCHAR(20) NOT NULL,
+                            [CustomerEmail] NVARCHAR(100) NULL,
+                            [PickupAddress] NVARCHAR(255) NULL,
+                            [RequestType] NVARCHAR(50) NOT NULL DEFAULT (N'Exchange'),
+                            [FaultSource] NVARCHAR(50) NOT NULL DEFAULT (N'ShopFault'),
+                            [ReasonCategory] NVARCHAR(150) NOT NULL,
+                            [ReasonDetail] NVARCHAR(1000) NULL,
+                            [ProductName] NVARCHAR(200) NOT NULL,
+                            [CurrentSizeColor] NVARCHAR(100) NULL,
+                            [DesiredSizeColor] NVARCHAR(100) NULL,
+                            [ProofImages] NVARCHAR(2000) NULL,
+                            [UnboxingVideoPath] NVARCHAR(500) NULL,
+                            [UnboxingVideoUrl] NVARCHAR(500) NULL,
+                            [HadCarrierCoCheck] BIT NOT NULL DEFAULT (0),
+                            [CarrierName] NVARCHAR(100) NULL,
+                            [CarrierTrackingCode] NVARCHAR(100) NULL,
+                            [BankName] NVARCHAR(100) NULL,
+                            [BankAccountNo] NVARCHAR(50) NULL,
+                            [BankAccountName] NVARCHAR(100) NULL,
+                            [Status] NVARCHAR(50) NOT NULL DEFAULT (N'Pending'),
+                            [AdminNote] NVARCHAR(1000) NULL,
+                            [CreatedAt] DATETIME2 NOT NULL DEFAULT (GETDATE()),
+                            [UpdatedAt] DATETIME2 NOT NULL DEFAULT (GETDATE()),
+                            [ProcessedAt] DATETIME2 NULL,
+                            CONSTRAINT [PK_ReturnRequests] PRIMARY KEY CLUSTERED ([Id] ASC),
+                            CONSTRAINT [FK_ReturnRequests_Orders] FOREIGN KEY ([OrderId]) REFERENCES [dbo].[Orders]([Id]) ON DELETE CASCADE,
+                            CONSTRAINT [FK_ReturnRequests_Users] FOREIGN KEY ([UserId]) REFERENCES [dbo].[Users]([Id]) ON DELETE SET NULL
+                        );
+                        CREATE UNIQUE NONCLUSTERED INDEX [IX_ReturnRequests_ReturnCode] ON [dbo].[ReturnRequests]([ReturnCode] ASC);
+                    END
+                ");
+
+                if (!context.ReturnRequests.Any() && context.Orders.Any())
+                {
+                    var orders = context.Orders.Include(o => o.OrderDetails).ToList();
+                    var order1 = orders.FirstOrDefault();
+                    var order2 = orders.Count > 1 ? orders[1] : order1;
+
+                    if (order1 != null)
+                    {
+                        var sample1 = new ReturnRequest
+                        {
+                            ReturnCode = "RT-" + DateTime.Now.ToString("yyyyMMdd") + "-8812",
+                            OrderId = order1.Id,
+                            UserId = order1.UserId,
+                            CustomerName = order1.CustomerName,
+                            CustomerPhone = order1.CustomerPhone,
+                            CustomerEmail = order1.CustomerEmail,
+                            PickupAddress = order1.ShippingAddress,
+                            RequestType = "Exchange",
+                            FaultSource = "ShopFault",
+                            ReasonCategory = "Giao nhầm mẫu / sai kích thước so với đơn đặt",
+                            ReasonDetail = "Mẹ đặt set đồ size 12-18M nhưng khi mở bưu kiện ra lại là size 6-9M. Bé không mặc vừa, nhờ shop gửi lại đúng size giúp mẹ ạ.",
+                            ProductName = order1.OrderDetails.FirstOrDefault()?.ProductName ?? "Set Quần Áo Trẻ Em Cao Cấp",
+                            CurrentSizeColor = "Size 6-9M (Giao nhầm)",
+                            DesiredSizeColor = "Size 12-18M (Đúng đơn)",
+                            ProofImages = "/images/banner-kid.jpg",
+                            UnboxingVideoUrl = "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                            HadCarrierCoCheck = false,
+                            CarrierName = "Viettel Post",
+                            CarrierTrackingCode = "VP" + order1.OrderCode,
+                            Status = "Pending",
+                            CreatedAt = DateTime.Now.AddHours(-3),
+                            UpdatedAt = DateTime.Now.AddHours(-3)
+                        };
+
+                        var sample2 = new ReturnRequest
+                        {
+                            ReturnCode = "RT-" + DateTime.Now.AddDays(-1).ToString("yyyyMMdd") + "-6321",
+                            OrderId = order2?.Id ?? order1.Id,
+                            UserId = order2?.UserId ?? order1.UserId,
+                            CustomerName = order2?.CustomerName ?? "Lê Thị Ngọc Lan",
+                            CustomerPhone = order2?.CustomerPhone ?? "0934567890",
+                            CustomerEmail = order2?.CustomerEmail ?? "ngoclan@gmail.com",
+                            PickupAddress = order2?.ShippingAddress ?? "45 Lê Duẩn, Quận 1, TP. Hồ Chí Minh",
+                            RequestType = "Exchange",
+                            FaultSource = "CarrierFault",
+                            ReasonCategory = "Hàng bị vỡ móp / rách bao bì trong lúc vận chuyển",
+                            ReasonDetail = "Hộp bưu kiện bên ngoài bị dập nát, ướt sũng do bưu tá đi mưa. Vải áo bên trong bị lem màu nước bẩn. Có video bóc hàng quay rõ tem vận đơn của bưu cục.",
+                            ProductName = order2?.OrderDetails.FirstOrDefault()?.ProductName ?? "Váy Công Chúa Voan Xốp Nơ Pastel",
+                            CurrentSizeColor = "Size 2-3Y (Hồng)",
+                            DesiredSizeColor = "Size 2-3Y (Hồng nguyên vẹn)",
+                            ProofImages = "/images/banner-kid.jpg",
+                            HadCarrierCoCheck = false,
+                            CarrierName = "Giao Hàng Nhanh (GHN)",
+                            CarrierTrackingCode = "GHN88291038",
+                            Status = "Approved",
+                            AdminNote = "Đã duyệt đổi sản phẩm mới ngay cho khách (miễn phí ship). Bộ phận vận hành đã gửi công văn khiếu nại bồi thường 100% đến GHN kèm video bóc hàng của khách.",
+                            CreatedAt = DateTime.Now.AddDays(-1),
+                            UpdatedAt = DateTime.Now.AddHours(-4)
+                        };
+
+                        var sample3 = new ReturnRequest
+                        {
+                            ReturnCode = "RT-" + DateTime.Now.AddDays(-2).ToString("yyyyMMdd") + "-5419",
+                            OrderId = order1.Id,
+                            UserId = order1.UserId,
+                            CustomerName = "Trần Minh Anh",
+                            CustomerPhone = "0977112233",
+                            CustomerEmail = "minhanh@gmail.com",
+                            PickupAddress = "88 Hoàng Diệu, Đà Nẵng",
+                            RequestType = "Exchange",
+                            FaultSource = "CustomerRequest",
+                            ReasonCategory = "Bé mặc chật/rộng (Đổi size)",
+                            ReasonDetail = "Bé nhà mình trộm vía tăng cân nhanh nên mặc size 1Y hơi kích nách, mình muốn nhờ shop hỗ trợ đổi lên size 2Y với ạ.",
+                            ProductName = order1.OrderDetails.LastOrDefault()?.ProductName ?? "Bộ Pijama Lụa Mềm Cho Bé",
+                            CurrentSizeColor = "Size 1Y (Xanh)",
+                            DesiredSizeColor = "Size 2Y (Xanh)",
+                            Status = "Completed",
+                            AdminNote = "Đã hoàn tất đổi size tận nhà cho mẹ qua bưu tá ViettelPost. Đơn hàng mới đã được giao thành công.",
+                            CreatedAt = DateTime.Now.AddDays(-2),
+                            UpdatedAt = DateTime.Now.AddDays(-1)
+                        };
+
+                        context.ReturnRequests.AddRange(sample1, sample2, sample3);
+                        context.SaveChanges();
+                    }
+                }
             }
             catch { }
         }

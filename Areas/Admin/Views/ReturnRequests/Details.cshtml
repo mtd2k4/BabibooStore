@@ -1,0 +1,539 @@
+@model WebsiteBabyShop.Models.ReturnRequest
+@{
+    ViewData["Title"] = $"Thẩm Định Yêu Cầu Đổi / Trả #{Model.ReturnCode}";
+    var proofList = !string.IsNullOrEmpty(Model.ProofImages)
+        ? Model.ProofImages.Split(';', StringSplitOptions.RemoveEmptyEntries)
+        : new string[0];
+}
+
+<div class="container-fluid px-0">
+    <!-- Breadcrumb & Navigation -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Quản Lý Đổi / Trả</a></li>
+                <li class="breadcrumb-item active fw-bold text-dark" aria-current="page">@Model.ReturnCode</li>
+            </ol>
+        </nav>
+        <div class="d-flex align-items-center gap-2">
+            <a asp-action="Index" class="btn btn-outline-secondary btn-sm rounded-pill px-3">
+                <i class="bi bi-arrow-left me-1"></i> Quay Lại Danh Sách
+            </a>
+            @if (Model.Order != null)
+            {
+                <a asp-controller="Orders" asp-action="Details" asp-route-id="@Model.OrderId" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                    <i class="bi bi-receipt me-1"></i> Xem Đơn Gốc #@Model.Order.OrderCode
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- Top Action Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4 d-flex flex-wrap justify-content-between align-items-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <h4 class="fw-bold mb-0 text-dark">Yêu Cầu @Model.ReturnCode</h4>
+                    @if (Model.RequestType == "Exchange")
+                    {
+                        <span class="badge bg-primary rounded-pill px-3 py-1">Đổi Hàng / Đổi Size</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-warning text-dark rounded-pill px-3 py-1">Trả Hàng / Hoàn Tiền</span>
+                    }
+                </div>
+                <div class="text-muted small">
+                    Khởi tạo lúc: @Model.CreatedAt.ToString("HH:mm - dd/MM/yyyy") | Cập nhật gần nhất: @Model.UpdatedAt.ToString("HH:mm - dd/MM/yyyy")
+                </div>
+            </div>
+
+            <!-- Workflow Status Badges & Action Buttons -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                @switch (Model.Status)
+                {
+                    case "Pending":
+                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle px-3 py-2 fs-6">
+                            <i class="bi bi-hourglass-split me-1"></i> Chờ Thẩm Định
+                        </span>
+                        <button type="button" class="btn btn-success btn-sm rounded-pill px-3 py-2" data-bs-toggle="modal" data-bs-target="#approveModal">
+                            <i class="bi bi-check-circle me-1"></i> Phê Duyệt
+                        </button>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="bi bi-x-circle me-1"></i> Từ Chối
+                        </button>
+                        break;
+                    case "Approved":
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 fs-6">
+                            <i class="bi bi-check-circle-fill me-1"></i> Đã Duyệt
+                        </span>
+                        <form method="post" asp-action="SetProcessing" asp-route-id="@Model.Id" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-warning btn-sm rounded-pill px-3 py-2 text-dark">
+                                <i class="bi bi-truck me-1"></i> Giao Bưu Tá Thu Hồi
+                            </button>
+                        </form>
+                        <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                            <i class="bi bi-x-circle me-1"></i> Hủy / Từ Chối
+                        </button>
+                        break;
+                    case "Processing":
+                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-3 py-2 fs-6">
+                            <i class="bi bi-truck me-1"></i> Đang Xử Lý / Thu Hồi
+                        </span>
+                        <form method="post" asp-action="Complete" asp-route-id="@Model.Id" class="d-inline">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-success btn-sm rounded-pill px-3 py-2" onclick="return confirm('Xác nhận đã nhận lại hàng / đã gửi hàng mới hoặc hoàn tiền cho khách?')">
+                                <i class="bi bi-check2-all me-1"></i> Hoàn Tất Đổi/Trả
+                            </button>
+                        </form>
+                        break;
+                    case "Completed":
+                        <span class="badge bg-success text-white px-3 py-2 fs-6 rounded-pill">
+                            <i class="bi bi-check2-all me-1"></i> Đã Hoàn Tất Xử Lý
+                        </span>
+                        break;
+                    case "Rejected":
+                        <span class="badge bg-secondary text-white px-3 py-2 fs-6 rounded-pill">
+                            <i class="bi bi-x-circle-fill me-1"></i> Đã Từ Chối
+                        </span>
+                        break;
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Fault Attribution Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            @if (Model.FaultSource == "ShopFault")
+            {
+                <div class="alert alert-danger border-0 shadow-sm rounded-4 p-4 mb-0" style="background-color: #fef2f2; border-left: 6px solid #ef4444 !important;">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="rounded-circle p-2 bg-danger text-white fs-4">
+                            <i class="bi bi-shop"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-danger mb-1">PHÂN LOẠI: LỖI DO CỬA HÀNG (SHOP)</h5>
+                            <p class="mb-2 text-dark">
+                                Yêu cầu phát sinh từ sai sót đóng gói, nhầm lẫn mã mẫu/size hoặc lỗi kiểm định chất lượng xuất xưởng của Shop.
+                            </p>
+                            <div class="small fw-semibold text-danger">
+                                <i class="bi bi-shield-fill-check me-1"></i> Chính Sách: Miễn phí 100% phí giao nhận 2 chiều bưu tá hoặc hoàn tiền 100% giá trị sản phẩm.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.FaultSource == "CarrierFault")
+            {
+                <div class="alert alert-warning border-0 shadow-sm rounded-4 p-4 mb-0" style="background-color: #fffbeb; border-left: 6px solid #f59e0b !important;">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="rounded-circle p-2 bg-warning text-dark fs-4">
+                            <i class="bi bi-truck"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-warning-emphasis mb-1">PHÂN LOẠI: LỖI DO ĐƠN VỊ VẬN CHUYỂN</h5>
+                            <p class="mb-2 text-dark">
+                                Bưu kiện bị móp méo, rách ướt, vỡ nát hoặc mất phụ kiện trong quá trình lưu kho/vận chuyển giao nhận.
+                            </p>
+                            <div class="row g-2 small text-muted mb-2">
+                                <div class="col-auto"><strong>Đơn vị VC:</strong> @(string.IsNullOrEmpty(Model.CarrierName) ? "Giao Hàng Nhanh / Tiết Kiệm" : Model.CarrierName)</div>
+                                <div class="col-auto"><strong>Mã vận đơn:</strong> @(string.IsNullOrEmpty(Model.CarrierTrackingCode) ? (Model.Order?.OrderCode ?? "Chưa rõ") : Model.CarrierTrackingCode)</div>
+                                <div class="col-auto"><strong>Biên bản / Có đồng kiểm:</strong> @(Model.HadCarrierCoCheck ? "Có đồng kiểm với bưu tá" : "Khách quay video bóc hàng sau khi nhận")</div>
+                            </div>
+                            <div class="small fw-semibold text-warning-emphasis">
+                                <i class="bi bi-exclamation-triangle me-1"></i> Hành động: Shop duyệt đổi sản phẩm mới ngay cho khách, lưu video/ảnh làm bằng chứng để lập biên bản đòi bồi thường bảo hiểm ĐVVC.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-info border-0 shadow-sm rounded-4 p-4 mb-0" style="background-color: #f0f9ff; border-left: 6px solid #0284c7 !important;">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="rounded-circle p-2 bg-info text-white fs-4">
+                            <i class="bi bi-person-check"></i>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold text-primary-emphasis mb-1">PHÂN LOẠI: KHÁCH HÀNG ĐỔI SIZE / MẪU</h5>
+                            <p class="mb-2 text-dark">
+                                Khách mua đúng sản phẩm nhưng bé mặc chật/rộng hoặc muốn đổi sang tông màu khác theo nhu cầu cá nhân.
+                            </p>
+                            <div class="small fw-semibold text-info-emphasis">
+                                <i class="bi bi-arrow-repeat me-1"></i> Chính Sách: Đổi size tận nhà trong 7 ngày, áp dụng biểu phí đồng giá 30.000đ (Shop trợ giá 50%).
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Main 2-Column Layout -->
+    <div class="row g-4">
+        <!-- Left Column: Evidence Video & Photos -->
+        <div class="col-12 col-lg-7">
+            <!-- Video Bóc Hàng -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-camera-video text-danger me-2"></i>
+                        Video Bóc Hàng Thẩm Định (Tối Đa 100MB)
+                    </h6>
+                    @if (!string.IsNullOrEmpty(Model.UnboxingVideoPath))
+                    {
+                        <a href="@Model.UnboxingVideoPath" target="_blank" class="btn btn-outline-dark btn-sm rounded-pill">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Mở Tab Mới
+                        </a>
+                    }
+                </div>
+                <div class="card-body p-4">
+                    @if (!string.IsNullOrEmpty(Model.UnboxingVideoPath))
+                    {
+                        <div class="rounded-3 overflow-hidden bg-black text-center shadow-xs">
+                            <video controls preload="metadata" style="max-height: 440px; width: 100%; display: block;" class="rounded-3">
+                                <source src="@Model.UnboxingVideoPath" type="video/mp4">
+                                <source src="@Model.UnboxingVideoPath" type="video/webm">
+                                Trình duyệt của bạn không hỗ trợ phát trực tiếp video này.
+                            </video>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center mt-3 small text-muted">
+                            <div><i class="bi bi-file-earmark-play me-1"></i> Tệp video lưu trữ: <code>@Model.UnboxingVideoPath</code></div>
+                            <a href="@Model.UnboxingVideoPath" download class="text-decoration-none fw-semibold">
+                                <i class="bi bi-download me-1"></i> Tải Về Máy
+                            </a>
+                        </div>
+                    }
+                    else if (!string.IsNullOrEmpty(Model.UnboxingVideoUrl))
+                    {
+                        <div class="p-3 bg-light rounded-3 text-center">
+                            <p class="mb-2">Video được đính kèm qua liên kết trực tuyến:</p>
+                            <a href="@Model.UnboxingVideoUrl" target="_blank" class="btn btn-danger btn-sm rounded-pill">
+                                <i class="bi bi-play-circle me-1"></i> Mở Video Trên Nền Tảng Bên Ngoài
+                            </a>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 bg-light rounded-3 text-center text-muted">
+                            <i class="bi bi-camera-video-off fs-1 d-block mb-2 text-secondary"></i>
+                            <div class="fw-semibold">Khách hàng không đính kèm Video bóc hàng</div>
+                            <div class="small">Thẩm định qua các hình ảnh chụp thực tế bên dưới hoặc liên hệ khách để bổ sung.</div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Ảnh Chụp Bằng Chứng -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-images text-primary me-2"></i>
+                        Ảnh Chụp Chi Tiết Lỗi / Bưu Kiện / Phiếu Giao (@proofList.Length ảnh)
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    @if (proofList.Length > 0)
+                    {
+                        <div class="row g-3">
+                            @for (int i = 0; i < proofList.Length; i++)
+                            {
+                                var imgUrl = proofList[i];
+                                <div class="col-6 col-md-4">
+                                    <div class="position-relative rounded-3 overflow-hidden border shadow-xs" style="height: 160px; cursor: pointer;" onclick="openProofModal('@imgUrl')">
+                                        <img src="@imgUrl" class="w-100 h-100 object-fit-cover" alt="Bằng chứng lỗi @(i+1)" />
+                                        <div class="position-absolute bottom-0 start-0 end-0 bg-dark bg-opacity-50 text-white text-center py-1 small">
+                                            <i class="bi bi-zoom-in me-1"></i> Phóng to #@(i+1)
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-4 bg-light rounded-3 text-center text-muted">
+                            <i class="bi bi-image text-secondary fs-1 d-block mb-2"></i>
+                            Không có ảnh bằng chứng đính kèm.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Ghi Chú Phản Hồi Của Admin -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-chat-left-quote text-success me-2"></i>
+                        Ghi Chú Phản Hồi / Hướng Xử Lý Của Admin
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    @if (!string.IsNullOrEmpty(Model.AdminNote))
+                    {
+                        <div class="p-3 bg-light rounded-3 border-start border-4 border-success mb-3">
+                            <div class="fw-bold text-dark mb-1"><i class="bi bi-person-badge me-1"></i> Phản hồi hiện tại:</div>
+                            <p class="mb-0 text-secondary" style="white-space: pre-line;">@Model.AdminNote</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-muted small mb-3">Chưa có ghi chú phản hồi nào từ Quản trị viên.</p>
+                    }
+
+                    <button type="button" class="btn btn-outline-primary btn-sm rounded-pill" data-bs-toggle="modal" data-bs-target="#updateNoteModal">
+                        <i class="bi bi-pencil-square me-1"></i> Cập Nhật Ghi Chú Phản Hồi
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Details, Reason, Customer & Order Info -->
+        <div class="col-12 col-lg-5">
+            <!-- Chi Tiết Lý Do & Sản Phẩm -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-info-circle text-info me-2"></i>
+                        Chi Tiết Sản Phẩm & Lý Do
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="mb-3">
+                        <label class="text-muted small text-uppercase fw-semibold">Sản phẩm yêu cầu</label>
+                        <div class="fw-bold text-dark fs-6">@Model.ProductName</div>
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="text-muted small text-uppercase fw-semibold">Size / Màu hiện tại</label>
+                            <div class="p-2 bg-light rounded-2 fw-semibold text-secondary">
+                                @(string.IsNullOrEmpty(Model.CurrentSizeColor) ? "Không ghi" : Model.CurrentSizeColor)
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="text-muted small text-uppercase fw-semibold">Size / Màu mong muốn</label>
+                            <div class="p-2 bg-light rounded-2 fw-bold text-primary">
+                                @(string.IsNullOrEmpty(Model.DesiredSizeColor) ? "Theo thỏa thuận" : Model.DesiredSizeColor)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small text-uppercase fw-semibold">Danh mục lý do</label>
+                        <div class="fw-semibold text-danger">@Model.ReasonCategory</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="text-muted small text-uppercase fw-semibold">Mô tả cụ thể từ khách</label>
+                        <div class="p-3 bg-light rounded-3 text-secondary" style="white-space: pre-line;">
+                            @Model.ReasonDetail
+                        </div>
+                    </div>
+
+                    @if (Model.RequestType == "ReturnRefund")
+                    {
+                        <hr class="my-3">
+                        <div class="mb-2">
+                            <label class="text-muted small text-uppercase fw-semibold text-warning-emphasis">
+                                <i class="bi bi-bank me-1"></i> Thông tin tài khoản nhận hoàn tiền
+                            </label>
+                            <div class="p-3 bg-light rounded-3 border">
+                                <div class="small mb-1"><strong>Ngân hàng:</strong> @(Model.BankName ?? "Chưa cung cấp")</div>
+                                <div class="small mb-1"><strong>Số tài khoản:</strong> <span class="fw-bold text-danger">@(Model.BankAccountNo ?? "Chưa cung cấp")</span></div>
+                                <div class="small"><strong>Tên chủ tài khoản:</strong> @(Model.BankAccountName ?? "Chưa cung cấp")</div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Khách Hàng -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-white py-3 border-bottom">
+                    <h6 class="fw-bold mb-0 text-dark">
+                        <i class="bi bi-person text-secondary me-2"></i>
+                        Thông Tin Khách Hàng
+                    </h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="rounded-circle bg-light d-flex align-items-center justify-content-center fw-bold text-dark fs-5" style="width: 48px; height: 48px;">
+                            @(string.IsNullOrEmpty(Model.CustomerName) ? "KH" : Model.CustomerName.Substring(0, 1).ToUpper())
+                        </div>
+                        <div>
+                            <div class="fw-bold text-dark">@Model.CustomerName</div>
+                            <div class="small text-muted"><i class="bi bi-telephone me-1"></i>@Model.CustomerPhone</div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.CustomerEmail))
+                    {
+                        <div class="small text-muted mb-2">
+                            <i class="bi bi-envelope me-2"></i>@Model.CustomerEmail
+                        </div>
+                    }
+
+                    <div class="small text-muted">
+                        <i class="bi bi-geo-alt me-2"></i>@Model.PickupAddress
+                    </div>
+                </div>
+            </div>
+
+            <!-- Đơn Hàng Gốc -->
+            @if (Model.Order != null)
+            {
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <i class="bi bi-box-seam text-secondary me-2"></i>
+                            Đơn Hàng Gốc #@Model.Order.OrderCode
+                        </h6>
+                        <span class="badge bg-secondary-subtle text-secondary">@Model.Order.OrderStatus</span>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between small text-muted mb-2">
+                            <span>Ngày đặt:</span>
+                            <span class="fw-semibold text-dark">@Model.Order.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted mb-2">
+                            <span>Tổng thanh toán:</span>
+                            <span class="fw-bold text-danger">@Model.Order.TotalAmount.ToString("N0") đ</span>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted mb-3">
+                            <span>Phương thức:</span>
+                            <span class="fw-semibold text-dark">@Model.Order.PaymentMethod</span>
+                        </div>
+
+                        <hr class="my-2">
+                        <div class="small fw-semibold text-dark mb-2">Sản phẩm trong đơn:</div>
+                        <div class="list-group list-group-flush small">
+                            @foreach (var detail in Model.Order.OrderDetails)
+                            {
+                                <div class="list-group-item px-0 py-2 d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold text-dark">@detail.ProductName</div>
+                                        <div class="text-muted" style="font-size: 0.78rem;">SL: @detail.Quantity | @detail.Size - @detail.Color</div>
+                                    </div>
+                                    <div class="text-end fw-semibold">
+                                        @((detail.UnitPrice * detail.Quantity).ToString("N0")) đ
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Xem Ảnh To -->
+<div class="modal fade" id="imagePreviewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 overflow-hidden">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <img id="previewModalImg" src="" class="img-fluid rounded-3 shadow-sm" style="max-height: 80vh;" alt="Ảnh bằng chứng" />
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Phê Duyệt -->
+<div class="modal fade" id="approveModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" asp-action="Approve" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-success"><i class="bi bi-check-circle-fill me-2"></i>Duyệt Yêu Cầu Đổi / Trả</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3 text-muted small">
+                        Hệ thống sẽ cập nhật trạng thái yêu cầu thành <strong>Đã Duyệt</strong>. Hãy để lại chỉ dẫn cho khách hàng hoặc ghi chú điều phối bưu tá.
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Ghi chú phản hồi cho khách:</label>
+                        <textarea name="adminNote" class="form-control" rows="3" placeholder="Ví dụ: Đã duyệt yêu cầu. Bưu tá BabyShop sẽ đến tận nhà trao size mới và nhận lại hàng trong 24-48h tới.">Đã duyệt yêu cầu. BabyShop đã đóng gói hàng mới và bàn giao bưu tá liên hệ giao đổi tận nhà cho mẹ.</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-success rounded-pill px-4 fw-semibold">Xác Nhận Duyệt</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Từ Chối -->
+<div class="modal fade" id="rejectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" asp-action="Reject" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-danger"><i class="bi bi-x-circle-fill me-2"></i>Từ Chối Yêu Cầu</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="mb-3 text-muted small">
+                        Vui lòng nêu rõ lý do từ chối (ví dụ: quá hạn 7 ngày, sản phẩm đã giặt/cắt tem, video không thể hiện đúng sản phẩm...).
+                    </p>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Lý do từ chối <span class="text-danger">*</span>:</label>
+                        <textarea name="adminNote" class="form-control" rows="4" required placeholder="Nhập lý do từ chối chi tiết..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-danger rounded-pill px-4 fw-semibold">Xác Nhận Từ Chối</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Cập Nhật Ghi Chú -->
+<div class="modal fade" id="updateNoteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <form method="post" asp-action="SetProcessing" asp-route-id="@Model.Id">
+                @Html.AntiForgeryToken()
+                <div class="modal-header border-bottom">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-pencil-square me-2"></i>Cập Nhật Ghi Chú Phản Hồi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Nội dung phản hồi / Tiến độ bưu tá:</label>
+                        <textarea name="adminNote" class="form-control" rows="4">@Model.AdminNote</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-top bg-light">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill px-3" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-dark rounded-pill px-4 fw-semibold">Lưu Ghi Chú</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openProofModal(imgUrl) {
+            const modalImg = document.getElementById('previewModalImg');
+            if (modalImg) {
+                modalImg.src = imgUrl;
+                const modal = new bootstrap.Modal(document.getElementById('imagePreviewModal'));
+                modal.show();
+            }
+        }
+    </script>
+}

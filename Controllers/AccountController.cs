@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -453,13 +453,28 @@ namespace WebsiteBabyShop.Controllers
         public async Task<IActionResult> MyOrders()
         {
             var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (int.TryParse(userIdStr, out int userId))
+            int userId = 0;
+            if (!int.TryParse(userIdStr, out userId))
+            {
+                var username = User.FindFirst("Username")?.Value ?? User.Identity?.Name;
+                var u = await _context.Users.FirstOrDefaultAsync(x => x.Username == username);
+                userId = u?.Id ?? 0;
+            }
+
+            if (userId > 0)
             {
                 var orders = await _context.Orders
                     .Include(o => o.OrderDetails)
                     .Where(o => o.UserId == userId)
                     .OrderByDescending(o => o.CreatedAt)
                     .ToListAsync();
+
+                var orderIds = orders.Select(o => o.Id).ToList();
+                var returns = await _context.ReturnRequests
+                    .Where(r => orderIds.Contains(r.OrderId))
+                    .ToListAsync();
+
+                ViewBag.ReturnRequests = returns;
 
                 return View(orders);
             }
