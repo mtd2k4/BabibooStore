@@ -1,9 +1,10 @@
-﻿@model List<WebsiteBabyShop.Models.Product>
+@model List<WebsiteBabyShop.Models.Product>
 @{
     ViewData["Title"] = "Bộ Sưu Tập Thời Trang Trẻ Em - BabyShop";
     var categories = ViewBag.Categories as List<WebsiteBabyShop.Models.Category> ?? new List<WebsiteBabyShop.Models.Category>();
     string currentGender = ViewBag.CurrentGender as string ?? "";
     string currentCategory = ViewBag.CurrentCategory as string ?? "";
+    string currentAgeRange = ViewBag.CurrentAgeRange as string ?? "";
     string currentSearch = ViewBag.CurrentSearch as string ?? "";
     string currentSort = ViewBag.CurrentSort as string ?? "";
     int currentPage = ViewBag.CurrentPage ?? 1;
@@ -16,10 +17,16 @@
     <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index"><i class="bi bi-house"></i> Trang Chủ</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Thời Trang Trẻ Em</li>
+            <li class="breadcrumb-item @(string.IsNullOrEmpty(currentGender) && string.IsNullOrEmpty(currentAgeRange) ? "active" : "")">
+                <a asp-controller="Product" asp-action="Index" class="text-decoration-none">Thời Trang Trẻ Em</a>
+            </li>
             @if (!string.IsNullOrEmpty(currentGender))
             {
-                <li class="breadcrumb-item active">@currentGender</li>
+                <li class="breadcrumb-item @(string.IsNullOrEmpty(currentAgeRange) ? "active" : "")">@currentGender</li>
+            }
+            @if (!string.IsNullOrEmpty(currentAgeRange))
+            {
+                <li class="breadcrumb-item active">@currentAgeRange</li>
             }
         </ol>
     </nav>
@@ -32,6 +39,14 @@
                     @if (!string.IsNullOrEmpty(currentSearch))
                     {
                         <span>Kết quả tìm kiếm: "@currentSearch"</span>
+                    }
+                    else if (!string.IsNullOrEmpty(currentGender) && !string.IsNullOrEmpty(currentAgeRange))
+                    {
+                        <span>Thời Trang @currentGender • @currentAgeRange</span>
+                    }
+                    else if (!string.IsNullOrEmpty(currentAgeRange))
+                    {
+                        <span>Độ Tuổi: @currentAgeRange</span>
                     }
                     else if (!string.IsNullOrEmpty(currentGender))
                     {
@@ -71,26 +86,48 @@
                     <div class="mb-4">
                         <label class="fw-bold small text-uppercase text-muted mb-2">Đối tượng / Giới tính</label>
                         <div class="d-flex flex-column gap-1">
-                            <a asp-controller="Product" asp-action="Index" asp-route-category="@currentCategory" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange"
                                class="baby-filter-link @(string.IsNullOrEmpty(currentGender) ? "active" : "")">
                                 <span>Tất cả bé</span>
                                 <i class="bi bi-chevron-right small text-muted"></i>
                             </a>
-                            <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-category="@currentCategory" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange"
                                class="baby-filter-link @(currentGender == "Bé gái" ? "active" : "")">
                                 <span>👗 Bé Gái</span>
                                 <i class="bi bi-chevron-right small text-muted"></i>
                             </a>
-                            <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-category="@currentCategory" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange"
                                class="baby-filter-link @(currentGender == "Bé trai" ? "active" : "")">
                                 <span>👕 Bé Trai</span>
                                 <i class="bi bi-chevron-right small text-muted"></i>
                             </a>
-                            <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" asp-route-category="@currentCategory" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="Sơ sinh" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange"
                                class="baby-filter-link @(currentGender == "Sơ sinh" ? "active" : "")">
                                 <span>👶 Sơ Sinh (0 - 24M)</span>
                                 <i class="bi bi-chevron-right small text-muted"></i>
                             </a>
+                        </div>
+                    </div>
+
+                    <hr class="opacity-10 my-3" />
+
+                    <!-- Age Range Filter -->
+                    <div class="mb-4">
+                        <label class="fw-bold small text-uppercase text-muted mb-2">Theo Độ Tuổi</label>
+                        <div class="d-flex flex-column gap-1">
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory"
+                               class="baby-filter-link @(string.IsNullOrEmpty(currentAgeRange) ? "active" : "")">
+                                <span>Tất cả độ tuổi</span>
+                                <i class="bi bi-chevron-right small text-muted"></i>
+                            </a>
+                            @foreach (var age in WebsiteBabyShop.Helpers.AgeRangeHelper.StandardOptions)
+                            {
+                                <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-ageRange="@age"
+                                   class="baby-filter-link @(currentAgeRange == age ? "active" : "")">
+                                    <span>@age</span>
+                                    <i class="bi bi-chevron-right small text-muted"></i>
+                                </a>
+                            }
                         </div>
                     </div>
 
@@ -102,7 +139,7 @@
                         <div class="d-flex flex-column gap-1">
                             @foreach (var cat in categories)
                             {
-                                <a asp-controller="Product" asp-action="Index" asp-route-category="@cat.Slug" asp-route-gender="@currentGender"
+                                <a asp-controller="Product" asp-action="Index" asp-route-category="@cat.Slug" asp-route-gender="@currentGender" asp-route-ageRange="@currentAgeRange"
                                    class="baby-filter-link @(currentCategory == cat.Slug ? "active" : "")">
                                     <span>@cat.Name</span>
                                     <i class="bi bi-chevron-right small text-muted"></i>
@@ -117,15 +154,15 @@
                     <div class="mb-2">
                         <label class="fw-bold small text-uppercase text-muted mb-2">Khoảng giá (VNĐ)</label>
                         <div class="d-flex flex-column gap-1">
-                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-maxPrice="200000" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange" asp-route-maxPrice="200000" 
                                class="baby-filter-link">
                                 <span>&le; Dưới 200.000đ</span>
                             </a>
-                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-minPrice="200000" asp-route-maxPrice="300000" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange" asp-route-minPrice="200000" asp-route-maxPrice="300000" 
                                class="baby-filter-link">
                                 <span>200.000đ - 300.000đ</span>
                             </a>
-                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-minPrice="300000" 
+                            <a asp-controller="Product" asp-action="Index" asp-route-gender="@currentGender" asp-route-category="@currentCategory" asp-route-ageRange="@currentAgeRange" asp-route-minPrice="300000" 
                                class="baby-filter-link">
                                 <span>&ge; Trên 300.000đ</span>
                             </a>

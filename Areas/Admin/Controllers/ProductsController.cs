@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
         }
 
         // GET: Admin/Products
-        public async Task<IActionResult> Index(string? search, int? categoryId, string? gender, int page = 1)
+        public async Task<IActionResult> Index(string? search, int? categoryId, string? gender, string? ageRange, int page = 1)
         {
             var query = _context.Products
                 .Include(p => p.Category)
@@ -44,20 +44,41 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
             }
 
             int pageSize = 10;
-            int totalItems = await query.CountAsync();
-            page = Math.Max(1, page);
-            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            if (totalPages == 0) totalPages = 1;
-            if (page > totalPages) page = totalPages;
+            int totalItems;
+            int totalPages;
+            List<Product> products;
 
-            var products = await query.OrderByDescending(p => p.CreatedAt)
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            if (!string.IsNullOrEmpty(ageRange))
+            {
+                var matchedProducts = (await query.OrderByDescending(p => p.CreatedAt).ToListAsync())
+                    .Where(p => WebsiteBabyShop.Helpers.AgeRangeHelper.Matches(p.AgeRange, ageRange))
+                    .ToList();
 
-            ViewBag.Categories = new SelectList(await _context.Categories.OrderBy(c => c.DisplayOrder).ToListAsync(), "Id", "Name", categoryId);
+                totalItems = matchedProducts.Count;
+                totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+                page = Math.Max(1, Math.Min(page, totalPages));
+
+                products = matchedProducts
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+            }
+            else
+            {
+                totalItems = await query.CountAsync();
+                totalPages = Math.Max(1, (int)Math.Ceiling(totalItems / (double)pageSize));
+                page = Math.Max(1, Math.Min(page, totalPages));
+
+                products = await query.OrderByDescending(p => p.CreatedAt)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+
+            ViewBag.Categories = new SelectList(await _context.Categories.OrderBy(c => c.Id).ToListAsync(), "Id", "Name", categoryId);
             ViewBag.Search = search;
             ViewBag.Gender = gender;
+            ViewBag.AgeRange = ageRange;
             ViewBag.CategoryId = categoryId;
             ViewBag.CurrentPage = page;
             ViewBag.PageSize = pageSize;
@@ -70,7 +91,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
         // GET: Admin/Products/Create
         public async Task<IActionResult> Create()
         {
-            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.DisplayOrder).ToListAsync(), "Id", "Name");
+            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.Id).ToListAsync(), "Id", "Name");
             return View(new Product { IsActive = true, IsNewArrival = true });
         }
 
@@ -157,7 +178,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.DisplayOrder).ToListAsync(), "Id", "Name", product.CategoryId);
+            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.Id).ToListAsync(), "Id", "Name", product.CategoryId);
             return View(product);
         }
 
@@ -172,7 +193,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
 
             if (product == null) return NotFound();
 
-            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.DisplayOrder).ToListAsync(), "Id", "Name", product.CategoryId);
+            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.Id).ToListAsync(), "Id", "Name", product.CategoryId);
             return View(product);
         }
 
@@ -275,7 +296,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
                 }
             }
 
-            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.DisplayOrder).ToListAsync(), "Id", "Name", product.CategoryId);
+            ViewBag.CategoryId = new SelectList(await _context.Categories.OrderBy(c => c.Id).ToListAsync(), "Id", "Name", product.CategoryId);
             return View(product);
         }
 

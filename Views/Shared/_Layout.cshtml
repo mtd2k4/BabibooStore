@@ -1,4 +1,4 @@
-﻿@using WebsiteBabyShop.Models
+@using WebsiteBabyShop.Models
 @using WebsiteBabyShop.Helpers
 @inject IHttpContextAccessor HttpContextAccessor
 
@@ -174,10 +174,10 @@
                                 <div class="col-4">
                                     <div class="baby-mega-title">Theo Độ Tuổi</div>
                                     <ul class="baby-mega-links">
-                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Bé tập đi (1 - 3 tuổi)</a></li>
-                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Mẫu giáo (3 - 6 tuổi)</a></li>
-                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái">Tiểu học (6 - 12 tuổi)</a></li>
-                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-isNew="true" class="text-primary fw-bold">Xem tất cả đồ bé gái &rarr;</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-ageRange="Bé tập đi (1 - 3 tuổi)">Bé tập đi (1 - 3 tuổi)</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-ageRange="Mẫu giáo (3 - 6 tuổi)">Mẫu giáo (3 - 6 tuổi)</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" asp-route-ageRange="Tiểu học (6 - 12 tuổi)">Tiểu học (6 - 12 tuổi)</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé gái" class="text-primary fw-bold">Xem tất cả đồ bé gái &rarr;</a></li>
                                     </ul>
                                 </div>
                                 <div class="col-4">
@@ -212,7 +212,7 @@
                                     <ul class="baby-mega-links">
                                         <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai">Thời Trang Đi Học</a></li>
                                         <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai">Đồ Đi Chơi Dã Ngoại</a></li>
-                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" asp-route-isNew="true" class="text-primary fw-bold">Xem tất cả đồ bé trai &rarr;</a></li>
+                                        <li><a asp-controller="Product" asp-action="Index" asp-route-gender="Bé trai" class="text-primary fw-bold">Xem tất cả đồ bé trai &rarr;</a></li>
                                     </ul>
                                 </div>
                                 <div class="col-4">

@@ -1,4 +1,4 @@
-﻿@model WebsiteBabyShop.Models.Product
+@model WebsiteBabyShop.Models.Product
 @{
     ViewData["Title"] = Model.Name + " - BabyShop";
     var relatedProducts = ViewBag.RelatedProducts as List<WebsiteBabyShop.Models.Product> ?? new List<WebsiteBabyShop.Models.Product>();
@@ -71,7 +71,7 @@
                     </span>
                     @if (!string.IsNullOrEmpty(Model.AgeRange))
                     {
-                        <span class="badge bg-light text-success border px-3 py-2 rounded-pill">Độ tuổi: @Model.AgeRange</span>
+                        <a asp-controller="Product" asp-action="Index" asp-route-ageRange="@Model.AgeRange" class="badge bg-light text-success border px-3 py-2 rounded-pill text-decoration-none">Độ tuổi: @Model.AgeRange</a>
                     }
                 </div>
                 <h1 class="h2 fw-bold text-dark mb-2">@Model.Name</h1>

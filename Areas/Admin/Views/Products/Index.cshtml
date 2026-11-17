@@ -1,4 +1,4 @@
-﻿@model List<WebsiteBabyShop.Models.Product>
+@model List<WebsiteBabyShop.Models.Product>
 @{
     ViewData["Title"] = "Quản Lý Sản Phẩm Thời Trang Bé";
 }
@@ -18,12 +18,12 @@
 <!-- Filters -->
 <div class="card border-0 rounded-4 shadow-sm mb-4 p-3">
     <form method="get" class="row g-2 align-items-center">
-        <div class="col-12 col-md-4">
+        <div class="col-12 col-md-3">
             <input type="text" name="search" class="form-control" placeholder="Tìm theo tên hoặc mã SKU..." value="@ViewBag.Search" />
         </div>
-        <div class="col-6 col-md-3">
-            <select name="gender" class="form-select">
-                <option value="">-- Tất cả đối tượng --</option>
+        <div class="col-6 col-md-2">
+            <select name="gender" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Đối tượng --</option>
                 <option value="Bé gái" selected="@(ViewBag.Gender == "Bé gái")">Bé gái</option>
                 <option value="Bé trai" selected="@(ViewBag.Gender == "Bé trai")">Bé trai</option>
                 <option value="Sơ sinh" selected="@(ViewBag.Gender == "Sơ sinh")">Sơ sinh</option>
@@ -31,12 +31,25 @@
             </select>
         </div>
         <div class="col-6 col-md-3">
-            <select name="categoryId" asp-items="ViewBag.Categories" class="form-select">
-                <option value="">-- Tất cả danh mục --</option>
+            <select name="ageRange" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Tất cả nhóm tuổi --</option>
+                @foreach (var age in WebsiteBabyShop.Helpers.AgeRangeHelper.StandardOptions)
+                {
+                    <option value="@age" selected="@(ViewBag.AgeRange == age)">@age</option>
+                }
             </select>
         </div>
-        <div class="col-12 col-md-2">
-            <button type="submit" class="btn btn-dark w-100"><i class="bi bi-filter me-1"></i> Lọc</button>
+        <div class="col-6 col-md-2">
+            <select name="categoryId" asp-items="ViewBag.Categories" class="form-select" onchange="this.form.submit()">
+                <option value="">-- Danh mục --</option>
+            </select>
+        </div>
+        <div class="col-6 col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-dark flex-grow-1"><i class="bi bi-filter me-1"></i> Lọc</button>
+            @if (!string.IsNullOrEmpty(ViewBag.Search as string) || !string.IsNullOrEmpty(ViewBag.Gender as string) || !string.IsNullOrEmpty(ViewBag.AgeRange as string) || ViewBag.CategoryId != null)
+            {
+                <a asp-action="Index" class="btn btn-outline-secondary" title="Xóa bộ lọc"><i class="bi bi-x-lg"></i></a>
+            }
         </div>
     </form>
 </div>
@@ -70,7 +83,7 @@
                         <th>Ảnh</th>
                         <th>Tên sản phẩm</th>
                         <th>Danh mục</th>
-                        <th>Đối tượng</th>
+                        <th>Đối tượng & Độ tuổi</th>
                         <th>Giá niêm yết</th>
                         <th>Giá bán</th>
                         <th>Biến thể & Tồn kho</th>
@@ -93,10 +106,18 @@
                             </td>
                             <td>@(item.Category?.Name ?? "-")</td>
                             <td>
-                                @if (item.Gender == "Bé gái") { <span class="badge bg-danger-subtle text-danger">Bé gái</span> }
-                                else if (item.Gender == "Bé trai") { <span class="badge bg-primary-subtle text-primary">Bé trai</span> }
-                                else if (item.Gender == "Sơ sinh") { <span class="badge bg-warning-subtle text-warning-emphasis">Sơ sinh</span> }
-                                else { <span class="badge bg-secondary-subtle text-secondary">Unisex</span> }
+                                <div>
+                                    @if (item.Gender == "Bé gái") { <span class="badge bg-danger-subtle text-danger">Bé gái</span> }
+                                    else if (item.Gender == "Bé trai") { <span class="badge bg-primary-subtle text-primary">Bé trai</span> }
+                                    else if (item.Gender == "Sơ sinh") { <span class="badge bg-warning-subtle text-warning-emphasis">Sơ sinh</span> }
+                                    else { <span class="badge bg-secondary-subtle text-secondary">Unisex</span> }
+                                </div>
+                                @if (!string.IsNullOrEmpty(item.AgeRange))
+                                {
+                                    <div class="mt-1">
+                                        <span class="badge bg-light text-dark border fw-normal" style="font-size: 0.72rem;">@item.AgeRange</span>
+                                    </div>
+                                }
                             </td>
                             <td>@item.Price.ToString("N0") đ</td>
                             <td class="fw-bold text-danger">@item.CurrentPrice.ToString("N0") đ</td>

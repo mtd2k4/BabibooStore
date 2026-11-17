@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,7 +21,7 @@ namespace WebsiteBabyShop.Controllers
         {
             var categories = await _context.Categories
                 .Where(c => c.IsActive)
-                .OrderBy(c => c.DisplayOrder)
+                .OrderBy(c => c.Id)
                 .ToListAsync();
 
             var featuredProducts = await _context.Products

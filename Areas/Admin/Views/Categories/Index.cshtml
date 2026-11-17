@@ -1,4 +1,4 @@
-﻿@model List<WebsiteBabyShop.Models.Category>
+@model List<WebsiteBabyShop.Models.Category>
 @{
     ViewData["Title"] = "Quản Lý Danh Mục Thời Trang Bé";
 }
@@ -20,7 +20,6 @@
                         <th>Tên danh mục</th>
                         <th>Slug</th>
                         <th>Số sản phẩm</th>
-                        <th>Thứ tự</th>
                         <th>Trạng thái</th>
                         <th>Thao tác</th>
                     </tr>
@@ -38,7 +37,6 @@
                             <td>
                                 <span class="badge bg-primary-subtle text-primary fw-bold">@item.Products.Count sản phẩm</span>
                             </td>
-                            <td>@item.DisplayOrder</td>
                             <td>
                                 @if (item.IsActive)
                                 {

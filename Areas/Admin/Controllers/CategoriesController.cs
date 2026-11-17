@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBabyShop.Models;
@@ -21,7 +21,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
         {
             var query = _context.Categories
                 .Include(c => c.Products)
-                .OrderBy(c => c.DisplayOrder)
+                .OrderBy(c => c.Id)
                 .AsQueryable();
 
             int pageSize = 10;
@@ -47,7 +47,7 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
         // GET: Admin/Categories/Create
         public IActionResult Create()
         {
-            return View(new Category { IsActive = true, DisplayOrder = 0 });
+            return View(new Category { IsActive = true });
         }
 
         // POST: Admin/Categories/Create
@@ -99,7 +99,6 @@ namespace WebsiteBabyShop.Areas.Admin.Controllers
                     existing.Slug = category.Slug;
                     existing.Description = category.Description;
                     existing.ImageUrl = category.ImageUrl;
-                    existing.DisplayOrder = category.DisplayOrder;
                     existing.IsActive = category.IsActive;
 
                     await _context.SaveChangesAsync();

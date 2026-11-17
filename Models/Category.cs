@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace WebsiteBabyShop.Models
 {
@@ -20,7 +20,6 @@ namespace WebsiteBabyShop.Models
         [Display(Name = "Hình ảnh đại diện")]
         public string? ImageUrl { get; set; }
 
-        [Display(Name = "Thứ tự hiển thị")]
         public int DisplayOrder { get; set; } = 0;
 
         [Display(Name = "Kích hoạt")]

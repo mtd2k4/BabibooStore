@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace WebsiteBabyShop.Models
@@ -53,7 +53,7 @@ namespace WebsiteBabyShop.Models
 
         [Display(Name = "Nhóm tuổi / Giai đoạn")]
         [StringLength(50)]
-        public string? AgeRange { get; set; } // "0 - 12 tháng", "1 - 3 tuổi", "4 - 7 tuổi", "8 - 12 tuổi"
+        public string? AgeRange { get; set; } // "Sơ sinh (0 - 24 tháng)", "Bé tập đi (1 - 3 tuổi)", "Mẫu giáo (3 - 6 tuổi)", "Tiểu học (6 - 12 tuổi)"
 
         [Display(Name = "Sản phẩm nổi bật")]
         public bool IsFeatured { get; set; } = false;

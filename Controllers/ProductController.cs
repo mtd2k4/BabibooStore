@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBabyShop.Models;
@@ -18,6 +18,7 @@ namespace WebsiteBabyShop.Controllers
         public async Task<IActionResult> Index(
             string? category,
             string? gender,
+            string? ageRange,
             string? search,
             bool? isNew,
             bool? isSale,
@@ -94,17 +95,40 @@ namespace WebsiteBabyShop.Controllers
             }
 
             int pageSize = 12;
-            int totalItems = await query.CountAsync();
-            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
-            page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+            int totalItems;
+            int totalPages;
+            List<Product> products;
 
-            var products = await query
-                .Skip((page - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+            if (!string.IsNullOrEmpty(ageRange))
+            {
+                var matched = (await query.ToListAsync())
+                    .Where(p => WebsiteBabyShop.Helpers.AgeRangeHelper.Matches(p.AgeRange, ageRange))
+                    .ToList();
+
+                totalItems = matched.Count;
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+                products = matched
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToList();
+            }
+            else
+            {
+                totalItems = await query.CountAsync();
+                totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                page = Math.Max(1, Math.Min(page, Math.Max(1, totalPages)));
+
+                products = await query
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
 
             ViewBag.CurrentCategory = category;
             ViewBag.CurrentGender = gender;
+            ViewBag.CurrentAgeRange = ageRange;
             ViewBag.CurrentSearch = search;
             ViewBag.CurrentIsNew = isNew;
             ViewBag.CurrentIsSale = isSale;
@@ -118,7 +142,7 @@ namespace WebsiteBabyShop.Controllers
 
             ViewBag.Categories = await _context.Categories
                 .Where(c => c.IsActive)
-                .OrderBy(c => c.DisplayOrder)
+                .OrderBy(c => c.Id)
                 .ToListAsync();
 
             return View(products);

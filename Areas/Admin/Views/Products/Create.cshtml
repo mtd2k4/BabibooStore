@@ -1,4 +1,4 @@
-﻿@model WebsiteBabyShop.Models.Product
+@model WebsiteBabyShop.Models.Product
 @{
     ViewData["Title"] = "Thêm Mới Mẫu Quần Áo Bé";
 
@@ -95,7 +95,14 @@
 
             <div class="col-12 col-md-3">
                 <label asp-for="AgeRange" class="form-label fw-bold small"></label>
-                <input asp-for="AgeRange" class="form-control rounded-3" placeholder="Ví dụ: 1 - 5 tuổi, 0 - 12 tháng" />
+                <select asp-for="AgeRange" class="form-select rounded-3">
+                    <option value="">-- Chọn nhóm tuổi --</option>
+                    @foreach (var age in WebsiteBabyShop.Helpers.AgeRangeHelper.StandardOptions)
+                    {
+                        <option value="@age">@age</option>
+                    }
+                </select>
+                <span asp-validation-for="AgeRange" class="text-danger small"></span>
             </div>
 
             <div class="col-12 col-md-3">
