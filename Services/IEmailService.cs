@@ -1,4 +1,4 @@
-﻿using WebsiteBabyShop.Models;
+using WebsiteBabyShop.Models;
 
 namespace WebsiteBabyShop.Services
 {
@@ -13,5 +13,10 @@ namespace WebsiteBabyShop.Services
         /// Gửi email thông báo đặt hàng thành công với template đầy đủ chi tiết đơn hàng
         /// </summary>
         Task<bool> SendOrderConfirmationEmailAsync(Order order, IEnumerable<OrderDetail> details);
+
+        /// <summary>
+        /// Tạo HTML xác nhận đơn hàng, lưu bản sao cục bộ (nếu bật) và gửi SMTP ở nền để không làm treo trang Thanh toán
+        /// </summary>
+        Task PrepareAndDispatchOrderConfirmationAsync(Order order, IEnumerable<OrderDetail> details);
     }
 }

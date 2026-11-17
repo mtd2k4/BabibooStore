@@ -1,0 +1,392 @@
+@model WebsiteBabyShop.ViewComponents.VietQrPaymentViewModel
+@{
+    var uid = Model.ComponentUid;
+    var transferAmount = (long)Math.Round(Model.Amount, MidpointRounding.AwayFromZero);
+    var selectedBank = Model.SelectedBank;
+}
+
+<div id="@uid"
+     class="baby-qr-payment-card border border-primary-subtle rounded-4 p-3 p-md-4 mb-4 text-start bg-white shadow-sm"
+     data-memo="@Model.TransferMemo"
+     data-amount="@transferAmount"
+     data-is-preview="@(Model.IsPreview ? "true" : "false")"
+     data-sync-checkout="@(Model.SyncFromCheckoutTotal ? "true" : "false")"
+     data-active-bankcode="@selectedBank.BankCode"
+     data-active-accno="@selectedBank.AccountNumber"
+     data-active-accholder="@selectedBank.AccountHolder"
+     data-active-template="@(string.IsNullOrWhiteSpace(selectedBank.QrTemplate) ? "compact2" : selectedBank.QrTemplate)">
+
+    <div class="d-flex align-items-center justify-content-between pb-3 mb-3 border-bottom flex-wrap gap-2">
+        <div>
+            <h5 class="fw-bold text-dark mb-1">
+                <i class="bi bi-qr-code-scan text-primary me-2"></i>@(Model.IsPreview ? "Thông Tin Chuyển Khoản & Mã VietQR" : "Quét Mã VietQR Để Thanh Toán")
+            </h5>
+            <span class="text-muted small">
+                @(Model.IsPreview
+                    ? "Mẹ xem trước thông tin chuyển khoản. Khi bấm Hoàn tất đặt hàng, mã đơn chính thức sẽ được gắn vào QR."
+                    : "Mở App ngân hàng bất kỳ để quét mã chuyển khoản tự động 24/7")
+            </span>
+        </div>
+        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill small fw-bold">
+            <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>@(Model.IsPreview ? "VietQR 24/7" : "Xác nhận tự động")
+        </span>
+    </div>
+
+    @if (Model.ActiveBanks.Count > 1)
+    {
+        <div class="mb-3">
+            <div class="small fw-semibold text-muted mb-2">
+                <i class="bi bi-bank me-1 text-primary"></i>Chọn ngân hàng thuận tiện cho mẹ:
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                @for (int bi = 0; bi < Model.ActiveBanks.Count; bi++)
+                {
+                    var bk = Model.ActiveBanks[bi];
+                    var isSelected = bk.Id == selectedBank.Id || (bi == 0 && !Model.ActiveBanks.Any(x => x.Id == selectedBank.Id));
+                    var bkTemplate = string.IsNullOrWhiteSpace(bk.QrTemplate) ? "compact2" : bk.QrTemplate;
+                    var bkQr = bk.BuildVietQrUrl(Model.Amount, Model.TransferMemo);
+                    <button type="button"
+                            class="btn btn-sm rounded-pill px-3 @(isSelected ? "btn-primary" : "btn-outline-secondary") baby-vqr-bank-btn"
+                            data-uid="@uid"
+                            data-bankcode="@bk.BankCode"
+                            data-bankname="@bk.BankName"
+                            data-accno="@bk.AccountNumber"
+                            data-accholder="@bk.AccountHolder"
+                            data-template="@bkTemplate"
+                            data-qrurl="@bkQr"
+                            data-note="@(bk.Note ?? "")"
+                            onclick="babySwitchQrBank(this)">
+                        <i class="bi bi-bank2 me-1"></i>@bk.BankCode @(bk.IsDefault ? "★" : "")
+                    </button>
+                }
+            </div>
+        </div>
+    }
+
+    <div class="row g-4 align-items-center">
+        <!-- Left: QR Code Preview -->
+        <div class="col-12 col-md-5 text-center">
+            <div class="p-2 border rounded-4 bg-light d-inline-block shadow-sm">
+                <img id="@(uid)-qr-img"
+                     src="@Model.InitialQrUrl"
+                     alt="VietQR Thanh Toán @Model.TransferMemo"
+                     class="img-fluid rounded-3"
+                     style="max-width: 240px; height: auto;"
+                     onload="babyHandleQrLoad('@uid')"
+                     onerror="babyHandleQrError('@uid')" />
+
+                <div id="@(uid)-qr-fallback" class="d-none p-3 text-start bg-white rounded-3 border" style="max-width: 240px;">
+                    <div class="fw-bold text-warning-emphasis small mb-1">
+                        <i class="bi bi-exclamation-triangle-fill me-1"></i>Không tải được ảnh QR tự động
+                    </div>
+                    <div class="text-muted small mb-2" style="font-size: 0.78rem;">
+                        Có thể trình duyệt hoặc mạng đang chặn <code>img.vietqr.io</code>. Mẹ vẫn chuyển khoản bình thường theo thông tin bên cạnh.
+                    </div>
+                    <div class="d-flex flex-wrap gap-1">
+                        <button type="button" class="btn btn-xs btn-sm btn-outline-primary rounded-pill px-2 py-1" style="font-size: 0.75rem;" onclick="babyRetryQrImage('@uid')">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Tải lại QR
+                        </button>
+                        <a id="@(uid)-qr-fallback-link" href="@Model.InitialQrUrl" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-outline-secondary rounded-pill px-2 py-1" style="font-size: 0.75rem;">
+                            <i class="bi bi-box-arrow-up-right me-1"></i>Mở QR
+                        </a>
+                    </div>
+                </div>
+
+                <div class="mt-2 text-center d-flex justify-content-center gap-2 flex-wrap">
+                    <a id="@(uid)-qr-dl"
+                       href="@Model.InitialQrUrl"
+                       download="VietQR-@Model.TransferMemo"
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       class="btn btn-outline-primary btn-sm rounded-pill px-3 py-1 small">
+                        <i class="bi bi-download me-1"></i> Tải mã QR
+                    </a>
+                </div>
+            </div>
+            <div class="small text-muted mt-2">
+                <i class="bi bi-shield-check text-success me-1"></i>Hỗ trợ mọi App Ngân hàng &amp; Ví điện tử
+            </div>
+        </div>
+
+        <!-- Right: Transfer Details & Copy Buttons -->
+        <div class="col-12 col-md-7">
+            <div class="d-flex flex-column gap-2">
+                <!-- Bank Name -->
+                <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-muted" style="font-size: 0.78rem;">Ngân hàng thụ hưởng:</div>
+                        <div class="fw-bold text-dark small" id="@(uid)-bank-name">@selectedBank.BankName</div>
+                    </div>
+                </div>
+
+                <!-- Account Number -->
+                <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-muted" style="font-size: 0.78rem;">Số tài khoản:</div>
+                        <div class="fw-bold fs-5 text-primary font-monospace text-break" id="@(uid)-acc-no">@selectedBank.AccountNumber</div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3 text-nowrap flex-shrink-0" onclick="babyCopyTransferText('@(uid)-acc-no', this)">
+                        <i class="bi bi-copy me-1"></i> Sao chép
+                    </button>
+                </div>
+
+                <!-- Account Name -->
+                <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-muted" style="font-size: 0.78rem;">Chủ tài khoản:</div>
+                        <div class="fw-bold text-dark text-uppercase small" id="@(uid)-acc-holder">@selectedBank.AccountHolder</div>
+                    </div>
+                </div>
+
+                <!-- Transfer Amount -->
+                <div class="p-2 px-3 rounded-3 bg-light d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-muted" style="font-size: 0.78rem;">Số tiền chuyển khoản:</div>
+                        <div class="fw-bold fs-5 text-danger font-monospace" id="@(uid)-amount-display">@transferAmount.ToString("N0") đ</div>
+                    </div>
+                    <button type="button"
+                            id="@(uid)-copy-amount-btn"
+                            class="btn btn-sm btn-outline-secondary rounded-pill px-3 text-nowrap flex-shrink-0"
+                            data-copy-value="@transferAmount"
+                            onclick="babyCopyTransferText(this.getAttribute('data-copy-value'), this, true)">
+                        <i class="bi bi-copy me-1"></i> Sao chép
+                    </button>
+                </div>
+
+                <!-- Transfer Memo / Content -->
+                <div class="p-2 px-3 rounded-3 bg-warning-subtle border border-warning-subtle d-flex justify-content-between align-items-center gap-2">
+                    <div class="min-w-0">
+                        <div class="small text-dark fw-bold" style="font-size: 0.78rem;">
+                            @(Model.IsPreview ? "Nội dung chuyển khoản mẫu:" : "Nội dung chuyển khoản (bắt buộc):")
+                        </div>
+                        <div class="fw-bold fs-6 text-danger font-monospace text-break" id="@(uid)-memo">@Model.TransferMemo</div>
+                    </div>
+                    <button type="button"
+                            class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold text-nowrap flex-shrink-0"
+                            data-reset-class="btn-outline-danger"
+                            onclick="babyCopyTransferText('@(uid)-memo', this)">
+                        <i class="bi bi-copy me-1"></i> Sao chép
+                    </button>
+                </div>
+            </div>
+
+            <div class="alert alert-info py-2 px-3 rounded-3 small mt-3 mb-0" style="font-size: 0.8rem;" id="@(uid)-note-box">
+                <i class="bi bi-info-circle-fill me-1 text-primary"></i>
+                <span id="@(uid)-note-text">
+                    @if (!string.IsNullOrWhiteSpace(selectedBank.Note))
+                    {
+                        @selectedBank.Note
+                        @if (!Model.IsPreview)
+                        {
+                            <span> (Mã đơn: <strong class="text-danger">@Model.TransferMemo</strong>)</span>
+                        }
+                    }
+                    else if (Model.IsPreview)
+                    {
+                        <span>Mẹ hãy bấm <strong>HOÀN TẤT ĐẶT HÀNG</strong> để hệ thống tạo mã đơn hàng chính thức và giữ nguyên nội dung chuyển khoản khi quét QR nhé!</span>
+                    }
+                    else
+                    {
+                        <span><strong>Lưu ý quan trọng:</strong> Mẹ vui lòng giữ nguyên nội dung chuyển khoản là mã đơn <strong class="text-danger">@Model.TransferMemo</strong> để hệ thống tự động gạch nợ và xác nhận đơn trong 1-3 phút nhé!</span>
+                    }
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    if (!window.babyCopyTransferText) {
+        window.babyCopyTransferText = function (elementIdOrValue, btn, isDirectValue) {
+            var el = isDirectValue ? null : document.getElementById(elementIdOrValue);
+            var text = isDirectValue ? elementIdOrValue : (el ? el.innerText : elementIdOrValue);
+            var resetClass = (btn && btn.getAttribute("data-reset-class")) || "btn-outline-secondary";
+            var onCopied = function () {
+                if (!btn) return;
+                var originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Đã chép!';
+                btn.classList.add('btn-success', 'text-white');
+                btn.classList.remove('btn-outline-secondary', 'btn-outline-danger');
+                setTimeout(function () {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('btn-success', 'text-white');
+                    btn.classList.add(resetClass);
+                }, 2000);
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(onCopied).catch(function () {
+                    fallbackCopy(text, onCopied);
+                });
+            } else {
+                fallbackCopy(text, onCopied);
+            }
+            function fallbackCopy(val, cb) {
+                var ta = document.createElement('textarea');
+                ta.value = val;
+                ta.style.position = 'fixed';
+                ta.style.opacity = '0';
+                document.body.appendChild(ta);
+                ta.select();
+                try { document.execCommand('copy'); cb(); } catch (e) { }
+                document.body.removeChild(ta);
+            }
+        };
+    }
+
+    if (!window.babyBuildVietQrUrl) {
+        window.babyBuildVietQrUrl = function (bankCode, accNo, template, amount, memo, accHolder) {
+            var tpl = template || "compact2";
+            var baseUrl = "https://img.vietqr.io/image/" + encodeURIComponent(bankCode) + "-" + encodeURIComponent(accNo) + "-" + encodeURIComponent(tpl) + ".png";
+            var qs = [];
+            var intAmount = Math.round(Number(amount) || 0);
+            if (intAmount > 0) qs.push("amount=" + intAmount);
+            if (memo) qs.push("addInfo=" + encodeURIComponent(memo));
+            if (accHolder) qs.push("accountName=" + encodeURIComponent(accHolder));
+            return qs.length > 0 ? (baseUrl + "?" + qs.join("&")) : baseUrl;
+        };
+    }
+
+    if (!window.babyHandleQrError) {
+        window.babyHandleQrError = function (uid) {
+            var img = document.getElementById(uid + "-qr-img");
+            var fb = document.getElementById(uid + "-qr-fallback");
+            if (img) img.classList.add("d-none");
+            if (fb) fb.classList.remove("d-none");
+        };
+    }
+
+    if (!window.babyHandleQrLoad) {
+        window.babyHandleQrLoad = function (uid) {
+            var img = document.getElementById(uid + "-qr-img");
+            var fb = document.getElementById(uid + "-qr-fallback");
+            if (img) img.classList.remove("d-none");
+            if (fb) fb.classList.add("d-none");
+        };
+    }
+
+    if (!window.babyRetryQrImage) {
+        window.babyRetryQrImage = function (uid) {
+            var img = document.getElementById(uid + "-qr-img");
+            if (!img) return;
+            var rawSrc = img.src.split("&_t=")[0].split("?_t=")[0];
+            var sep = rawSrc.indexOf("?") >= 0 ? "&" : "?";
+            img.src = rawSrc + sep + "_t=" + Date.now();
+        };
+    }
+
+    if (!window.babyUpdateQrAmount) {
+        window.babyUpdateQrAmount = function (uid, newAmount) {
+            var root = document.getElementById(uid);
+            if (!root) return;
+            var intAmount = Math.max(0, Math.round(Number(newAmount) || 0));
+            root.setAttribute("data-amount", String(intAmount));
+
+            var dispEl = document.getElementById(uid + "-amount-display");
+            var copyBtn = document.getElementById(uid + "-copy-amount-btn");
+            if (dispEl) dispEl.innerText = intAmount.toLocaleString("vi-VN") + " đ";
+            if (copyBtn) copyBtn.setAttribute("data-copy-value", String(intAmount));
+
+            var bankCode = root.getAttribute("data-active-bankcode") || "MB";
+            var accNo = root.getAttribute("data-active-accno") || "";
+            var accHolder = root.getAttribute("data-active-accholder") || "";
+            var template = root.getAttribute("data-active-template") || "compact2";
+            var memo = root.getAttribute("data-memo") || "BABYSHOP";
+            var qrUrl = window.babyBuildVietQrUrl(bankCode, accNo, template, intAmount, memo, accHolder);
+
+            var imgEl = document.getElementById(uid + "-qr-img");
+            var dlEl = document.getElementById(uid + "-qr-dl");
+            var fbLinkEl = document.getElementById(uid + "-qr-fallback-link");
+            if (imgEl && imgEl.getAttribute("src") !== qrUrl) {
+                imgEl.src = qrUrl;
+            }
+            if (dlEl) dlEl.href = qrUrl;
+            if (fbLinkEl) fbLinkEl.href = qrUrl;
+        };
+    }
+
+    if (!window.babySwitchQrBank) {
+        window.babySwitchQrBank = function (btn) {
+            var uid = btn.getAttribute("data-uid");
+            var root = document.getElementById(uid);
+            if (!root) return;
+
+            root.querySelectorAll(".baby-vqr-bank-btn").forEach(function (el) {
+                el.classList.remove("btn-primary");
+                el.classList.add("btn-outline-secondary");
+            });
+            btn.classList.remove("btn-outline-secondary");
+            btn.classList.add("btn-primary");
+
+            var bankCode = btn.getAttribute("data-bankcode") || "";
+            var bankName = btn.getAttribute("data-bankname") || "";
+            var accNo = btn.getAttribute("data-accno") || "";
+            var accHolder = btn.getAttribute("data-accholder") || "";
+            var template = btn.getAttribute("data-template") || "compact2";
+            var note = btn.getAttribute("data-note") || "";
+            var memo = root.getAttribute("data-memo") || "BABYSHOP";
+            var safeMemoHtml = memo.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            var amount = Number(root.getAttribute("data-amount") || "0");
+            var isPreview = root.getAttribute("data-is-preview") === "true";
+
+            root.setAttribute("data-active-bankcode", bankCode);
+            root.setAttribute("data-active-accno", accNo);
+            root.setAttribute("data-active-accholder", accHolder);
+            root.setAttribute("data-active-template", template);
+
+            var qrUrl = window.babyBuildVietQrUrl(bankCode, accNo, template, amount, memo, accHolder);
+
+            var nameEl = document.getElementById(uid + "-bank-name");
+            var accEl = document.getElementById(uid + "-acc-no");
+            var holderEl = document.getElementById(uid + "-acc-holder");
+            var imgEl = document.getElementById(uid + "-qr-img");
+            var dlEl = document.getElementById(uid + "-qr-dl");
+            var fbLinkEl = document.getElementById(uid + "-qr-fallback-link");
+            var noteEl = document.getElementById(uid + "-note-text");
+
+            if (nameEl) nameEl.innerText = bankName;
+            if (accEl) accEl.innerText = accNo;
+            if (holderEl) holderEl.innerText = accHolder;
+            if (imgEl) imgEl.src = qrUrl;
+            if (dlEl) dlEl.href = qrUrl;
+            if (fbLinkEl) fbLinkEl.href = qrUrl;
+
+            if (noteEl) {
+                if (note) {
+                    if (isPreview) {
+                        noteEl.innerText = note;
+                    } else {
+                        noteEl.innerHTML = note.replace(/</g, "&lt;") + ' (Mã đơn: <strong class="text-danger">' + safeMemoHtml + '</strong>)';
+                    }
+                } else if (isPreview) {
+                    noteEl.innerHTML = 'Mẹ hãy bấm <strong>HOÀN TẤT ĐẶT HÀNG</strong> để hệ thống tạo mã đơn hàng chính thức và giữ nguyên nội dung chuyển khoản khi quét QR nhé!';
+                } else {
+                    noteEl.innerHTML = '<strong>Lưu ý quan trọng:</strong> Mẹ vui lòng giữ nguyên nội dung chuyển khoản là mã đơn <strong class="text-danger">' + safeMemoHtml + '</strong> để hệ thống tự động gạch nợ và xác nhận đơn trong 1-3 phút nhé!';
+                }
+            }
+        };
+    }
+
+    (function () {
+        var root = document.getElementById("@uid");
+        if (!root || root.getAttribute("data-sync-checkout") !== "true") return;
+
+        var syncTotal = function () {
+            var totalEl = document.getElementById("checkoutTotalDisplay");
+            if (!totalEl) return;
+            var digits = (totalEl.innerText || "").replace(/[^\d]/g, "");
+            var num = parseInt(digits, 10);
+            if (!isNaN(num)) {
+                window.babyUpdateQrAmount("@uid", num);
+            }
+        };
+
+        document.addEventListener("DOMContentLoaded", function () {
+            setTimeout(syncTotal, 0);
+            var totalEl = document.getElementById("checkoutTotalDisplay");
+            if (totalEl && window.MutationObserver) {
+                var obs = new MutationObserver(syncTotal);
+                obs.observe(totalEl, { childList: true, characterData: true, subtree: true });
+            }
+        });
+    })();
+</script>

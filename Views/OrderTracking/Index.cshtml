@@ -1,4 +1,4 @@
-﻿@model WebsiteBabyShop.Models.Order
+@model WebsiteBabyShop.Models.Order
 @{
     ViewData["Title"] = "Tra Cứu Tiến Độ Đơn Hàng - BabyShop Studio Kids";
     var orderCodeVal = ViewBag.OrderCode as string ?? "";
@@ -252,9 +252,18 @@
                                     <div class="fw-semibold">
                                         @(Model.PaymentMethod == "COD" ? "Thanh toán khi nhận hàng (COD)" : "Chuyển khoản VietQR")
                                     </div>
-                                    <span class="badge @(Model.IsPaid ? "bg-success" : "bg-secondary") mt-1">
-                                        @(Model.IsPaid ? "Đã thanh toán" : "Thu tiền khi giao hàng")
-                                    </span>
+                                    @if (Model.IsPaid)
+                                    {
+                                        <span class="badge bg-success mt-1">Đã thanh toán</span>
+                                    }
+                                    else if (Model.PaymentMethod == "BankTransfer")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle mt-1">Chờ chuyển khoản VietQR</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary mt-1">Thu tiền khi giao hàng</span>
+                                    }
                                 </div>
                             </div>
                         </div>
@@ -354,6 +363,13 @@
                             </div>
                         </div>
                     </div>
+
+                    @if (Model.PaymentMethod == "BankTransfer" && !Model.IsPaid && Model.OrderStatus != "Cancelled")
+                    {
+                        <div class="mt-4 d-print-none">
+                            @await Component.InvokeAsync("VietQrPayment", new { amount = Model.TotalAmount, transferMemo = Model.OrderCode, isPreview = false })
+                        </div>
+                    }
 
                     <!-- Print-only Signatures & Receipt Footer (Chỉ xuất hiện khi in giấy) -->
                     <div class="d-none d-print-block mt-4 pt-4 border-top">

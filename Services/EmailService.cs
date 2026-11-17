@@ -1,6 +1,7 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using WebsiteBabyShop.Models;
 
@@ -11,46 +12,59 @@ namespace WebsiteBabyShop.Services
         private readonly EmailSettings _settings;
         private readonly ILogger<EmailService> _logger;
         private readonly IWebHostEnvironment _env;
+        private readonly BabyShopDbContext _context;
 
         public EmailService(
             IOptions<EmailSettings> settings,
             ILogger<EmailService> logger,
-            IWebHostEnvironment env)
+            IWebHostEnvironment env,
+            BabyShopDbContext context)
         {
             _settings = settings.Value;
             _logger = logger;
             _env = env;
+            _context = context;
         }
 
-        public async Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
+        public Task<bool> SendEmailAsync(string toEmail, string subject, string htmlBody)
+        {
+            return SendSmtpMailAsync(_settings, _logger, toEmail, subject, htmlBody);
+        }
+
+        private static async Task<bool> SendSmtpMailAsync(
+            EmailSettings settings,
+            ILogger logger,
+            string toEmail,
+            string subject,
+            string htmlBody)
         {
             if (string.IsNullOrWhiteSpace(toEmail))
             {
-                _logger.LogWarning("[EmailService] Không thể gửi email do địa chỉ người nhận trống.");
+                logger.LogWarning("[EmailService] Không thể gửi email do địa chỉ người nhận trống.");
                 return false;
             }
 
             // Kiểm tra xem đã cấu hình tài khoản SMTP thực tế chưa
-            bool hasSmtpCredentials = !string.IsNullOrWhiteSpace(_settings.Username) && !string.IsNullOrWhiteSpace(_settings.Password);
+            bool hasSmtpCredentials = !string.IsNullOrWhiteSpace(settings.Username) && !string.IsNullOrWhiteSpace(settings.Password);
 
             if (!hasSmtpCredentials)
             {
-                _logger.LogInformation("[EmailService] SMTP chưa được cấu hình tài khoản (Username/Password trống). Hệ thống ghi nhận nội dung email cho {ToEmail}.", toEmail);
+                logger.LogInformation("[EmailService] SMTP chưa được cấu hình tài khoản (Username/Password trống). Hệ thống ghi nhận nội dung email cho {ToEmail}.", toEmail);
                 return true;
             }
 
             try
             {
-                var username = _settings.Username.Trim();
-                var cleanPassword = _settings.Password.Trim().Replace(" ", "");
-                var senderAddress = !string.IsNullOrWhiteSpace(_settings.SenderEmail) && _settings.SenderEmail != "babyshop.cskh@gmail.com"
-                    ? _settings.SenderEmail.Trim()
+                var username = settings.Username.Trim();
+                var cleanPassword = settings.Password.Trim().Replace(" ", "");
+                var senderAddress = !string.IsNullOrWhiteSpace(settings.SenderEmail) && settings.SenderEmail != "babyshop.cskh@gmail.com"
+                    ? settings.SenderEmail.Trim()
                     : username;
-                var senderName = string.IsNullOrWhiteSpace(_settings.SenderName) ? "BabyShop Studio Kids" : _settings.SenderName.Trim();
+                var senderName = string.IsNullOrWhiteSpace(settings.SenderName) ? "BabyShop Studio Kids" : settings.SenderName.Trim();
 
-                using var client = new SmtpClient(_settings.SmtpServer, _settings.SmtpPort)
+                using var client = new SmtpClient(settings.SmtpServer, settings.SmtpPort)
                 {
-                    EnableSsl = _settings.EnableSsl,
+                    EnableSsl = settings.EnableSsl,
                     Credentials = new NetworkCredential(username, cleanPassword),
                     Timeout = 15000 // 15 giây
                 };
@@ -68,28 +82,58 @@ namespace WebsiteBabyShop.Services
                 mail.To.Add(toEmail.Trim());
 
                 await client.SendMailAsync(mail);
-                _logger.LogInformation("[EmailService] Đã gửi email thành công tới {ToEmail} qua SMTP server {Server}.", toEmail, _settings.SmtpServer);
+                logger.LogInformation("[EmailService] Đã gửi email thành công tới {ToEmail} qua SMTP server {Server}.", toEmail, settings.SmtpServer);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "[EmailService] Gặp lỗi khi gửi email qua SMTP tới {ToEmail}. Ngoại lệ: {Message}", toEmail, ex.Message);
+                logger.LogError(ex, "[EmailService] Gặp lỗi khi gửi email qua SMTP tới {ToEmail}. Ngoại lệ: {Message}", toEmail, ex.Message);
                 return false;
             }
         }
 
         public async Task<bool> SendOrderConfirmationEmailAsync(Order order, IEnumerable<OrderDetail> details)
         {
+            var prepared = await PrepareOrderEmailAsync(order, details);
+            if (prepared == null) return false;
+
+            return await SendSmtpMailAsync(_settings, _logger, prepared.Value.toEmail, prepared.Value.subject, prepared.Value.htmlBody);
+        }
+
+        public async Task PrepareAndDispatchOrderConfirmationAsync(Order order, IEnumerable<OrderDetail> details)
+        {
+            var prepared = await PrepareOrderEmailAsync(order, details);
+            if (prepared == null) return;
+
+            var settingsSnapshot = new EmailSettings
+            {
+                SmtpServer = _settings.SmtpServer,
+                SmtpPort = _settings.SmtpPort,
+                EnableSsl = _settings.EnableSsl,
+                SenderName = _settings.SenderName,
+                SenderEmail = _settings.SenderEmail,
+                Username = _settings.Username,
+                Password = _settings.Password,
+                SaveToDisk = _settings.SaveToDisk
+            };
+            var logger = _logger;
+            var (toEmail, subject, htmlBody) = prepared.Value;
+
+            _ = Task.Run(() => SendSmtpMailAsync(settingsSnapshot, logger, toEmail, subject, htmlBody));
+        }
+
+        private async Task<(string toEmail, string subject, string htmlBody)?> PrepareOrderEmailAsync(Order order, IEnumerable<OrderDetail> details)
+        {
             if (order == null || string.IsNullOrWhiteSpace(order.CustomerEmail))
             {
                 _logger.LogWarning("[EmailService] Bỏ qua gửi email xác nhận vì đơn hàng hoặc email khách hàng không hợp lệ.");
-                return false;
+                return null;
             }
 
             var subject = $"[BabyShop Studio Kids] Xác nhận đơn hàng thành công #{order.OrderCode}";
             var htmlBody = GenerateOrderConfirmationHtml(order, details);
 
-            // Lưu bản sao HTML email vào thư mục wwwroot/emails/ để tiện xem lại hoặc phục vụ môi trường Dev/Test
+            // Lưu bản sao HTML email vào thư mục wwwroot/emails/ ngay trước khi chuyển sang OrderSuccess
             if (_settings.SaveToDisk)
             {
                 try
@@ -111,8 +155,7 @@ namespace WebsiteBabyShop.Services
                 }
             }
 
-            // Gửi email thực tế qua SMTP
-            return await SendEmailAsync(order.CustomerEmail, subject, htmlBody);
+            return (order.CustomerEmail.Trim(), subject, htmlBody);
         }
 
         private string GenerateOrderConfirmationHtml(Order order, IEnumerable<OrderDetail> details)
@@ -191,17 +234,30 @@ namespace WebsiteBabyShop.Services
 
             var shippingFeeText = order.ShippingFee == 0 ? "<span style=\"color: #28a745; font-weight: 600;\">Miễn phí giao hàng</span>" : $"{order.ShippingFee:N0} đ";
 
-            // Khung VietQR nếu là Chuyển khoản
+            // Khung VietQR nếu là Chuyển khoản (đọc từ cấu hình Ngân hàng trong Admin)
             var qrSection = string.Empty;
             if (order.PaymentMethod == "BankTransfer")
             {
-                var bankId = "MB";
-                var bankName = "MB Bank (Ngân hàng Quân Đội)";
-                var accountNo = "212882";
-                var accountName = "MAI TIEN DUNG";
+                BankAccount? bankConfig = null;
+                try
+                {
+                    bankConfig = _context.BankAccounts
+                        .AsNoTracking()
+                        .Where(b => b.IsActive)
+                        .OrderByDescending(b => b.IsDefault)
+                        .ThenBy(b => b.Id)
+                        .FirstOrDefault();
+                }
+                catch { }
+
+                bankConfig ??= WebsiteBabyShop.Helpers.VietQrBankHelper.CreateFallbackDefault();
+
+                var bankName = bankConfig.BankName;
+                var accountNo = bankConfig.AccountNumber;
+                var accountName = bankConfig.AccountHolder;
                 var transferAmount = (long)order.TotalAmount;
                 var transferMemo = order.OrderCode;
-                var qrUrl = $"https://img.vietqr.io/image/{bankId}-{accountNo}-compact2.png?amount={transferAmount}&addInfo={Uri.EscapeDataString(transferMemo)}&accountName={Uri.EscapeDataString(accountName)}";
+                var qrUrl = bankConfig.BuildVietQrUrl(order.TotalAmount, transferMemo);
 
                 qrSection = $@"
                 <div style=""background: #fdf8f6; border: 1px solid #fbd38d; border-radius: 12px; padding: 18px; margin: 24px 0;"">

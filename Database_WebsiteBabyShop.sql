@@ -23,6 +23,7 @@ GO
 -- ============================================================================
 -- 2. XÓA BẢNG CŨ THEO THỨ TỰ RÀNG BUỘC KHÓA NGOẠI (CLEAN DATABASE RESET)
 -- ============================================================================
+IF OBJECT_ID('dbo.BankAccounts', 'U') IS NOT NULL DROP TABLE dbo.BankAccounts;
 IF OBJECT_ID('dbo.ReturnRequests', 'U') IS NOT NULL DROP TABLE dbo.ReturnRequests;
 IF OBJECT_ID('dbo.LuckyWheelHistories', 'U') IS NOT NULL DROP TABLE dbo.LuckyWheelHistories;
 IF OBJECT_ID('dbo.DailyCheckIns', 'U') IS NOT NULL DROP TABLE dbo.DailyCheckIns;
@@ -487,7 +488,27 @@ CREATE NONCLUSTERED INDEX [IX_ReturnRequests_Status] ON [dbo].[ReturnRequests]([
 GO
 
 -- ============================================================================
--- 20. ĐĂNG KÝ BẢNG LỊCH SỬ MIGRATION CHO ENTITY FRAMEWORK CORE
+-- 20. BẢNG [BankAccounts] - CẤU HÌNH TÀI KHOẢN NGÂN HÀNG & THANH TOÁN VIETQR
+-- ============================================================================
+CREATE TABLE [dbo].[BankAccounts] (
+    [Id] INT IDENTITY(1,1) NOT NULL,
+    [BankCode] NVARCHAR(20) NOT NULL CONSTRAINT [DF_BankAccounts_BankCode] DEFAULT (N'MB'),
+    [BankName] NVARCHAR(150) NOT NULL,
+    [AccountNumber] NVARCHAR(50) NOT NULL,
+    [AccountHolder] NVARCHAR(100) NOT NULL,
+    [Branch] NVARCHAR(150) NULL,
+    [QrTemplate] NVARCHAR(30) NOT NULL CONSTRAINT [DF_BankAccounts_QrTemplate] DEFAULT (N'compact2'),
+    [Note] NVARCHAR(500) NULL,
+    [IsDefault] BIT NOT NULL CONSTRAINT [DF_BankAccounts_IsDefault] DEFAULT (0),
+    [IsActive] BIT NOT NULL CONSTRAINT [DF_BankAccounts_IsActive] DEFAULT (1),
+    [CreatedAt] DATETIME2 NOT NULL CONSTRAINT [DF_BankAccounts_CreatedAt] DEFAULT (GETDATE()),
+    [UpdatedAt] DATETIME2 NOT NULL CONSTRAINT [DF_BankAccounts_UpdatedAt] DEFAULT (GETDATE()),
+    CONSTRAINT [PK_BankAccounts] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+GO
+
+-- ============================================================================
+-- 21. ĐĂNG KÝ BẢNG LỊCH SỬ MIGRATION CHO ENTITY FRAMEWORK CORE
 -- ============================================================================
 IF OBJECT_ID('dbo.__EFMigrationsHistory', 'U') IS NULL
 BEGIN
@@ -752,8 +773,17 @@ VALUES
 (1, N'Customer', N'Nguyễn Thu Hà', N'Dạ cảm ơn shop, em vừa đặt đơn luôn rồi ạ!', DATEADD(minute, -10, GETDATE()), 1);
 GO
 
+-- M. CẤU HÌNH TÀI KHOẢN NGÂN HÀNG & VIETQR MẶC ĐỊNH
+SET IDENTITY_INSERT [dbo].[BankAccounts] ON;
+INSERT INTO [dbo].[BankAccounts]
+([Id], [BankCode], [BankName], [AccountNumber], [AccountHolder], [Branch], [QrTemplate], [Note], [IsDefault], [IsActive], [CreatedAt], [UpdatedAt])
+VALUES
+(1, N'MB', N'MB Bank (Ngân hàng Quân Đội)', N'212882', N'MAI TIEN DUNG', N'Chi nhánh Hà Nội', N'compact2', N'Mẹ vui lòng giữ nguyên nội dung chuyển khoản là mã đơn hàng để hệ thống tự động gạch nợ và xác nhận đơn trong 1-3 phút nhé!', 1, 1, GETDATE(), GETDATE());
+SET IDENTITY_INSERT [dbo].[BankAccounts] OFF;
+GO
+
 PRINT N'============================================================================';
 PRINT N'==> KHỞI TẠO TOÀN DIỆN CƠ SỞ DỮ LIỆU [WebsiteBabyShopDb] THÀNH CÔNG 100%! <==';
-PRINT N'==> ĐÃ TẠO ĐẦY ĐỦ 19 BẢNG & NẠP DỮ LIỆU MẪU CHUẨN XÁC ĐỒNG BỘ VỚI C# MODEL <==';
+PRINT N'==> ĐÃ TẠO ĐẦY ĐỦ 20 BẢNG & NẠP DỮ LIỆU MẪU CHUẨN XÁC ĐỒNG BỘ VỚI C# MODEL <==';
 PRINT N'============================================================================';
 GO

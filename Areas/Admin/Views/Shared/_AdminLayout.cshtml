@@ -111,6 +111,11 @@
                 <!-- Group 4: System -->
                 <div class="nav-section-title">Hệ Thống</div>
                 <nav class="nav flex-column">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "BankSettings" ? "active" : "")" 
+                       asp-area="Admin" asp-controller="BankSettings" asp-action="Index" title="Cấu hình ngân hàng & VietQR">
+                        <i class="bi bi-bank"></i>
+                        <span class="nav-item-text">Cấu Hình Ngân Hàng</span>
+                    </a>
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "AuditLogs" ? "active" : "")" 
                        asp-area="Admin" asp-controller="AuditLogs" asp-action="Index" title="Nhật ký hoạt động">
                         <i class="bi bi-shield-check"></i>
@@ -333,6 +338,13 @@
                             <div>
                                 <div class="fw-bold small text-dark">Tư Vấn Trực Tuyến (Live Chat)</div>
                                 <div class="text-muted" style="font-size: 0.75rem;">Hội thoại khách hàng thời gian thực</div>
+                            </div>
+                        </a>
+                        <a asp-area="Admin" asp-controller="BankSettings" asp-action="Index" class="list-group-item list-group-item-action border-0 rounded-3 p-2 d-flex align-items-center gap-3 command-item" data-search="bank ngan hang vietqr tai khoan thanh toan chuyen khoan cau hinh">
+                            <div class="rounded-3 p-2 bg-primary-subtle text-primary"><i class="bi bi-bank"></i></div>
+                            <div>
+                                <div class="fw-bold small text-dark">Cấu Hình Ngân Hàng & VietQR</div>
+                                <div class="text-muted" style="font-size: 0.75rem;">Tài khoản thụ hưởng, mã VietQR tự động</div>
                             </div>
                         </a>
                         <a asp-area="Admin" asp-controller="AuditLogs" asp-action="Index" class="list-group-item list-group-item-action border-0 rounded-3 p-2 d-flex align-items-center gap-3 command-item" data-search="audit logs nhat ky kiem toan hoat dong he thong">

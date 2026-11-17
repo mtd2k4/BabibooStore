@@ -1,0 +1,165 @@
+@model WebsiteBabyShop.Models.BankAccount
+@{
+    ViewData["Title"] = "Thêm Tài Khoản Ngân Hàng";
+    var banks = WebsiteBabyShop.Helpers.VietQrBankHelper.SupportedBanks;
+    var templates = WebsiteBabyShop.Helpers.VietQrBankHelper.SupportedTemplates;
+}
+
+<div class="card border-0 rounded-4 shadow-sm p-4 bg-white">
+    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h4 class="fw-bold m-0 text-dark">
+            <i class="bi bi-plus-circle-fill text-primary me-2"></i>Thêm Tài Khoản Ngân Hàng & Cấu Hình VietQR
+        </h4>
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Quay Lại Danh Sách
+        </a>
+    </div>
+
+    <form asp-action="Create" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small"></div>
+
+        <div class="row g-4">
+            <!-- Left: Configuration Form -->
+            <div class="col-12 col-lg-7">
+                <div class="row g-3">
+                    <div class="col-12 col-md-5">
+                        <label asp-for="BankCode" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <select asp-for="BankCode" id="bankCodeSelect" class="form-select rounded-3" onchange="onBankSelected(this)">
+                            @foreach (var b in banks)
+                            {
+                                <option value="@b.Code" data-fullname="@b.DisplayName">@b.Code - @b.ShortName</option>
+                            }
+                        </select>
+                        <span asp-validation-for="BankCode" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 col-md-7">
+                        <label asp-for="BankName" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="BankName" id="bankNameInput" class="form-control rounded-3" placeholder="Ví dụ: MB Bank (Ngân hàng Quân Đội)" oninput="updateLiveQrPreview()" required />
+                        <span asp-validation-for="BankName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label asp-for="AccountNumber" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="AccountNumber" id="accountNumberInput" class="form-control rounded-3 font-monospace fw-bold" placeholder="Nhập số tài khoản nhận tiền..." oninput="updateLiveQrPreview()" required />
+                        <span asp-validation-for="AccountNumber" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label asp-for="AccountHolder" class="form-label fw-bold small"></label> <span class="text-danger">*</span>
+                        <input asp-for="AccountHolder" id="accountHolderInput" class="form-control rounded-3 text-uppercase fw-bold" placeholder="NGUYEN VAN A" oninput="this.value = this.value.toUpperCase(); updateLiveQrPreview();" required />
+                        <span asp-validation-for="AccountHolder" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label asp-for="Branch" class="form-label fw-bold small"></label>
+                        <input asp-for="Branch" class="form-control rounded-3" placeholder="Ví dụ: Chi nhánh Hà Nội (Tùy chọn)" />
+                    </div>
+
+                    <div class="col-12 col-md-6">
+                        <label asp-for="QrTemplate" class="form-label fw-bold small"></label>
+                        <select asp-for="QrTemplate" id="qrTemplateSelect" class="form-select rounded-3" onchange="updateLiveQrPreview()">
+                            @foreach (var tpl in templates)
+                            {
+                                <option value="@tpl.Value">@tpl.Label</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Note" class="form-label fw-bold small"></label>
+                        <textarea asp-for="Note" class="form-control rounded-3" rows="2" placeholder="Ghi chú hướng dẫn khách hàng khi quét mã chuyển khoản..."></textarea>
+                    </div>
+
+                    <div class="col-12">
+                        <div class="p-3 rounded-3 bg-light border d-flex flex-column gap-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsActive" id="isActiveSwitch">
+                                <label class="form-check-label fw-bold small text-dark" for="isActiveSwitch">
+                                    Kích hoạt sử dụng tài khoản này để nhận chuyển khoản từ khách hàng
+                                </label>
+                            </div>
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" asp-for="IsDefault" id="isDefaultSwitch">
+                                <label class="form-check-label fw-bold small text-dark" for="isDefaultSwitch">
+                                    Đặt làm tài khoản VietQR mặc định trên toàn hệ thống (Web & Email đơn hàng)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12 pt-2">
+                        <button type="submit" class="btn btn-primary-baby px-4 py-2">
+                            <i class="bi bi-check-circle-fill me-1"></i> Lưu Cấu Hình Ngân Hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right: Live VietQR Preview -->
+            <div class="col-12 col-lg-5">
+                <div class="card border rounded-4 p-4 bg-light h-100 text-center">
+                    <div class="fw-bold text-dark mb-1">
+                        <i class="bi bi-qr-code-scan text-primary me-1"></i>Xem Trước Mã VietQR Trực Tiếp
+                    </div>
+                    <div class="small text-muted mb-3">Tự động cập nhật khi bạn chọn ngân hàng & nhập số tài khoản</div>
+
+                    <div class="bg-white border rounded-4 p-3 d-inline-block mx-auto shadow-sm mb-3">
+                        <img id="liveQrImg" src="" alt="VietQR Live Preview" class="img-fluid rounded-3" style="max-width: 230px; min-height: 180px; object-fit: contain;" />
+                    </div>
+
+                    <div class="text-start bg-white rounded-3 border p-3 small">
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Ngân hàng:</span>
+                            <strong class="text-dark text-end" id="previewBankName">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Số tài khoản:</span>
+                            <strong class="text-primary font-monospace" id="previewAccNo">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between py-1 border-bottom">
+                            <span class="text-muted">Chủ tài khoản:</span>
+                            <strong class="text-dark text-uppercase" id="previewAccHolder">-</strong>
+                        </div>
+                        <div class="d-flex justify-content-between pt-1">
+                            <span class="text-muted">Nội dung thử:</span>
+                            <strong class="text-danger font-monospace">BS-DEMO-8888 (250.000đ)</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        function onBankSelected(selectEl) {
+            const opt = selectEl.options[selectEl.selectedIndex];
+            const fullName = opt ? opt.getAttribute('data-fullname') : '';
+            if (fullName) {
+                document.getElementById('bankNameInput').value = fullName;
+            }
+            updateLiveQrPreview();
+        }
+
+        function updateLiveQrPreview() {
+            const code = (document.getElementById('bankCodeSelect').value || 'MB').trim();
+            const bankName = (document.getElementById('bankNameInput').value || '').trim();
+            const accNo = (document.getElementById('accountNumberInput').value || '0000000000').trim();
+            const holder = (document.getElementById('accountHolderInput').value || 'CHU TAI KHOAN').trim().toUpperCase();
+            const tpl = (document.getElementById('qrTemplateSelect').value || 'compact2').trim();
+
+            document.getElementById('previewBankName').innerText = bankName || code;
+            document.getElementById('previewAccNo').innerText = accNo;
+            document.getElementById('previewAccHolder').innerText = holder;
+
+            const qrUrl = `https://img.vietqr.io/image/${encodeURIComponent(code)}-${encodeURIComponent(accNo)}-${encodeURIComponent(tpl)}.png?amount=250000&addInfo=${encodeURIComponent('BS-DEMO-8888')}&accountName=${encodeURIComponent(holder)}`;
+            document.getElementById('liveQrImg').src = qrUrl;
+        }
+
+        document.addEventListener('DOMContentLoaded', updateLiveQrPreview);
+    </script>
+}

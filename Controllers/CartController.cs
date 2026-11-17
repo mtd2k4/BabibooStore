@@ -1,4 +1,4 @@
-﻿using System.Security.Claims;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebsiteBabyShop.Helpers;
@@ -11,6 +11,8 @@ namespace WebsiteBabyShop.Controllers
     {
         private const string CartSessionKey = "ShoppingCart";
         private const string CouponSessionKey = "AppliedCouponCode";
+        private const string CheckoutTokenSessionKey = "CheckoutIdempotencyToken";
+        private const string LastCompletedOrderSessionKey = "LastCompletedCheckoutOrder";
         private readonly BabyShopDbContext _context;
         private readonly IEmailService _emailService;
         private readonly ILogger<CartController> _logger;
@@ -502,27 +504,43 @@ namespace WebsiteBabyShop.Controllers
 
             // Kiểm tra tồn kho trước khi thanh toán
             bool hasStockError = false;
+            var outOfStockItems = new List<CartItem>();
             foreach (var item in cart)
             {
                 var p = await _context.Products.Include(x => x.Variants).FirstOrDefaultAsync(x => x.Id == item.ProductId);
-                if (p != null)
+                if (p == null || !p.IsActive)
                 {
-                    var v = p.Variants.FirstOrDefault(x => x.Id == item.VariantId)
-                         ?? p.Variants.FirstOrDefault(x => x.Size == item.Size && x.Color == item.Color)
-                         ?? p.Variants.FirstOrDefault();
-                    int stock = v != null ? v.StockQuantity : p.TotalStock;
-                    item.AvailableStock = stock;
-                    if (item.Quantity > stock)
-                    {
-                        item.Quantity = Math.Max(1, stock);
-                        hasStockError = true;
-                    }
+                    outOfStockItems.Add(item);
+                    hasStockError = true;
+                    continue;
+                }
+
+                var v = p.Variants.FirstOrDefault(x => x.Id == item.VariantId)
+                     ?? p.Variants.FirstOrDefault(x => x.Size == item.Size && x.Color == item.Color)
+                     ?? p.Variants.FirstOrDefault();
+                int stock = v != null ? v.StockQuantity : p.TotalStock;
+                item.AvailableStock = stock;
+                if (stock <= 0)
+                {
+                    outOfStockItems.Add(item);
+                    hasStockError = true;
+                }
+                else if (item.Quantity > stock)
+                {
+                    item.Quantity = stock;
+                    hasStockError = true;
                 }
             }
             if (hasStockError)
             {
+                foreach (var rem in outOfStockItems)
+                {
+                    cart.Remove(rem);
+                }
                 SaveCart(cart);
-                TempData["ErrorMessage"] = "Một số sản phẩm trong giỏ hàng đã thay đổi số lượng do giới hạn tồn kho. Vui lòng kiểm tra lại giỏ hàng!";
+                TempData["ErrorMessage"] = outOfStockItems.Any()
+                    ? "Một số sản phẩm trong giỏ hàng đã hết hàng nên đã được cập nhật lại. Vui lòng kiểm tra giỏ hàng!"
+                    : "Một số sản phẩm trong giỏ hàng đã thay đổi số lượng do giới hạn tồn kho. Vui lòng kiểm tra lại giỏ hàng!";
                 return RedirectToAction("Index");
             }
 
@@ -572,26 +590,7 @@ namespace WebsiteBabyShop.Controllers
             // Chiết khấu hạng thành viên Baby Club: Đồng 3%, Bạc 8%, Vàng 10%, Kim Cương 20% (Trọn đời)
             decimal memberDiscount = Math.Round(subTotal * (tierDiscountPercent / 100m), 0);
             decimal afterDiscount = Math.Max(0, subTotal - discountAmount - memberDiscount);
-
-            // Miễn phí vận chuyển theo chính sách Baby Club
-            decimal shippingFee = 30000;
-            if (userTier.Contains("Kim Cương"))
-            {
-                shippingFee = 0; // Freeship mọi đơn
-            }
-            else if (userTier.Contains("Vàng"))
-            {
-                shippingFee = (afterDiscount >= 100000 || subTotal == 0) ? 0 : 30000;
-            }
-            else if (userTier.Contains("Bạc"))
-            {
-                shippingFee = (afterDiscount >= 200000 || subTotal == 0) ? 0 : 30000;
-            }
-            else
-            {
-                shippingFee = (afterDiscount >= 300000 || subTotal == 0) ? 0 : 30000;
-            }
-
+            decimal shippingFee = CalculateShippingFee(userTier, afterDiscount, subTotal);
             decimal totalAmount = Math.Max(0, afterDiscount + shippingFee);
 
             var order = new Order
@@ -683,14 +682,33 @@ namespace WebsiteBabyShop.Controllers
                 .OrderBy(c => c.MinOrderAmount)
                 .ToListAsync();
 
+            await PopulateBankViewBagAsync();
+
+            var checkoutToken = Guid.NewGuid().ToString("N");
+            HttpContext.Session.SetString(CheckoutTokenSessionKey, checkoutToken);
+            ViewBag.CheckoutToken = checkoutToken;
+
             return View(order);
         }
 
         // POST: /Cart/Checkout
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Checkout(Order order, bool usePoints = false, int pointsToUse = 0)
+        public async Task<IActionResult> Checkout(Order order, bool usePoints = false, int pointsToUse = 0, string? checkoutToken = null)
         {
+            // Chống gửi lặp / nhấn đúp nút đặt hàng: nếu token đã hoàn tất trước đó thì chuyển thẳng tới trang xác nhận đơn
+            if (!string.IsNullOrWhiteSpace(checkoutToken))
+            {
+                var lastCompleted = HttpContext.Session.GetString(LastCompletedOrderSessionKey);
+                if (!string.IsNullOrEmpty(lastCompleted) && lastCompleted.StartsWith(checkoutToken + ":", StringComparison.Ordinal))
+                {
+                    if (int.TryParse(lastCompleted[(checkoutToken.Length + 1)..], out int existingOrderId) && existingOrderId > 0)
+                    {
+                        return RedirectToAction("OrderSuccess", new { id = existingOrderId });
+                    }
+                }
+            }
+
             var cart = GetCart();
             if (!cart.Any())
             {
@@ -779,26 +797,28 @@ namespace WebsiteBabyShop.Controllers
 
             if (hasShippingError)
             {
+                var errCode = HttpContext.Session.GetString(CouponSessionKey) ?? order.CouponCode;
+                Coupon? errCoupon = null;
+                decimal errDiscount = 0;
+                if (!string.IsNullOrEmpty(errCode))
+                {
+                    var (cEval, dEval, _, validEval) = await EvaluateCouponAsync(errCode, subTotal, user?.Id);
+                    if (validEval && cEval != null)
+                    {
+                        errCoupon = cEval;
+                        errDiscount = dEval;
+                    }
+                }
+
+                decimal errAfterDiscount = Math.Max(0, subTotal - errDiscount - memberDiscount);
                 order.SubTotal = subTotal;
-                order.ShippingFee = (subTotal >= 300000 || subTotal == 0) ? 0 : 30000;
-                order.TotalAmount = subTotal + order.ShippingFee;
+                order.DiscountAmount = errDiscount;
+                order.MemberDiscount = memberDiscount;
+                order.CouponCode = errCoupon?.Code;
+                order.ShippingFee = CalculateShippingFee(userTier, errAfterDiscount, subTotal);
+                order.TotalAmount = Math.Max(0, errAfterDiscount + order.ShippingFee);
 
-                ViewBag.Cart = cart;
-                ViewBag.CurrentUser = user;
-                ViewBag.UserRewardPoints = user?.RewardPoints ?? 0;
-                ViewBag.UserMemberTier = userTier;
-                ViewBag.TierDiscountPercent = tierDiscountPercent;
-                ViewBag.MemberDiscount = memberDiscount;
-                ViewBag.AvailableCoupons = await _context.Coupons
-                    .Where(c => !c.IsForYou && !c.IsFlashHunt && c.IsActive && (!c.ExpiryDate.HasValue || c.ExpiryDate > DateTime.Now))
-                    .OrderBy(c => c.MinOrderAmount)
-                    .ToListAsync();
-                ViewBag.UserVouchers = user != null ? await _context.UserCoupons
-                    .Include(uc => uc.Coupon)
-                    .Where(uc => uc.UserId == user.Id && !uc.IsUsed && uc.ExpiryDate >= DateTime.Now && uc.Coupon != null && uc.Coupon.IsActive)
-                    .OrderBy(uc => uc.ExpiryDate)
-                    .ToListAsync() : new List<UserCoupon>();
-
+                await PopulateCheckoutRedisplayAsync(cart, user, userTier, tierDiscountPercent, memberDiscount, errCoupon, errDiscount);
                 return View(order);
             }
 
@@ -824,49 +844,20 @@ namespace WebsiteBabyShop.Controllers
                     TempData["CouponError"] = evalMsg ?? "Mã giảm giá không hợp lệ hoặc không thể áp dụng.";
                     ModelState.AddModelError("CouponCode", evalMsg ?? "Mã giảm giá không hợp lệ.");
 
+                    decimal invalidAfterDiscount = Math.Max(0, subTotal - memberDiscount);
                     order.SubTotal = subTotal;
-                    order.ShippingFee = (subTotal >= 300000 || subTotal == 0) ? 0 : 30000;
-                    order.TotalAmount = subTotal + order.ShippingFee;
+                    order.DiscountAmount = 0;
+                    order.MemberDiscount = memberDiscount;
+                    order.CouponCode = null;
+                    order.ShippingFee = CalculateShippingFee(userTier, invalidAfterDiscount, subTotal);
+                    order.TotalAmount = Math.Max(0, invalidAfterDiscount + order.ShippingFee);
 
-                    ViewBag.Cart = cart;
-                    ViewBag.CurrentUser = user;
-                    ViewBag.UserRewardPoints = user?.RewardPoints ?? 0;
-                    ViewBag.UserMemberTier = userTier;
-                    ViewBag.TierDiscountPercent = tierDiscountPercent;
-                    ViewBag.MemberDiscount = memberDiscount;
-                    ViewBag.AvailableCoupons = await _context.Coupons
-                        .Where(c => !c.IsForYou && !c.IsFlashHunt && c.IsActive && (!c.ExpiryDate.HasValue || c.ExpiryDate > DateTime.Now))
-                        .OrderBy(c => c.MinOrderAmount)
-                        .ToListAsync();
-                    ViewBag.UserVouchers = user != null ? await _context.UserCoupons
-                        .Include(uc => uc.Coupon)
-                        .Where(uc => uc.UserId == user.Id && !uc.IsUsed && uc.ExpiryDate >= DateTime.Now && uc.Coupon != null && uc.Coupon.IsActive)
-                        .OrderBy(uc => uc.ExpiryDate)
-                        .ToListAsync() : new List<UserCoupon>();
-
+                    await PopulateCheckoutRedisplayAsync(cart, user, userTier, tierDiscountPercent, memberDiscount, null, 0);
                     return View(order);
                 }
             }
             decimal afterDiscount = Math.Max(0, subTotal - discountAmount - memberDiscount);
-
-            // Miễn phí vận chuyển theo chính sách Baby Club
-            decimal shippingFee = 30000;
-            if (userTier.Contains("Kim Cương"))
-            {
-                shippingFee = 0; // Freeship mọi đơn
-            }
-            else if (userTier.Contains("Vàng"))
-            {
-                shippingFee = (afterDiscount >= 100000 || subTotal == 0) ? 0 : 30000;
-            }
-            else if (userTier.Contains("Bạc"))
-            {
-                shippingFee = (afterDiscount >= 200000 || subTotal == 0) ? 0 : 30000;
-            }
-            else
-            {
-                shippingFee = (afterDiscount >= 300000 || subTotal == 0) ? 0 : 30000;
-            }
+            decimal shippingFee = CalculateShippingFee(userTier, afterDiscount, subTotal);
 
             // Xử lý điểm thưởng Baby Club
             int actualPointsUsed = 0;
@@ -1036,12 +1027,21 @@ namespace WebsiteBabyShop.Controllers
             HttpContext.Session.Remove(CartSessionKey);
             HttpContext.Session.Remove(CouponSessionKey);
 
-            // Gửi email thông báo xác nhận đặt hàng thành công đến khách hàng
+            var activeCheckoutToken = !string.IsNullOrWhiteSpace(checkoutToken)
+                ? checkoutToken
+                : HttpContext.Session.GetString(CheckoutTokenSessionKey);
+            if (!string.IsNullOrWhiteSpace(activeCheckoutToken))
+            {
+                HttpContext.Session.SetString(LastCompletedOrderSessionKey, $"{activeCheckoutToken}:{order.Id}");
+                HttpContext.Session.Remove(CheckoutTokenSessionKey);
+            }
+
+            // Tạo bản sao HTML email xác nhận ngay lập tức và gửi SMTP ở nền để chuyển thẳng tới trang OrderSuccess
             try
             {
                 if (!string.IsNullOrWhiteSpace(order.CustomerEmail))
                 {
-                    await _emailService.SendOrderConfirmationEmailAsync(order, order.OrderDetails);
+                    await _emailService.PrepareAndDispatchOrderConfirmationAsync(order, order.OrderDetails);
                 }
             }
             catch (Exception ex)
@@ -1064,7 +1064,81 @@ namespace WebsiteBabyShop.Controllers
                 return RedirectToAction("Index", "Home");
             }
 
+            await PopulateBankViewBagAsync();
+
             return View(order);
+        }
+
+        private static decimal CalculateShippingFee(string userTier, decimal afterDiscount, decimal subTotal)
+        {
+            if (userTier.Contains("Kim Cương")) return 0;
+            if (userTier.Contains("Vàng")) return (afterDiscount >= 100000 || subTotal == 0) ? 0 : 30000;
+            if (userTier.Contains("Bạc")) return (afterDiscount >= 200000 || subTotal == 0) ? 0 : 30000;
+            return (afterDiscount >= 300000 || subTotal == 0) ? 0 : 30000;
+        }
+
+        private async Task PopulateCheckoutRedisplayAsync(
+            List<CartItem> cart,
+            User? user,
+            string userTier,
+            int tierDiscountPercent,
+            decimal memberDiscount,
+            Coupon? appliedCoupon,
+            decimal discountAmount)
+        {
+            ViewBag.Cart = cart;
+            ViewBag.CurrentUser = user;
+            ViewBag.UserRewardPoints = user?.RewardPoints ?? 0;
+            ViewBag.UserMemberTier = userTier;
+            ViewBag.TierDiscountPercent = tierDiscountPercent;
+            ViewBag.MemberDiscount = memberDiscount;
+            ViewBag.AppliedCoupon = appliedCoupon;
+            ViewBag.DiscountAmount = discountAmount;
+            ViewBag.AvailableCoupons = await _context.Coupons
+                .Where(c => !c.IsForYou && !c.IsFlashHunt && c.IsActive && (!c.ExpiryDate.HasValue || c.ExpiryDate > DateTime.Now))
+                .OrderBy(c => c.MinOrderAmount)
+                .ToListAsync();
+            ViewBag.UserVouchers = user != null ? await _context.UserCoupons
+                .Include(uc => uc.Coupon)
+                .Where(uc => uc.UserId == user.Id && !uc.IsUsed && uc.ExpiryDate >= DateTime.Now && uc.Coupon != null && uc.Coupon.IsActive)
+                .OrderBy(uc => uc.ExpiryDate)
+                .ToListAsync() : new List<UserCoupon>();
+
+            await PopulateBankViewBagAsync();
+
+            var token = HttpContext.Session.GetString(CheckoutTokenSessionKey);
+            if (string.IsNullOrWhiteSpace(token))
+            {
+                token = Guid.NewGuid().ToString("N");
+                HttpContext.Session.SetString(CheckoutTokenSessionKey, token);
+            }
+            ViewBag.CheckoutToken = token;
+        }
+
+        private async Task PopulateBankViewBagAsync()
+        {
+            List<BankAccount> activeBanks;
+            try
+            {
+                activeBanks = await _context.BankAccounts
+                    .AsNoTracking()
+                    .Where(b => b.IsActive)
+                    .OrderByDescending(b => b.IsDefault)
+                    .ThenBy(b => b.Id)
+                    .ToListAsync();
+            }
+            catch
+            {
+                activeBanks = new List<BankAccount>();
+            }
+
+            if (!activeBanks.Any())
+            {
+                activeBanks.Add(WebsiteBabyShop.Helpers.VietQrBankHelper.CreateFallbackDefault());
+            }
+
+            ViewBag.ActiveBanks = activeBanks;
+            ViewBag.DefaultBank = activeBanks.First();
         }
     }
 }

@@ -27,6 +27,7 @@ namespace WebsiteBabyShop.Models
         public DbSet<DailyCheckIn> DailyCheckIns { get; set; }
         public DbSet<LuckyWheelHistory> LuckyWheelHistories { get; set; }
         public DbSet<ReturnRequest> ReturnRequests { get; set; }
+        public DbSet<BankAccount> BankAccounts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

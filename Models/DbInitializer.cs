@@ -281,6 +281,9 @@ namespace WebsiteBabyShop.Models
             // Đảm bảo tạo bảng và dữ liệu mẫu cho Đổi / Trả Hàng (ReturnRequests)
             EnsureReturnRequestsTableAndSeed(context);
 
+            // Đảm bảo tạo bảng và cấu hình mặc định cho Ngân Hàng & VietQR (BankAccounts)
+            EnsureBankAccountsTableAndSeed(context);
+
             // Tự động làm sạch và chuẩn hóa toàn bộ dữ liệu tiếng Việt trong CSDL
             CleanCorruptedData(context);
 
@@ -1709,6 +1712,53 @@ namespace WebsiteBabyShop.Models
                         context.ReturnRequests.AddRange(sample1, sample2, sample3);
                         context.SaveChanges();
                     }
+                }
+            }
+            catch { }
+        }
+
+        private static void EnsureBankAccountsTableAndSeed(BabyShopDbContext context)
+        {
+            try
+            {
+                context.Database.ExecuteSqlRaw(@"
+                    IF OBJECT_ID('dbo.BankAccounts', 'U') IS NULL
+                    BEGIN
+                        CREATE TABLE [dbo].[BankAccounts] (
+                            [Id] INT IDENTITY(1,1) NOT NULL,
+                            [BankCode] NVARCHAR(20) NOT NULL DEFAULT (N'MB'),
+                            [BankName] NVARCHAR(150) NOT NULL,
+                            [AccountNumber] NVARCHAR(50) NOT NULL,
+                            [AccountHolder] NVARCHAR(100) NOT NULL,
+                            [Branch] NVARCHAR(150) NULL,
+                            [QrTemplate] NVARCHAR(30) NOT NULL DEFAULT (N'compact2'),
+                            [Note] NVARCHAR(500) NULL,
+                            [IsDefault] BIT NOT NULL DEFAULT (0),
+                            [IsActive] BIT NOT NULL DEFAULT (1),
+                            [CreatedAt] DATETIME2 NOT NULL DEFAULT (GETDATE()),
+                            [UpdatedAt] DATETIME2 NOT NULL DEFAULT (GETDATE()),
+                            CONSTRAINT [PK_BankAccounts] PRIMARY KEY CLUSTERED ([Id] ASC)
+                        );
+                    END
+                ");
+
+                if (!context.BankAccounts.Any())
+                {
+                    context.BankAccounts.Add(new BankAccount
+                    {
+                        BankCode = "MB",
+                        BankName = "MB Bank (Ngân hàng Quân Đội)",
+                        AccountNumber = "212882",
+                        AccountHolder = "MAI TIEN DUNG",
+                        Branch = "Chi nhánh Hà Nội",
+                        QrTemplate = "compact2",
+                        Note = "Mẹ vui lòng giữ nguyên nội dung chuyển khoản là mã đơn hàng để hệ thống tự động gạch nợ và xác nhận đơn trong 1-3 phút nhé!",
+                        IsDefault = true,
+                        IsActive = true,
+                        CreatedAt = DateTime.Now,
+                        UpdatedAt = DateTime.Now
+                    });
+                    context.SaveChanges();
                 }
             }
             catch { }
